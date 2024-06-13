@@ -1,0 +1,27 @@
+import { createApp } from "vue"
+// full import element plus
+import ElementPlus from 'element-plus'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import 'element-plus/dist/index.css'
+import App from './App.vue'
+import router from './router'
+
+const app = createApp(App);
+// 配置访问后端路径的全局变量
+app.config.globalProperties.$requestUrl = 'http://localhost:8130'
+app.config.globalProperties.$id = null
+// 测试菜单
+app.config.globalProperties.$test_menu = null
+// 业务中各单元的分析文字信息(单元测试和集成测试可以通用该信息)
+// app.config.globalProperties.$units_analysis = null
+// 单元测试的菜单
+app.config.globalProperties.$unit_menu_result = null
+// 集成测试的菜单
+app.config.globalProperties.$integration_menu_result = null
+
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+    app.component(key, component)
+}
+app.use(router).use(ElementPlus).mount("#app");
+
+
