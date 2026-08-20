@@ -1,6 +1,9 @@
+import asyncio
+import json
 import os.path
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Request, UploadFile
+from fastapi.responses import StreamingResponse
 from dao import testProjectDao
 from service.llmAcceptanceTestService import find_out_requirement_info, generate_acceptance_test_cases
 from service.llmApiTestService import find_out_apis_info, generate_api_test_cases
@@ -8,13 +11,28 @@ from service.llmDatabaseTestService import find_out_database_info, generate_db_t
 from service.llmFunctionalTestService import find_out_use_cases_info, generate_functional_test_cases
 from service.llmNonfunctionalTestService import find_out_nonfunctional_info, generate_nonfunctional_test_cases
 from service.llmTestPlanService import generate_test_plan, generate_test_plan_again
+from service.llmTestPlanStreamService import (
+    TestPlanStreamError,
+    get_project_analysis_status,
+    stream_test_plan,
+)
+from service.llmWorkflowStreamCore import WorkflowStreamError
+from service.llmWorkflowStreamService import stream_llm_workflow
 from service.llmUITestService import find_out_ui_info, generate_ui_test_cases
 from tools.status import Status
+from llm.provider import (
+    LLMConfigurationError,
+    LLMEmptyResponseError,
+    LLMProviderError,
+    LLMRateLimitError,
+    LLMTimeoutError,
+    ensure_supported_model,
+)
 from tools import fileTools, documentTools
 from vectorstore.loader import load_document
 from model.HttpModel import MenuModel, UnitTestInvokeModel, InfoModel, IntegrationTestInvokeModel, ApiTestInvokeModel, \
     UITestInvokeModel, DBTestInvokeModel, FunctionalTestInvokeModel, NFunctionalTestInvokeModel, \
-    AcceptanceTestInvokeModel
+    AcceptanceTestInvokeModel, PlanStreamRequest, WorkflowStreamRequest
 from service.llmSummarizeService import start_test_summarize_analyze, get_test_menu, restart_test_summarize_analyze
 from service.llmUnitTestService import (summarize_unit_info, find_out_test_unit_info,
                                         find_unit_test_knowledge, generate_test_cases, summarize_unit_info_again)
@@ -22,6 +40,59 @@ from service.llmIntegrationTestService import (get_integration_test_info, get_in
                                                find_integration_test_knowledge, generate_integration_test_cases)
 
 router = APIRouter()
+
+
+def _validate_llm_name(llm_name: str) -> None:
+    ensure_supported_model(llm_name)
+
+
+def _sse_message(event: str, data: dict) -> str:
+    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+def _stream_error(exc: Exception) -> dict:
+    if isinstance(exc, (TestPlanStreamError, WorkflowStreamError)):
+        return {
+            "code": exc.code,
+            "message": str(exc),
+            "status": exc.status,
+            "retryable": exc.retryable,
+        }
+    if isinstance(exc, LLMConfigurationError):
+        return {
+            "code": "configuration_error",
+            "message": str(exc),
+            "status": 503,
+            "retryable": False,
+        }
+    if isinstance(exc, LLMTimeoutError):
+        return {
+            "code": "timeout",
+            "message": str(exc),
+            "status": 504,
+            "retryable": True,
+        }
+    if isinstance(exc, LLMRateLimitError):
+        return {
+            "code": "rate_limit",
+            "message": str(exc),
+            "status": 429,
+            "retryable": True,
+        }
+    if isinstance(exc, (LLMProviderError, LLMEmptyResponseError)):
+        return {
+            "code": "provider_error",
+            "message": str(exc),
+            "status": 502,
+            "retryable": True,
+        }
+    return {
+        "code": "internal_error",
+        "message": "大模型任务执行失败，请稍后重试",
+        "status": 500,
+        "retryable": True,
+    }
 
 
 @router.post("/project/add/{name}")
@@ -39,11 +110,11 @@ async def add_project(name: str):
 async def login_project(pid: str):
     result = testProjectDao.find_project(pid)
     if result is None:
-        return {"status": Status.LOGIN_FAILURE, "reason": "请先创建项目", "data": False}
+        return {"status": Status.LOGIN_FAILURE.value, "reason": "请先创建项目", "data": False}
     elif not result:
-        return {"status": Status.LOGIN_FAILURE, "reason": "登录失败", "data": False}
+        return {"status": Status.LOGIN_FAILURE.value, "reason": "登录失败", "data": False}
     else:
-        return {"status": Status.LOGIN_FAILURE, "reason": "登录成功", "data": result.name}
+        return {"status": Status.SUCCESS.value, "reason": "登录成功", "data": result.name}
 
 
 @router.post("/uploadFile/{pid}/{doctype}")
@@ -93,7 +164,7 @@ async def upload_file(file: UploadFile, pid: str, doctype: int):
 
 @router.post("/project/info/add")
 async def add_project_info(item: InfoModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     pid = item_dict["pid"]
     info_type = item_dict["info_type"]
     info = item_dict["info"]
@@ -108,7 +179,7 @@ async def add_project_info(item: InfoModel):
 
 @router.post("/project/info/update")
 async def update_project_info(item: InfoModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     pid = item_dict["pid"]
     info_type = item_dict["info_type"]
     info = item_dict["info"]
@@ -219,6 +290,7 @@ async def analyze_testdoc_for_menu(pid: str):
 
 @router.get("/project/llm/menu/analyze/update/{pid}/{llm_name}")
 async def reanalyze_testdoc(pid: str, llm_name: str):
+    _validate_llm_name(llm_name)
     result = restart_test_summarize_analyze(pid, llm_name)
     if not result:
         return {"status": Status.LLM_MENU_ANALYSIS_FAILURE.value, "reason": "业务文档重新分析失败", "data": False}
@@ -228,7 +300,7 @@ async def reanalyze_testdoc(pid: str, llm_name: str):
 
 @router.post("/project/llm/menu/acquire")
 async def acquire_menu(item: MenuModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     summary = item_dict["summary"]
     result = get_test_menu(summary)
     return {"status": Status.SUCCESS.value, "reason": "测试类型分析完成", "data": result}
@@ -236,6 +308,7 @@ async def acquire_menu(item: MenuModel):
 
 @router.get("/project/llm/unit/menu/{pid}/{llm_name}")
 async def unit_test_menu(pid: str, llm_name: str):
+    _validate_llm_name(llm_name)
     result = summarize_unit_info(pid, llm_name)
     if not result:
         return {"status": Status.LLM_MENU_ANALYSIS_FAILURE.value, "reason": "单元测试分析失败", "data": False}
@@ -245,6 +318,7 @@ async def unit_test_menu(pid: str, llm_name: str):
 
 @router.get("/project/llm/unit/menu/update/{pid}/{llm_name}")
 async def unit_test_menu_again(pid: str, llm_name: str):
+    _validate_llm_name(llm_name)
     result = summarize_unit_info_again(pid, llm_name)
     if not result:
         return {"status": Status.LLM_MENU_ANALYSIS_FAILURE.value, "reason": "单元测试重新分析失败", "data": False}
@@ -254,6 +328,7 @@ async def unit_test_menu_again(pid: str, llm_name: str):
 
 @router.get("/project/llm/unit/info/{pid}/{name}/{llm_name}")
 async def unit_test_info(pid: str, name: str, llm_name: str):
+    _validate_llm_name(llm_name)
     result = find_out_test_unit_info(pid, name, llm_name)
     if not result:
         return {"status": Status.LLM_MENU_ANALYSIS_FAILURE.value, "reason": "单元信息获取失败", "data": False}
@@ -272,7 +347,7 @@ async def unit_test_knowledge(pid: str, method_type: int):
 
 @router.post("/project/llm/unit/case")
 async def unit_test_case(item: UnitTestInvokeModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     test_knowledge = item_dict["unit_test_knowledge"]
     static_method = item_dict["static_method"]
     unit_test_method_knowledge = item_dict["unit_test_method_knowledge"]
@@ -280,6 +355,7 @@ async def unit_test_case(item: UnitTestInvokeModel):
     unit_info = item_dict["unit_info"]
     output_type = item_dict["output_type"]
     llm_name = item_dict["llm_name"]
+    _validate_llm_name(llm_name)
     result = generate_test_cases(test_knowledge, static_method, unit_test_method_knowledge,
                                  unit, unit_info, output_type, llm_name)
     if not result:
@@ -290,7 +366,7 @@ async def unit_test_case(item: UnitTestInvokeModel):
 
 @router.post("/project/llm/integration/menu")
 async def acquire_integration_menu(item: MenuModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     summary = item_dict["summary"]
     result = get_integration_test_info(summary)
     if not result:
@@ -322,7 +398,7 @@ async def integration_test_knowledge(pid: str, strategy_type: int):
 
 @router.post("/project/llm/integration/case")
 async def integration_test_case(item: IntegrationTestInvokeModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     test_knowledge = item_dict["integration_test_knowledge"]
     strategy = item_dict["strategy"]
     strategy_knowledge = item_dict["strategy_knowledge"]
@@ -333,9 +409,9 @@ async def integration_test_case(item: IntegrationTestInvokeModel):
     result = generate_integration_test_cases(test_knowledge, strategy, strategy_knowledge, blackbox_method_knowledge,
                                              integration_object, integration_object_info, output_type)
     if not result:
-        return {"status": Status.LLM_MENU_ANALYSIS_FAILURE.value, "reason": "单元测试用例生成失败", "data": False}
+        return {"status": Status.LLM_MENU_ANALYSIS_FAILURE.value, "reason": "集成测试用例生成失败", "data": False}
     else:
-        return {"status": Status.SUCCESS.value, "reason": "单元测试用例生成成功", "data": result}
+        return {"status": Status.SUCCESS.value, "reason": "集成测试用例生成成功", "data": result}
 
 
 @router.get("/project/llm/api/info/{pid}")
@@ -349,7 +425,7 @@ async def get_apis_info(pid: str):
 
 @router.post("/project/llm/api/case")
 async def api_test_case(item: ApiTestInvokeModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     pid = item_dict["pid"]
     info = item_dict["info"]
     test_type = item_dict["test_type"]
@@ -373,7 +449,7 @@ async def get_ui_info(pid: str):
 
 @router.post("/project/llm/ui/case")
 async def ui_test_case(item: UITestInvokeModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     pid = item_dict["pid"]
     info = item_dict["info"]
     result = generate_ui_test_cases(pid, info)
@@ -394,7 +470,7 @@ async def get_db_info(pid: str):
 
 @router.post("/project/llm/db/case")
 async def db_test_case(item: DBTestInvokeModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     pid = item_dict["pid"]
     info = item_dict["info"]
     result = generate_db_test_cases(pid, info)
@@ -415,7 +491,7 @@ async def get_use_cases_info(pid: str):
 
 @router.post("/project/llm/functional/case")
 async def functional_test_case(item: FunctionalTestInvokeModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     pid = item_dict["pid"]
     info = item_dict["info"]
     test_type = item_dict["test_type"]
@@ -441,7 +517,7 @@ async def get_nfunctional_info(pid: str):
 
 @router.post("/project/llm/nfunctional/case")
 async def nfunctional_test_case(item: NFunctionalTestInvokeModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     pid = item_dict["pid"]
     info = item_dict["info"]
     method_name = item_dict["method_name"]
@@ -464,7 +540,7 @@ async def get_acceptance_info(pid: str):
 
 @router.post("/project/llm/acceptance/case")
 async def acceptance_test_case(item: AcceptanceTestInvokeModel):
-    item_dict = item.dict()
+    item_dict = item.model_dump()
     pid = item_dict["pid"]
     info = item_dict["info"]
     result = generate_acceptance_test_cases(pid, info)
@@ -476,6 +552,7 @@ async def acceptance_test_case(item: AcceptanceTestInvokeModel):
 
 @router.get("/project/llm/plan/{pid}/{llm_name}")
 async def test_plan(pid: str, llm_name: str):
+    _validate_llm_name(llm_name)
     result = generate_test_plan(pid, llm_name)
     if not result:
         return {"status": Status.LLM_APIS_ANALYSIS_FAILURE.value, "reason": "测试计划生成失败", "data": False}
@@ -485,8 +562,91 @@ async def test_plan(pid: str, llm_name: str):
 
 @router.put("/project/llm/plan/update/{pid}/{llm_name}")
 async def test_plan_again(pid: str, llm_name: str):
+    _validate_llm_name(llm_name)
     result = generate_test_plan_again(pid, llm_name)
     if not result:
         return {"status": Status.LLM_APIS_ANALYSIS_FAILURE.value, "reason": "测试计划生成失败", "data": False}
     else:
         return {"status": Status.SUCCESS.value, "reason": "测试计划生成成功", "data": result}
+
+
+@router.get("/project/analysis/status/{pid}")
+async def project_analysis_status(pid: str):
+    if not await asyncio.to_thread(testProjectDao.find_project, pid):
+        return {
+            "status": Status.LOGIN_FAILURE.value,
+            "reason": "项目不存在",
+            "data": False,
+        }
+    result = await get_project_analysis_status(pid)
+    return {
+        "status": Status.SUCCESS.value,
+        "reason": "项目分析状态获取成功",
+        "data": result,
+    }
+
+
+@router.post("/project/llm/plan/stream")
+async def test_plan_stream(item: PlanStreamRequest, request: Request):
+    _validate_llm_name(item.llm_name)
+
+    async def event_source():
+        try:
+            async for message in stream_test_plan(
+                item.pid,
+                item.llm_name,
+                item.regenerate,
+                is_disconnected=request.is_disconnected,
+            ):
+                if await request.is_disconnected():
+                    return
+                yield _sse_message(message["event"], message["data"])
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            if not await request.is_disconnected():
+                yield _sse_message("error", _stream_error(exc))
+
+    return StreamingResponse(
+        event_source(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/project/llm/workflow/stream")
+async def llm_workflow_stream(item: WorkflowStreamRequest, request: Request):
+    _validate_llm_name(item.llm_name)
+
+    async def event_source():
+        try:
+            async for message in stream_llm_workflow(
+                item.operation,
+                item.pid,
+                item.llm_name,
+                item.payload,
+                item.regenerate,
+                is_disconnected=request.is_disconnected,
+            ):
+                if await request.is_disconnected():
+                    return
+                yield _sse_message(message["event"], message["data"])
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            if not await request.is_disconnected():
+                yield _sse_message("error", _stream_error(exc))
+
+    return StreamingResponse(
+        event_source(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

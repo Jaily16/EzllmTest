@@ -1,7 +1,7 @@
-import os
 from chain.BasicChain import BasicChain
 from chain.KnowledgeChain import knowledge_retrieval_chain
 from dao import testProjectDao
+from llm.provider import LLMError
 from llm.llm_ChatGLM import ChatGLMModel
 from llm.llm_chatGPT import ChatGPTModel
 from prompt.templates import DATABASE_TEST_GENERATE_TEST_CASE_TEMPLATE
@@ -9,12 +9,6 @@ from tools import documentTools
 from tools.InfoType import InfoType
 import prompt.promptStr as prompt
 from vectorstore.splitter import testdoc_text_splitter_for_unit
-
-# 利用langsmith监控运行
-os.environ["LANGCHAIN_API_KEY"] = "ls__8f1d0a23c4cb4c9d8b58076ba3de84c7"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "LangServe_Service"
 
 llm = ChatGPTModel().get_model()
 llm_cn = ChatGLMModel().get_model()
@@ -48,6 +42,8 @@ def find_out_database_info(pid: str):
                                                                          llm_cn)
             testProjectDao.add_project_info(pid, InfoType.PROJECT_DB_SUMMARY.value, db_info)
         return db_info
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -65,6 +61,8 @@ def find_db_test_knowledge(pid: str):
             testProjectDao.add_project_info(pid, InfoType.PROJECT_DB_TEST_KNOWLEDGE.value,
                                             db_test_knowledge)
             return db_test_knowledge
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -74,6 +72,8 @@ def get_db_test_cases(db_test_knowledge: str, info: str):
     try:
         test_case_chain = BasicChain.stuff_chain(DATABASE_TEST_GENERATE_TEST_CASE_TEMPLATE, llm)
         return test_case_chain.invoke({"db_test_knowledge": db_test_knowledge, "content": info})
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -84,6 +84,8 @@ def generate_db_test_cases(pid: str, info: str):
         db_test_knowledge = find_db_test_knowledge(pid)
         test_cases = get_db_test_cases(db_test_knowledge, info)
         return {"db_test_knowledge": db_test_knowledge, "test_cases": test_cases}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False

@@ -1,7 +1,22 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from app.routers import router
-from langserve import add_routes
+from app.config import get_settings
+from dao.testProjectDao import engine
+from llm.provider import (
+    LLMConfigurationError,
+    LLMEmptyResponseError,
+    LLMOutputParsingError,
+    LLMProviderError,
+    LLMRateLimitError,
+    LLMTimeoutError,
+    UnsupportedModelError,
+)
+from tools.status import Status
+
+settings = get_settings()
 
 app = FastAPI(
     title="EzllmTest BackEnd API",
@@ -9,13 +24,68 @@ app = FastAPI(
 )
 
 app.include_router(router)
-# add_routes(app, chain, path="/llm/test")
+
+
+def _llm_error_response(status_code: int, reason: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": Status.LLM_APIS_ANALYSIS_FAILURE.value,
+            "reason": reason,
+            "data": False,
+        },
+    )
+
+
+@app.exception_handler(UnsupportedModelError)
+async def unsupported_model_handler(_request, exc: UnsupportedModelError):
+    return _llm_error_response(400, str(exc))
+
+
+@app.exception_handler(LLMConfigurationError)
+async def llm_configuration_handler(_request, exc: LLMConfigurationError):
+    return _llm_error_response(503, str(exc))
+
+
+@app.exception_handler(LLMTimeoutError)
+async def llm_timeout_handler(_request, exc: LLMTimeoutError):
+    return _llm_error_response(504, str(exc))
+
+
+@app.exception_handler(LLMRateLimitError)
+async def llm_rate_limit_handler(_request, exc: LLMRateLimitError):
+    return _llm_error_response(429, str(exc))
+
+
+@app.exception_handler(LLMOutputParsingError)
+@app.exception_handler(LLMEmptyResponseError)
+@app.exception_handler(LLMProviderError)
+async def llm_upstream_handler(_request, exc):
+    return _llm_error_response(502, str(exc))
+
+
+@app.get("/health")
+def health():
+    database_status = "ok"
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception:
+        database_status = "error"
+
+    return {
+        "status": "ok" if database_status == "ok" else "degraded",
+        "database": database_status,
+        "llm_configured": settings.llm_configured,
+        "chat_model": settings.zhipu_chat_model,
+        "embedding_model": settings.zhipu_embedding_model,
+    }
 
 # 将配置挂在到app上,解决跨域问题
 app.add_middleware(
     CORSMiddleware,
     # 这里配置允许跨域访问的前端地址
-    allow_origins=["*"],
+    allow_origins=list(settings.cors_origins),
     # 跨域请求是否支持 cookie， 如果这里配置true，则allow_origins不能配置*
     allow_credentials=False,
     # 支持跨域的请求类型，可以单独配置get、post等，也可以直接使用通配符*表示支持所有

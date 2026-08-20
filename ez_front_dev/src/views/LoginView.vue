@@ -7,7 +7,7 @@
       <div class="id_area">
         <el-input v-model="input_pid" style="width: 230px; margin-left: -30px" placeholder="请输入项目id(若已创建项目)"
           :suffix-icon="User" maxlength="21" clearable />
-        <el-button type="success" style="margin-left: 15px" @click="login" plain>进入测试分析</el-button>
+        <el-button type="success" style="margin-left: 15px" @click="login" plain>开始分析业务和生成测试计划</el-button>
       </div>
       <RouterLink to="/create"><el-button type="success" style="margin-top: 20px; margin-left: 50px">创建新项目</el-button>
       </RouterLink>
@@ -22,6 +22,7 @@ import { User } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import axios from "axios";
 import { useRouter } from "vue-router";
+import { resetProjectAnalysisState } from "@/state/projectAnalysis";
 
 const input_pid = ref('');
 const instance = getCurrentInstance();
@@ -33,6 +34,7 @@ if(instance != null){
   instance.appContext.config.globalProperties.$unit_menu_result = null
   instance.appContext.config.globalProperties.$integration_menu_result = null
   instance.appContext.config.globalProperties.$id = null
+  resetProjectAnalysisState()
 }
 
 if (instance == null) {

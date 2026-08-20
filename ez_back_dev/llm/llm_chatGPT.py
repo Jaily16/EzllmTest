@@ -1,16 +1,15 @@
-import os
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+"""Compatibility wrapper for legacy imports.
 
-os.environ["OPENAI_API_KEY"] = "your_api_key"
+The local reproduction no longer calls OpenAI. Both methods delegate to the
+configured Zhipu-compatible provider.
+"""
+
+from llm.provider import get_lazy_chat_model, get_lazy_embeddings
 
 
 class ChatGPTModel:
-    def __init__(self):
-        self.model = ChatOpenAI(model="gpt-3.5-turbo")
-        self.embeddings = OpenAIEmbeddings(model="gpt-3.5-turbo")
-
     def get_model(self):
-        return self.model
+        return get_lazy_chat_model()
 
     def get_embeddings(self):
-        return self.embeddings
+        return get_lazy_embeddings()

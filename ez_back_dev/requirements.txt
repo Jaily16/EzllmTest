@@ -1,0 +1,26 @@
+# Python 3.11 runtime baseline verified on 2026-08-19.
+
+# Web and database
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pydantic==2.13.4
+sqlalchemy==2.0.52
+pymysql==1.2.0
+python-multipart==0.0.32
+python-dotenv==1.2.3
+toollib==2.2.5
+
+# Modern LangChain packages used directly by the application
+langchain-core==1.5.6
+langchain-openai==1.5.2
+langchain-text-splitters==1.1.2
+openai==3.3.0
+
+# Local document loading and token counting
+pypdf==6.16.1
+docx2txt==0.9
+tiktoken==0.14.0
+
+# Offline tests
+pytest==9.1.1
+httpx==0.28.1

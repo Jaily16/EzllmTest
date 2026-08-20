@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { analysisReady } from '@/state/projectAnalysis'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -22,11 +23,12 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/test',
     name: 'testMain',
-    redirect: '/menu',
+    redirect: '/plan',
     component: () => import('../views/MainView.vue'),
     children:[
       {
         path: '/menu',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/TestMenu.vue')
       },
       {
@@ -35,34 +37,42 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: '/unit',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/UnitTest.vue')
       },
       {
         path: '/integration',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/IntegrationTest.vue')
       },
       {
         path: '/api',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/ApiTest.vue')
       },
       {
         path: '/ui',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/UITest.vue')
       },
       {
         path: '/database',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/DatabaseTest.vue')
       },
       {
         path: '/functional',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/FounctionalTest.vue')
       },
       {
         path: '/nfunctional',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/NonfunctionalTest.vue')
       },
       {
         path: '/acceptance',
+        meta: { requiresAnalysis: true },
         component: () => import('../components/AcceptanceTest.vue')
       }
     ]
@@ -72,6 +82,11 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+router.beforeEach((to) => {
+  if (to.meta.requiresAnalysis && !analysisReady.value) return '/plan'
+  return true
 })
 
 export default router

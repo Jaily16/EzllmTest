@@ -1,7 +1,7 @@
-import os
 from chain.BasicChain import BasicChain
 from chain.KnowledgeChain import knowledge_retrieval_chain
 from dao import testProjectDao
+from llm.provider import LLMError
 from llm.llm_ChatGLM import ChatGLMModel
 from llm.llm_GPT4 import GPT4Model
 from llm.llm_MoonShot import MoonShotModel
@@ -17,12 +17,6 @@ from tools.InfoType import InfoType
 from vectorstore.retrievers import require_retriever
 import prompt.promptStr as prompt
 from vectorstore.splitter import testdoc_text_splitter_for_use_case
-
-# 利用langsmith监控运行
-os.environ["LANGCHAIN_API_KEY"] = "ls__8f1d0a23c4cb4c9d8b58076ba3de84c7"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "LangServe_Service"
 
 llm = ChatGPTModel().get_model()
 llm_cn = GPT4Model().get_model()
@@ -67,6 +61,8 @@ def find_out_use_cases_info(pid: str):
             json_chain = BasicChain.json_chain(UseCaseList, llm)
             query = prompt.FUNCTIONAL_TEST_JSON_PROMPT_STR + result
             return {"text_info": result, "list_info": json_chain.invoke({"query": query})}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -75,8 +71,7 @@ def find_out_use_cases_info(pid: str):
 def find_out_use_case_info(pid: str, use_case_name: str):
     try:
         require_docs = documentTools.generate_require_testdocs_docs(pid)
-        require_retriever.add_documents(require_docs)
-        uc_docs = require_retriever.invoke(use_case_name)
+        uc_docs = require_retriever(require_docs).invoke(use_case_name)
         uc_str = documentTools.docs_to_meaningful_strings(uc_docs)
         tokens = documentTools.num_tokens_from_string(uc_str)
         if tokens > 14500:
@@ -93,6 +88,8 @@ def find_out_use_case_info(pid: str, use_case_name: str):
             stuff_chain = BasicChain.stuff_chain(USE_CASE_INFO_TEMPLATE, llm_cn)
             uc_info = stuff_chain.invoke({"use_case_name": use_case_name, "docs": uc_str})
         return uc_info
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -111,6 +108,8 @@ def find_functional_test_knowledge(pid: str):
             testProjectDao.add_project_info(pid, InfoType.PROJECT_FUNCTION_TEST_KNOWLEDGE.value,
                                             functional_test_knowledge)
             return functional_test_knowledge
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -136,6 +135,8 @@ def get_functional_test_cases(functional_test_knowledge: str, info: str, test_ty
             test_case_chain = BasicChain.stuff_chain(FUNCTIONAL_TEST_GENERATE_ALL_TEST_CASE_TEMPLATE, llm)
             return test_case_chain.invoke({"functional_test_knowledge": functional_test_knowledge,
                                            "content": info, "case_template": output_template})
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -148,6 +149,8 @@ def generate_functional_test_cases(pid: str, info: str, test_type: int, output_t
         functional_test_knowledge = find_functional_test_knowledge(pid)
         test_cases = get_functional_test_cases(functional_test_knowledge, info, test_type, output_type, use_case_name)
         return {"functional_test_knowledge": functional_test_knowledge, "test_cases": test_cases}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False

@@ -1,62 +1,119 @@
-from langchain.storage import InMemoryStore
-from llm.llm_chatGPT import ChatGPTModel
-from langchain_community.vectorstores import Chroma, FAISS
-from langchain.retrievers import ParentDocumentRetriever, ContextualCompressionRetriever
-from vectorstore.splitter import design_parent_text_splitter, design_child_text_splitter, knowledge_text_splitter, \
-    require_child_text_splitter, require_parent_text_splitter, testdoc_text_splitter_for_api, \
-    testdoc_text_splitter_for_nfunctional
-from langchain_openai import OpenAIEmbeddings, OpenAI
-from langchain.retrievers.document_compressors import LLMChainExtractor
+from __future__ import annotations
 
-embeddings = ChatGPTModel().get_embeddings()
+from collections.abc import Sequence
+from langchain_core.documents import Document
+from langchain_core.vectorstores import InMemoryVectorStore
 
-# 用于开发设计文档的retrievers
-design_vectorstore = Chroma(
-    collection_name="design_split_parent",
-    embedding_function=OpenAIEmbeddings()
-)
-design_store = InMemoryStore()
-design_retriever = ParentDocumentRetriever(
-    vectorstore=design_vectorstore,
-    docstore=design_store,
-    child_splitter=design_child_text_splitter,
-    parent_splitter=design_parent_text_splitter
+from llm.provider import get_lazy_embeddings
+from vectorstore.splitter import (
+    design_child_text_splitter,
+    design_parent_text_splitter,
+    knowledge_text_splitter,
+    require_child_text_splitter,
+    require_parent_text_splitter,
+    testdoc_text_splitter_for_api,
+    testdoc_text_splitter_for_nfunctional,
 )
 
-# 用于需求文档的retrievers
-require_vectorstore = Chroma(
-    collection_name="require_split_parent",
-    embedding_function=OpenAIEmbeddings()
-)
-require_store = InMemoryStore()
-require_retriever = ParentDocumentRetriever(
-    vectorstore=require_vectorstore,
-    docstore=require_store,
-    child_splitter=require_child_text_splitter,
-    parent_splitter=require_parent_text_splitter
-)
+_PARENT_ID_KEY = "_ezllm_parent_id"
 
 
-# 用于构造知识库搜索的密集和稀疏检索器融合retriever
-def knowledge_retriever(documents):
-    texts = knowledge_text_splitter.split_documents(documents)
-    retriever = FAISS.from_documents(texts, OpenAIEmbeddings()).as_retriever()
-    llm = OpenAI(temperature=0)
-    compressor = LLMChainExtractor.from_llm(llm)
-    compression_retriever = ContextualCompressionRetriever(
-        base_compressor=compressor,
-        base_retriever=retriever
+class EmptyRetriever:
+    def invoke(self, _query: str, config=None, **_kwargs) -> list[Document]:
+        return []
+
+
+class ProjectScopedParentRetriever:
+    def __init__(self, parents: dict[str, Document], child_retriever):
+        self._parents = parents
+        self._child_retriever = child_retriever
+
+    def invoke(self, query: str, config=None, **kwargs) -> list[Document]:
+        children = self._child_retriever.invoke(query, config=config, **kwargs)
+        result: list[Document] = []
+        seen: set[str] = set()
+        for child in children:
+            parent_id = child.metadata.get(_PARENT_ID_KEY)
+            if parent_id is not None and parent_id not in seen:
+                seen.add(parent_id)
+                result.append(self._parents[parent_id])
+        return result
+
+
+def _vector_retriever(
+    documents: Sequence[Document], *, embedding_model=None, k: int = 4
+):
+    if not documents:
+        return EmptyRetriever()
+    vectorstore = InMemoryVectorStore(
+        embedding=embedding_model or get_lazy_embeddings()
     )
-    return compression_retriever
+    vectorstore.add_documents(documents=list(documents))
+    return vectorstore.as_retriever(
+        search_kwargs={"k": min(k, len(documents))}
+    )
 
 
-def api_retriever(documents):
-    texts = testdoc_text_splitter_for_api.split_documents(documents)
-    retriever = FAISS.from_documents(texts, OpenAIEmbeddings()).as_retriever()
-    return retriever
+def _parent_retriever(
+    documents: Sequence[Document],
+    *,
+    parent_splitter,
+    child_splitter,
+    embedding_model=None,
+    k: int = 6,
+):
+    if not documents:
+        return EmptyRetriever()
+
+    parent_documents = parent_splitter.split_documents(list(documents))
+    parents: dict[str, Document] = {}
+    children: list[Document] = []
+    for index, parent in enumerate(parent_documents):
+        parent_id = str(index)
+        parents[parent_id] = Document(
+            page_content=parent.page_content,
+            metadata=dict(parent.metadata),
+        )
+        marked_parent = Document(
+            page_content=parent.page_content,
+            metadata={**parent.metadata, _PARENT_ID_KEY: parent_id},
+        )
+        children.extend(child_splitter.split_documents([marked_parent]))
+
+    child_retriever = _vector_retriever(
+        children, embedding_model=embedding_model, k=k
+    )
+    return ProjectScopedParentRetriever(parents, child_retriever)
 
 
-def nfunctional_retriever(documents):
-    texts = testdoc_text_splitter_for_nfunctional.split_documents(documents)
-    retriever = FAISS.from_documents(texts, OpenAIEmbeddings()).as_retriever()
-    return retriever
+def design_retriever(documents, *, embedding_model=None):
+    return _parent_retriever(
+        documents,
+        parent_splitter=design_parent_text_splitter,
+        child_splitter=design_child_text_splitter,
+        embedding_model=embedding_model,
+    )
+
+
+def require_retriever(documents, *, embedding_model=None):
+    return _parent_retriever(
+        documents,
+        parent_splitter=require_parent_text_splitter,
+        child_splitter=require_child_text_splitter,
+        embedding_model=embedding_model,
+    )
+
+
+def knowledge_retriever(documents, *, embedding_model=None):
+    texts = knowledge_text_splitter.split_documents(list(documents))
+    return _vector_retriever(texts, embedding_model=embedding_model)
+
+
+def api_retriever(documents, *, embedding_model=None):
+    texts = testdoc_text_splitter_for_api.split_documents(list(documents))
+    return _vector_retriever(texts, embedding_model=embedding_model)
+
+
+def nfunctional_retriever(documents, *, embedding_model=None):
+    texts = testdoc_text_splitter_for_nfunctional.split_documents(list(documents))
+    return _vector_retriever(texts, embedding_model=embedding_model)

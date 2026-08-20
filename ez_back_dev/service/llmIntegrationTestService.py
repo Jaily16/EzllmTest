@@ -1,8 +1,8 @@
 # 提供llm对业务文档集成测试智能分析的相关服务
-import os
 import prompt.promptStr as prompt
 from chain.KnowledgeChain import knowledge_retrieval_chain
 from dao import testProjectDao
+from llm.provider import LLMError
 from llm.llm_ChatGLM import ChatGLMModel
 from llm.llm_chatGPT import ChatGPTModel
 from chain.BasicChain import BasicChain
@@ -15,12 +15,6 @@ from prompt.templates import (INTEGRATION_TEST_INFO_STUFF_TEMPLATE, INTEGRATION_
                               INTEGRATION_TEST_GENERATE_TEST_CASE_TEMPLATE)
 from vectorstore.splitter import testdoc_text_splitter_for_integration
 
-# 利用langsmith监控运行
-os.environ["LANGCHAIN_API_KEY"] = "ls__8f1d0a23c4cb4c9d8b58076ba3de84c7"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "LangServe_Service"
-
 llm = ChatGPTModel().get_model()
 llm_cn = ChatGLMModel().get_model()
 
@@ -30,6 +24,8 @@ def get_integration_test_info(units_info: str):
         json_chain = BasicChain.json_chain(IntegrationTestMenu, llm)
         query = prompt.INTEGRATION_TEST_MENU_JSON_STR + units_info
         return json_chain.invoke({"query": query})
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -69,8 +65,7 @@ def get_integration_description(pid: str, integration_type: int, unit_name: str 
                 doc_str = documentTools.generate_design_testdocs_str(pid)
         else:
             design_docs = documentTools.generate_design_testdocs_docs(pid)
-            design_retriever.add_documents(design_docs)
-            docs = design_retriever.invoke(unit_name)
+            docs = design_retriever(design_docs).invoke(unit_name)
             doc_str = documentTools.docs_to_string(docs)
             tokens = documentTools.num_tokens_from_string(doc_str)
             if tokens > 14500:
@@ -121,6 +116,8 @@ def get_integration_description(pid: str, integration_type: int, unit_name: str 
             else:
                 stuff_chain = BasicChain.stuff_chain(INTEGRATION_TEST_INFO_STUFF_TEMPLATE, llm_cn)
                 return stuff_chain.invoke({"integration_unit": unit_name, "unit_type": unit_type, "docs": doc_str})
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -249,6 +246,8 @@ def generate_integration_test_cases(integration_test_knowledge: str, strategy: s
              "strategy": strategy, "strategy_knowledge": strategy_knowledge,
              "blackbox_knowledge": blackbox_method_knowledge, "integration_unit": integration_object,
              "case_template": output_template, "integration_unit_info": integration_object_info})
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False

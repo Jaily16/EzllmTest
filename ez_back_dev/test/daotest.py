@@ -1,7 +1,8 @@
 import pytest
 from toollib.guid import SnowFlake
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from app.config import get_settings
+from sqlalchemy import create_engine
 from dao import testProjectDao
 from tools import documentTools
 from vectorstore.loader import load_document
@@ -15,7 +16,7 @@ def test_snowflake():
 
 
 def test_db_connect():
-    engine = create_engine("mysql+pymysql://root:050598@localhost/ezllmtest_dev")
+    engine = create_engine(get_settings().database_url)
     session = sessionmaker(bind=engine)
     print(engine)
     print(session)

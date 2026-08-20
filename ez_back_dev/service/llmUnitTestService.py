@@ -1,10 +1,10 @@
 # 提供llm对业务文档单元测试智能分析的相关服务
-import os
 import prompt.promptStr as prompt
 from llm.llm_chatGPT import ChatGPTModel
 from chain.BasicChain import BasicChain
 from chain.KnowledgeChain import knowledge_retrieval_chain
 from dao import testProjectDao
+from llm.provider import LLMError
 from tools import documentTools
 from tools.InfoType import InfoType
 from tools.llmTools import choose_llm_by_name
@@ -14,12 +14,6 @@ from vectorstore.retrievers import design_retriever
 from prompt.templates import (UNIT_TEST_UNIT_INFO_MAP_TEMPLATE, UNIT_TEST_UNIT_INFO_REDUCE_TEMPLATE,
                               UNIT_TEST_UNIT_INFO_STUFF_TEMPLATE, UNIT_TEST_TYPE_JSON_TEMPLATE,
                               UNIT_TEST_GENERATE_TEST_CASE_TEMPLATE_2)
-
-# 利用langsmith监控运行
-os.environ["LANGCHAIN_API_KEY"] = "ls__8f1d0a23c4cb4c9d8b58076ba3de84c7"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "LangServe_Service"
 
 llm = ChatGPTModel().get_model()
 
@@ -64,6 +58,8 @@ def summarize_unit_info(pid: str, llm_name: str):
         json_chain = BasicChain.json_chain(UnitTestMenu, llm)
         query = prompt.UNIT_TEST_FIND_UNIT_INFO_JSON_STR + result
         return {"text_info": result, "list_info": json_chain.invoke({"query": query})}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -97,6 +93,8 @@ def summarize_unit_info_again(pid: str, llm_name: str):
         json_chain = BasicChain.json_chain(UnitTestMenu, llm)
         query = prompt.UNIT_TEST_FIND_UNIT_INFO_JSON_STR + result
         return {"text_info": result, "list_info": json_chain.invoke({"query": query})}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -106,8 +104,7 @@ def find_out_test_unit_info(pid: str, unit_name: str, llm_name: str):
     try:
         analyze_llm = choose_llm_by_name(llm_name)
         design_docs = documentTools.generate_design_testdocs_docs(pid)
-        design_retriever.add_documents(design_docs)
-        unit_docs = design_retriever.invoke(unit_name)
+        unit_docs = design_retriever(design_docs).invoke(unit_name)
         unit_docs_str = documentTools.docs_to_string(unit_docs)
         tokens = documentTools.num_tokens_from_string(unit_docs_str)
         if tokens > 14500:
@@ -127,6 +124,8 @@ def find_out_test_unit_info(pid: str, unit_name: str, llm_name: str):
         query = UNIT_TEST_TYPE_JSON_TEMPLATE.format(unit=unit_name, content=unit_info)
         type_json = test_type_chain.invoke({"query": query})
         return {"unit_info": unit_info, "test_type": type_json}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -180,6 +179,8 @@ def find_unit_test_knowledge(pid: str, method_type: int):
                     testProjectDao.add_project_info(pid, InfoType.PROJECT_STATIC_WHITEBOX_KNOWLEDGE.value,
                                                     unit_method_knowledge)
         return {"unit_test_knowledge": unit_test_knowledge, "unit_method_knowledge": unit_method_knowledge}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -201,6 +202,8 @@ def generate_test_cases(unit_test_knowledge: str, static_method: str, unit_test_
         return test_case_chain.invoke({"unit_test_knowledge": unit_test_knowledge, "static_method": static_method,
                                        "unit_test_method_knowledge": unit_test_method_knowledge, "unit": unit,
                                        "case_template": output_template, "unit_info": unit_info})
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False

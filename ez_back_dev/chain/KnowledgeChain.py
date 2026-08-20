@@ -1,17 +1,33 @@
-# 利用langchain自带的retrieval_chain来进行基于测试知识库的搜索跟问答，实现RAG方式
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
-from langchain import hub
-from llm.llm_chatGPT import ChatGPTModel
+from __future__ import annotations
+
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableLambda
+
+from llm.provider import get_lazy_chat_model
 from vectorstore.retrievers import knowledge_retriever
 
 
-def knowledge_retrieval_chain(documents):
-    retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
-    llm = ChatGPTModel().get_model()
-    combine_docs_chain = create_stuff_documents_chain(
-        llm, retrieval_qa_chat_prompt
+def knowledge_retrieval_chain(documents, *, llm=None, retriever=None):
+    """Build a request-scoped RAG runnable while preserving the legacy result keys."""
+    scoped_retriever = retriever or knowledge_retriever(documents)
+    selected_llm = llm or get_lazy_chat_model()
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "请仅根据以下检索到的上下文回答问题。若上下文不足，请明确说明。\n\n{context}",
+            ),
+            ("human", "{input}"),
+        ]
     )
-    retriever = knowledge_retriever(documents)
-    retrieval_chain = create_retrieval_chain(retriever, combine_docs_chain)
-    return retrieval_chain
+    answer_chain = prompt | selected_llm | StrOutputParser()
+
+    def invoke(payload: dict):
+        question = payload["input"]
+        context_documents = scoped_retriever.invoke(question)
+        context = "\n\n".join(doc.page_content for doc in context_documents)
+        answer = answer_chain.invoke({"input": question, "context": context})
+        return {"input": question, "context": context_documents, "answer": answer}
+
+    return RunnableLambda(invoke)

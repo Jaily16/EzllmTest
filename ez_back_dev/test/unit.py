@@ -8,8 +8,8 @@ from chain.KnowledgeChain import knowledge_retrieval_chain
 def test_retriever():
     pid = "Ez1790304752236494848"
     test_all_docs = documentTools.generate_design_testdocs_docs(pid)
-    design_retriever.add_documents(test_all_docs)
-    print(documentTools.docs_to_meaningful_strings(design_retriever.get_relevant_documents("用户发布博客")))
+    retriever = design_retriever(test_all_docs)
+    print(documentTools.docs_to_meaningful_strings(retriever.invoke("用户发布博客")))
 
 
 def test_template():

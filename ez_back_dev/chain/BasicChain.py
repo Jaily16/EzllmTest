@@ -1,7 +1,11 @@
 from langchain_core.prompts import PromptTemplate, format_document
-from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
+from langchain_core.runnables import RunnableLambda
 from functools import partial
+import json
 from operator import itemgetter
+
+from llm.provider import LLMOutputParsingError
 
 
 # 用BasicChain类统一整合stuff、mapreduce和refine链,用于灵活调整大语言模型
@@ -93,6 +97,8 @@ class BasicChain:
         )
 
         def refine_loop(docs):
+            if not docs:
+                raise ValueError("Refine chain requires at least one document")
             summary = context_chain.invoke(docs[0])
             for i, doc in enumerate(docs[1:]):
                 summary = refine_chain.invoke({"prev_response": summary, "doc": doc})
@@ -102,11 +108,28 @@ class BasicChain:
 
     @staticmethod
     def json_chain(json_class, llm):
-        parser = JsonOutputParser(pydantic_object=json_class)
+        instructions_parser = JsonOutputParser(pydantic_object=json_class)
         prompt = PromptTemplate(
             template="请回答下面的问题: \n{query}\n\n{format_instructions}\n如果输出的是代码块，请不要包含首尾的```符号",
             input_variables=["query"],
-            partial_variables={"format_instructions": parser.get_format_instructions()},
+            partial_variables={
+                "format_instructions": instructions_parser.get_format_instructions()
+            },
         )
-        chain = prompt | llm | parser
-        return chain
+
+        def parse_json_output(raw_output: str):
+            text = raw_output.strip()
+            if text.startswith("```") and text.endswith("```"):
+                text = text[3:-3].strip()
+                if text.lower().startswith("json"):
+                    text = text[4:].lstrip()
+            try:
+                parsed = json.loads(text)
+                validated = json_class.model_validate(parsed)
+            except Exception as exc:
+                raise LLMOutputParsingError(
+                    "The model returned invalid structured output"
+                ) from exc
+            return validated.model_dump()
+
+        return prompt | llm | StrOutputParser() | RunnableLambda(parse_json_output)

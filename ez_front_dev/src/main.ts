@@ -5,10 +5,15 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
+import axios from 'axios'
+
+// Typed backend failures use meaningful HTTP status codes while retaining the
+// legacy response envelope consumed by the existing pages.
+axios.defaults.validateStatus = (status) => status >= 200 && status < 600
 
 const app = createApp(App);
 // 配置访问后端路径的全局变量
-app.config.globalProperties.$requestUrl = 'http://localhost:8130'
+app.config.globalProperties.$requestUrl = process.env.VUE_APP_API_BASE_URL || 'http://localhost:8130'
 app.config.globalProperties.$id = null
 // 测试菜单
 app.config.globalProperties.$test_menu = null

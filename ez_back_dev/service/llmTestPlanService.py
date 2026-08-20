@@ -1,8 +1,8 @@
-import os
 
 from chain.BasicChain import BasicChain
 from chain.KnowledgeChain import knowledge_retrieval_chain
 from dao import testProjectDao
+from llm.provider import LLMError
 from llm.llm_ChatGLM import ChatGLMModel
 from llm.llm_Llama import LlamaModel
 from llm.llm_MoonShot import MoonShotModel
@@ -17,13 +17,8 @@ import prompt.promptStr as prompt
 from tools.llmTools import choose_llm_by_name
 from vectorstore.splitter import testdoc_text_splitter_for_acceptance
 
-# 利用langsmith监控运行
-os.environ["LANGCHAIN_API_KEY"] = "ls__8f1d0a23c4cb4c9d8b58076ba3de84c7"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "LangServe_Service"
-
 # 测试不同的llm看看(目前只支持调用5种模型好了，还可以支持不同版本)
+TEST_PLAN_MINIMUM_TIMEOUT_SECONDS = 300.0
 
 
 def generate_test_plan(pid: str, llm_name: str):
@@ -31,7 +26,10 @@ def generate_test_plan(pid: str, llm_name: str):
         overflow = testProjectDao.get_project_type(pid).overflow
         # 如果此前分析过了就取历史数据
         history_result = testProjectDao.get_project_info(pid, InfoType.PROJECT_TEST_PLAN.value)
-        llm_plan = choose_llm_by_name(llm_name)
+        llm_plan = choose_llm_by_name(
+            llm_name,
+            minimum_timeout_seconds=TEST_PLAN_MINIMUM_TIMEOUT_SECONDS,
+        )
         if overflow == 1 or overflow == 4:
             # 先将所有的业务需求文档进行拼接成一个大的document数组
             test_all_docs = documentTools.generate_require_testdocs_docs(pid)
@@ -61,6 +59,8 @@ def generate_test_plan(pid: str, llm_name: str):
                 )
                 testProjectDao.add_project_info(pid, InfoType.PROJECT_TEST_PLAN.value, result)
         return result
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -70,7 +70,10 @@ def generate_test_plan(pid: str, llm_name: str):
 def generate_test_plan_again(pid: str, llm_name: str):
     try:
         overflow = testProjectDao.get_project_type(pid).overflow
-        llm_plan = choose_llm_by_name(llm_name)
+        llm_plan = choose_llm_by_name(
+            llm_name,
+            minimum_timeout_seconds=TEST_PLAN_MINIMUM_TIMEOUT_SECONDS,
+        )
         if overflow == 1 or overflow == 4:
             # 先将所有的业务需求文档进行拼接成一个大的document数组
             test_all_docs = documentTools.generate_require_testdocs_docs(pid)
@@ -94,6 +97,8 @@ def generate_test_plan_again(pid: str, llm_name: str):
             )
             testProjectDao.update_project_info(pid, InfoType.PROJECT_TEST_PLAN.value, result)
         return result
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False

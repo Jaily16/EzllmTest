@@ -124,8 +124,8 @@
         <RouterLink to="/">
           <el-button v-if="createFinished" type="info">返回登入页面</el-button>
         </RouterLink>
-        <RouterLink to="/menu">
-          <el-button v-if="createFinished" style="margin-left: 10px;" type="success">进入测试菜单</el-button>
+        <RouterLink to="/plan">
+          <el-button v-if="createFinished" style="margin-left: 10px;" type="success">开始分析业务和生成测试计划</el-button>
         </RouterLink>
       </template>
     </el-dialog>
@@ -139,6 +139,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import type { UploadProps, UploadUserFile } from "element-plus";
 import useClipboard from 'vue-clipboard3'
 import axios from "axios";
+import { resetProjectAnalysisState } from "@/state/projectAnalysis";
 
 const instance = getCurrentInstance();
 const requestUrl = instance?.appContext.config.globalProperties.$requestUrl;
@@ -160,17 +161,23 @@ const copyId = async () => {
   try {
     await toClipboard(project_id.value)
     ElMessage.success('已复制项目id');
-  } catch (error) {
+  } catch {
     ElMessage.warning('项目id复制失败');
-    console.error(error)
   }
 }
 // 用于记录是否为文件上传的用户性错误
 let fileUploadFault = false;
 
-const func = () => {
-  console.log("invoke func");
+const appendRawFile = (formData: FormData, file: UploadUserFile): boolean => {
+  if (!file.raw) {
+    ElMessage({ message: "上传文件内容不可用，请重新选择文件", type: "error" });
+    return false;
+  }
+  formData.append("file", file.raw);
+  return true;
 };
+
+const func = () => undefined;
 
 const handleBeforeUploadKnowledge: UploadProps["beforeUpload"] = (file) => {
   //检查传输的文档大小是否满足约束
@@ -285,8 +292,8 @@ const register = async () => {
         return false
       }
     })
-    .catch(function (error) {
-      console.log(error);
+    .catch(function () {
+      ElMessage({ message: "项目创建请求失败", type: "error" });
       return false
     });
   return true
@@ -295,7 +302,7 @@ const register = async () => {
 const submitUploadKnowledge = async () => {
   for (let i = 0; i < fileListKnowledge.value.length; i++) {
     let formData = new FormData();
-    formData.append("file", fileListKnowledge.value[i].raw!);
+    if (!appendRawFile(formData, fileListKnowledge.value[i])) return false;
     await axios({
       method: "post",
       url: requestUrl + "/uploadFile/" + project_id.value + "/1",
@@ -307,8 +314,8 @@ const submitUploadKnowledge = async () => {
           return false
         }
       })
-      .catch(function (error) {
-        console.log(error);
+      .catch(function () {
+        ElMessage({ message: "知识库文件上传请求失败", type: "error" });
         return false
       });
   }
@@ -318,7 +325,7 @@ const submitUploadKnowledge = async () => {
 const submitUploadRequirementTestdoc = async () => {
   for (let i = 0; i < fileListRequirementTestDoc.value.length; i++) {
     let formData = new FormData();
-    formData.append("file", fileListRequirementTestDoc.value[i].raw!);
+    if (!appendRawFile(formData, fileListRequirementTestDoc.value[i])) return false;
     await axios({
       method: "post",
       url: requestUrl + "/uploadFile/" + project_id.value + "/2",
@@ -330,8 +337,8 @@ const submitUploadRequirementTestdoc = async () => {
           return false
         }
       })
-      .catch(function (error) {
-        console.log(error);
+      .catch(function () {
+        ElMessage({ message: "需求文档上传请求失败", type: "error" });
         return false
       });
   }
@@ -341,7 +348,7 @@ const submitUploadRequirementTestdoc = async () => {
 const submitUploadDesignTestdoc = async () => {
   for (let i = 0; i < fileListDesignTestDoc.value.length; i++) {
     let formData = new FormData();
-    formData.append("file", fileListDesignTestDoc.value[i].raw!);
+    if (!appendRawFile(formData, fileListDesignTestDoc.value[i])) return false;
     await axios({
       method: "post",
       url: requestUrl + "/uploadFile/" + project_id.value + "/3",
@@ -353,8 +360,8 @@ const submitUploadDesignTestdoc = async () => {
           return false
         }
       })
-      .catch(function (error) {
-        console.log(error);
+      .catch(function () {
+        ElMessage({ message: "设计文档上传请求失败", type: "error" });
         return false
       });
   }
@@ -378,8 +385,8 @@ const analyzeProjectType = async () => {
           }
       }
     })
-    .catch(function (error) {
-      console.log(error);
+    .catch(function () {
+      ElMessage({ message: "项目类型分析请求失败", type: "error" });
       return false
     });
   return true
@@ -415,6 +422,7 @@ const createProject = async () => {
     });
     return false;
   }
+  resetProjectAnalysisState()
   centerDialogVisible.value = true;
   var register_result = await register();
   if (register_result) {

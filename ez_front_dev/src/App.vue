@@ -3,13 +3,13 @@
 </template>
 
 <script lang="ts" setup>
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 
-const _ = (window as any).ResizeObserver;
-(window as any).ResizeObserver = class ResizeObserver extends _ {
-  constructor(callback: (...args: any[]) => void) {
-    callback = debounce(callback, 100);
-    super(callback);
+const NativeResizeObserver = window.ResizeObserver;
+type ResizeCallback = ConstructorParameters<typeof NativeResizeObserver>[0];
+window.ResizeObserver = class DebouncedResizeObserver extends NativeResizeObserver {
+  constructor(callback: ResizeCallback) {
+    super(debounce(callback, 100));
   }
 };
 

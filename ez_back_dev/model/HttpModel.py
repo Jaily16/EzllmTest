@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class InfoModel(BaseModel):
@@ -9,6 +11,20 @@ class InfoModel(BaseModel):
 
 class MenuModel(BaseModel):
     summary: str
+
+
+class PlanStreamRequest(BaseModel):
+    pid: str
+    llm_name: str
+    regenerate: bool = False
+
+
+class WorkflowStreamRequest(BaseModel):
+    operation: str
+    pid: str
+    llm_name: str
+    regenerate: bool = False
+    payload: dict[str, Any] = Field(default_factory=dict)
 
 
 class UnitTestInvokeModel(BaseModel):

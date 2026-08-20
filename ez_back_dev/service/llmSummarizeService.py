@@ -1,25 +1,16 @@
 # 提供llm对业务文档初步智能分析的相关服务
-import os
 import prompt.promptStr as prompt
 from llm.llm_chatGPT import ChatGPTModel
 from chain.BasicChain import BasicChain
 from dao import testProjectDao
+from llm.provider import LLMError
 from tools import documentTools
 from tools.InfoType import InfoType
 from tools.llmTools import choose_llm_by_name
 from vectorstore.splitter import testdoc_text_splitter_for_menu
 from model.ChainJsonModel import TestMenu
 
-# 利用langsmith监控运行
-os.environ["LANGCHAIN_API_KEY"] = "ls__8f1d0a23c4cb4c9d8b58076ba3de84c7"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "LangServe_Service"
-
 llm = ChatGPTModel().get_model()
-
-llm_first = choose_llm_by_name("GLM-3")
-
 
 def start_test_summarize_analyze(pid: str):
     try:
@@ -52,6 +43,8 @@ def start_test_summarize_analyze(pid: str):
             )
             testProjectDao.add_project_info(pid, InfoType.PROJECT_INITIAL_SUMMARY.value, result)
             return result
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -85,6 +78,8 @@ def restart_test_summarize_analyze(pid: str, llm_name: str):
             )
             testProjectDao.update_project_info(pid, InfoType.PROJECT_INITIAL_SUMMARY.value, result)
             return result
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False

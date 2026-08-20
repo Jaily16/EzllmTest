@@ -1,15 +1,8 @@
-from langchain_community.chat_models import ChatZhipuAI
-import os
+"""Compatibility wrapper for the former GLM-3 integration."""
 
-os.environ["ZHIPUAI_API_KEY"] = "your_api_key"
+from llm.provider import get_lazy_chat_model
 
 
 class ChatGLMModel:
-    def __init__(self):
-        self.model = ChatZhipuAI(
-            model="glm-3-turbo",
-            temperature=0.5,
-        )
-
     def get_model(self):
-        return self.model
+        return get_lazy_chat_model()

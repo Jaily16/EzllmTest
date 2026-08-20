@@ -1,7 +1,7 @@
-import os
 from chain.BasicChain import BasicChain
 from chain.KnowledgeChain import knowledge_retrieval_chain
 from dao import testProjectDao
+from llm.provider import LLMError
 from llm.llm_ChatGLM import ChatGLMModel
 from llm.llm_chatGPT import ChatGPTModel
 from model.ChainJsonModel import ApiList, NonfunctionalTestMethodList
@@ -10,12 +10,6 @@ from tools import documentTools
 from tools.InfoType import InfoType
 from vectorstore.retrievers import nfunctional_retriever
 import prompt.promptStr as prompt
-
-# 利用langsmith监控运行
-os.environ["LANGCHAIN_API_KEY"] = "ls__8f1d0a23c4cb4c9d8b58076ba3de84c7"
-os.environ["LANGCHAIN_ENDPOINT"] = "https://api.smith.langchain.com"
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
-os.environ["LANGCHAIN_PROJECT"] = "LangServe_Service"
 
 llm = ChatGPTModel().get_model()
 llm_cn = ChatGLMModel().get_model()
@@ -59,6 +53,8 @@ def find_out_nonfunctional_info(pid: str):
         query = prompt.NONFUNCTIONAL_TEST_JSON_PROMPT_STR + nonfunctional_info
         nonfunctional_list_json = nonfunctional_list_chain.invoke({"query": query})
         return {"nonfunctional_info": nonfunctional_info, "list": nonfunctional_list_json}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -72,6 +68,8 @@ def find_nonfunctional_test_knowledge(pid: str, test_name: str):
             knowledge_chain.invoke({"input": NONFUNCTIONAL_TEST_KNOWLEDGE_TEMPLATE.format(test_name=test_name)})[
                 "answer"]
         return nonfunctional_test_knowledge
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -82,6 +80,8 @@ def get_nonfunctional_test_cases(nonfunctional_test_knowledge: str, info: str, m
         test_case_chain = BasicChain.stuff_chain(NONFUNCTIONAL_TEST_GENERATE_TEST_CASE_TEMPLATE, llm)
         return test_case_chain.invoke({"knowledge": nonfunctional_test_knowledge,
                                        "content": info, "test_name": method_name})
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
@@ -92,6 +92,8 @@ def generate_nonfunctional_test_cases(pid: str, info: str, test_name: str):
         nonfunctional_test_knowledge = find_nonfunctional_test_knowledge(pid, test_name)
         test_cases = get_nonfunctional_test_cases(nonfunctional_test_knowledge, info, test_name)
         return {"nonfunctional_test_knowledge": nonfunctional_test_knowledge, "test_cases": test_cases}
+    except LLMError:
+        raise
     except Exception as e:
         print("encountered exception {}".format(e))
         return False

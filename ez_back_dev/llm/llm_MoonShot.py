@@ -1,12 +1,8 @@
-from langchain_community.llms.moonshot import Moonshot
-import os
+"""Compatibility wrapper for the Moonshot Kimi provider."""
 
-os.environ["MOONSHOT_API_KEY"] = "your_api_key"
+from llm.provider import get_lazy_chat_model
 
 
 class MoonShotModel:
-    def __init__(self):
-        self.model = Moonshot()
-
     def get_model(self):
-        return self.model
+        return get_lazy_chat_model("Moonshot Kimi")

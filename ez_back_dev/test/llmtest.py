@@ -1,7 +1,6 @@
 from llm.llm_chatGPT import ChatGPTModel
 from vectorstore.loader import load_document
 from dao.testProjectDao import find_project_testdoc_list
-from langchain_community.document_loaders import UnstructuredMarkdownLoader, PyPDFLoader
 from tools import documentTools
 
 
@@ -21,8 +20,7 @@ def test_loader():
 
 def test_markdown():
     path = "../static/projects/Ez1789195814036307968/knowledge/硕士复试通知书.pdf"
-    loader = PyPDFLoader(path)
-    print(loader.load())
+    print(load_document(path))
 
 
 def test_generate_big_str():

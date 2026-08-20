@@ -1,20 +1,8 @@
-from langchain_wenxin.chat_models import ChatWenxin
+"""Compatibility wrapper for the removed WenXin provider."""
 
-WENXIN_APP_Key = "your_api_key"
-WENXIN_APP_SECRET = "your_api_key"
-#
-llm = ChatWenxin(
-    model="wenxin", baidu_api_key=WENXIN_APP_Key, baidu_secret_key=WENXIN_APP_SECRET
-)
+from llm.provider import get_lazy_chat_model
 
 
 class WenXinModel:
-    def __init__(self):
-        self.model = ChatWenxin(
-            model="ernie-bot",
-            baidu_api_key=WENXIN_APP_Key,
-            baidu_secret_key=WENXIN_APP_SECRET
-        )
-
     def get_model(self):
-        return self.model
+        return get_lazy_chat_model()

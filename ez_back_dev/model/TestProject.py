@@ -1,8 +1,9 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, ForeignKey, INT, Text
+from sqlalchemy.orm import DeclarativeBase
 
 # 创建数据库表对应的映射类
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
 class TestProject(Base):

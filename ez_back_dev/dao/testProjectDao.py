@@ -1,10 +1,12 @@
 from toollib.guid import SnowFlake
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
+from app.config import get_settings
 from model.TestProject import (TestProject, TestProjectKnowledge, TestProjectRequirementTestdoc,
                                TestProjectDesignTestdoc, TestProjectType, TestProjectInfo)
+from tools.InfoType import InfoType
 
-engine = create_engine("mysql+pymysql://root:050598@localhost/ezllmtest_dev")
+engine = create_engine(get_settings().database_url, pool_pre_ping=True)
 Session = sessionmaker(bind=engine)
 
 
@@ -232,6 +234,65 @@ def get_project_info(pid, info_type):
     except Exception as e:
         print("encountered exception {}".format(e))
         return False
+
+
+def save_project_analysis_bundle(pid, summary, plan, menu_json):
+    """Atomically upsert the initial summary, test plan, and test menu."""
+    session = Session()
+    try:
+        values = (
+            (InfoType.PROJECT_INITIAL_SUMMARY.value, summary),
+            (InfoType.PROJECT_TEST_PLAN.value, plan),
+            (InfoType.PROJECT_TEST_MENU.value, menu_json),
+        )
+        for info_type, info in values:
+            project_info = session.query(TestProjectInfo).filter(
+                and_(
+                    TestProjectInfo.id == pid,
+                    TestProjectInfo.info_type == info_type,
+                )
+            ).first()
+            if project_info is None:
+                session.add(
+                    TestProjectInfo(id=pid, info_type=info_type, info=info)
+                )
+            else:
+                project_info.info = info
+        session.commit()
+        return True
+    except Exception as e:
+        session.rollback()
+        print("encountered exception {}".format(e))
+        return False
+    finally:
+        session.close()
+
+
+def save_project_info_values(pid, values):
+    """Atomically upsert an arbitrary group of project analysis values."""
+    session = Session()
+    try:
+        for info_type, info in values.items():
+            project_info = session.query(TestProjectInfo).filter(
+                and_(
+                    TestProjectInfo.id == pid,
+                    TestProjectInfo.info_type == info_type,
+                )
+            ).first()
+            if project_info is None:
+                session.add(
+                    TestProjectInfo(id=pid, info_type=info_type, info=info)
+                )
+            else:
+                project_info.info = info
+        session.commit()
+        return True
+    except Exception as e:
+        session.rollback()
+        print("encountered exception {}".format(e))
+        return False
+    finally:
+        session.close()
 
 
 # 删除项目的所有LLM分析信息
