@@ -106,13 +106,13 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-回到项目根目录，导入六张空的基础表结构。仓库中的 SQL 不包含项目、文档路径、分析结果或其他业务数据：
+回到项目根目录，一次性导入七张空表结构（六张基础表和 `tb_project_workflow_artifact`）。仓库中的 SQL 不包含项目、文档路径、分析结果或其他业务数据：
 
 ```powershell
 cmd /c "mysql -u root -p ezllmtest_dev < ezllmtest.sql"
 ```
 
-验证六张基础表。新安装完成后 `project rows` 应为 `0`：
+验证七张表。新安装完成后 `project rows` 应为 `0`：
 
 ```powershell
 conda activate ezllmtest
@@ -121,13 +121,7 @@ python .\scripts\verify_database.py
 Set-Location ..
 ```
 
-随后执行 Iteration 2 的加法迁移，创建第七张空表 `tb_project_workflow_artifact`：
-
-```powershell
-cmd /c "mysql -u root -p ezllmtest_dev < ez_back_dev\migrations\iteration_2_workflow_artifacts.sql"
-```
-
-两份 SQL 都只包含表结构，不包含 `INSERT`、`REPLACE` 或 `LOAD DATA` 数据写入语句。
+`ezllmtest.sql` 是唯一的数据库结构文件，七张表均在其中定义；它不包含 `INSERT`、`REPLACE` 或 `LOAD DATA` 数据写入语句。
 
 ## 4. 安装前端依赖
 
@@ -217,18 +211,12 @@ npm run build
 
 - 旧 `langchain.chains`/retriever/storage 调用已迁移为 LangChain Core 1.x runnable/LCEL。
 - Pydantic v1 兼容层和 `.dict()` 已迁移到 Pydantic 2。
-- SQLAlchemy 声明模型已迁移到 2.x API，同时保留原六张表、列名、主键和七个样例项目。
+- SQLAlchemy 声明模型已迁移到 2.x API，同时保留原六张表、列名和主键，并增加工作流 artifact 表。仓库 SQL 不再携带样例项目数据。
 - RAG 改为请求级内存向量库，防止不同项目之间共享全局检索数据。
 - 文档加载直接使用 `pypdf`、`docx2txt` 和文本读取，不再依赖 `langchain-community`。
 - FastAPI 路径、请求字段、`{status, reason, data}` 响应信封及前端调用方式保持兼容。
 
-Iteration 2 新增的 `tb_project_workflow_artifact` 使用独立、可加性迁移，不修改或删除六张旧表。当前工作区未对真实 MySQL 执行该迁移。备份并获得用户另行明确批准后，才可在仓库根目录运行：
-
-```powershell
-mysql.exe --host=127.0.0.1 --port=3306 --user=root --password --database=ezllmtest_dev --execute="SOURCE ez_back_dev/migrations/iteration_2_workflow_artifacts.sql"
-```
-
-该命令会提示输入密码；不要把密码写入命令、脚本、日志或文档。执行前应先在目标 MySQL 上确认数据库名称、备份状态和应用停写窗口。迁移 SQL 位于 [`ez_back_dev/migrations/iteration_2_workflow_artifacts.sql`](ez_back_dev/migrations/iteration_2_workflow_artifacts.sql)。
+Iteration 2 新增的 `tb_project_workflow_artifact` 已合并到根目录 [`ezllmtest.sql`](ezllmtest.sql)，仓库不再提供独立迁移目录。该文件是面向空库初始化的完整结构脚本，包含 `DROP TABLE IF EXISTS`；不要直接用于覆盖已有数据的数据库。现有数据库升级必须先备份，并由数据库管理员审核工作流表对应的 DDL 后单独执行。
 
 ## 迭代文档
 
@@ -244,7 +232,7 @@ mysql.exe --host=127.0.0.1 --port=3306 --user=root --password --database=ezllmte
 
 - 真实 provider smoke 只证明 Key、Base URL、模型 ID 和模型工厂可用，不代表十个 FastAPI 业务页面都已经逐接口完成真实付费 E2E。
 - RAG 仍统一使用智谱 `embedding-3`；选择其他聊天模型时也需要智谱 Key 才能执行向量检索流程。
-- Iteration 2 可加性迁移已通过静态 SQL、SQLAlchemy 元数据和内存 SQLite 验证，但尚未在真实 MySQL 执行；生产启用 revision-aware artifact 前仍需用户批准、备份和迁移。
+- Iteration 2 的七表结构已通过静态 SQL、SQLAlchemy 元数据和内存 SQLite 验证，但尚未在真实 MySQL 执行；生产数据库变更仍需用户批准和备份。
 - `npm run lint` 当前为零错误、零警告；生产构建仍有 Node `fs.Stats` 弃用提示和字体、Logo、vendor 包体积建议，但构建成功。
 - revision-aware 向量索引是进程内缓存，容量 16、空闲 TTL 30 分钟；进程重启、TTL/LRU 淘汰或不同后端 worker 会各自重建，但同一进程内相同项目/corpus/文档版本/embedding 模型会复用一次构建。
 - `sessionStorage` 只保证当前浏览器标签会话的正文即时恢复；换浏览器或会话存储不可用时，步骤状态仍从后端恢复，但需用户点击“继续”通过缓存 SSE 取回正文。

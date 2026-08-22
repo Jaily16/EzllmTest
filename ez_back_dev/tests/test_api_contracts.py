@@ -524,23 +524,14 @@ def test_typed_llm_errors_have_deterministic_http_mapping(
     }
 
 
-def test_iteration2_release_keeps_migration_additive_and_user_gated():
-    migration = (
-        PROJECT_ROOT
-        / "ez_back_dev"
-        / "migrations"
-        / "iteration_2_workflow_artifacts.sql"
-    ).read_text(encoding="utf-8")
+def test_iteration2_release_uses_one_schema_only_sql_file():
+    schema = (PROJECT_ROOT / "ezllmtest.sql").read_text(encoding="utf-8")
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
     closeout = (
         PROJECT_ROOT / "docs" / "iteration-2-closeout.md"
     ).read_text(encoding="utf-8")
 
-    assert "CREATE TABLE IF NOT EXISTS tb_project_workflow_artifact" in migration
-    assert all(
-        forbidden not in migration.upper()
-        for forbidden in ("DROP TABLE", "ALTER TABLE", "TRUNCATE", "DELETE FROM")
-    )
+    assert "CREATE TABLE `tb_project_workflow_artifact`" in schema
     for legacy_table in (
         "tb_test_project",
         "tb_project_knowledge",
@@ -550,8 +541,8 @@ def test_iteration2_release_keeps_migration_additive_and_user_gated():
         "tb_project_info",
     ):
         assert legacy_table in closeout
-    assert "iteration_2_workflow_artifacts.sql" in readme
-    assert "--execute=\"SOURCE ez_back_dev/migrations/iteration_2_workflow_artifacts.sql\"" in readme
+    assert "唯一的数据库结构文件" in readme
+    assert not (PROJECT_ROOT / "ez_back_dev" / "migrations").exists()
+    assert "mysql -u root -p ezllmtest_dev < ezllmtest.sql" in readme
     assert "未执行" in closeout
-    assert "需要用户另行明确批准" in closeout
-    assert "DROP TABLE IF EXISTS tb_project_workflow_artifact" in closeout
+    assert "仓库中不再保留独立迁移目录" in closeout

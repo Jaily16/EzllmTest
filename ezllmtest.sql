@@ -158,6 +158,39 @@ LOCK TABLES `tb_test_project` WRITE;
 /*!40000 ALTER TABLE `tb_test_project` DISABLE KEYS */;
 /*!40000 ALTER TABLE `tb_test_project` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `tb_project_workflow_artifact`
+--
+
+DROP TABLE IF EXISTS `tb_project_workflow_artifact`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tb_project_workflow_artifact` (
+  `project_id` varchar(21) NOT NULL,
+  `artifact_key` varchar(80) NOT NULL,
+  `input_hash` char(64) NOT NULL,
+  `source_revision` char(64) NOT NULL,
+  `prompt_version` varchar(32) NOT NULL,
+  `model_label` varchar(32) NOT NULL,
+  `content` longtext NOT NULL,
+  `metadata_json` text NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`project_id`,`artifact_key`,`input_hash`,`source_revision`,`prompt_version`,`model_label`),
+  INDEX `idx_workflow_artifact_project_key` (`project_id`,`artifact_key`),
+  CONSTRAINT `fk_workflow_artifact_project` FOREIGN KEY (`project_id`) REFERENCES `tb_test_project` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tb_project_workflow_artifact`
+--
+
+LOCK TABLES `tb_project_workflow_artifact` WRITE;
+/*!40000 ALTER TABLE `tb_project_workflow_artifact` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tb_project_workflow_artifact` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

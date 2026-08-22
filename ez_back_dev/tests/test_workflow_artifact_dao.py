@@ -26,8 +26,8 @@ from model.TestProject import (
 )
 
 
-BACKEND_ROOT = Path(__file__).resolve().parents[1]
-MIGRATION_PATH = BACKEND_ROOT / "migrations" / "iteration_2_workflow_artifacts.sql"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SQL_PATH = PROJECT_ROOT / "ezllmtest.sql"
 
 
 def _session_factory():
@@ -166,20 +166,8 @@ def test_invalidate_project_artifacts_marks_only_other_revisions_stale(monkeypat
     assert "stale_for_source_revision" not in current.metadata
 
 
-def test_migration_is_idempotent_and_additive_only():
-    sql = MIGRATION_PATH.read_text(encoding="utf-8")
-    without_comments = re.sub(r"--[^\n]*", "", sql)
-    statements = [item.strip() for item in without_comments.split(";") if item.strip()]
+def test_base_schema_contains_workflow_artifact_table_and_index():
+    sql = SQL_PATH.read_text(encoding="utf-8")
 
-    assert statements
-    assert all(
-        re.match(r"^CREATE\s+(?:TABLE\s+IF\s+NOT\s+EXISTS|INDEX)\b", item, re.I)
-        for item in statements
-    )
-    assert not re.search(
-        r"^\s*(?:ALTER|DROP|DELETE|UPDATE|INSERT|TRUNCATE)\b",
-        without_comments,
-        re.I | re.M,
-    )
-    assert "tb_project_workflow_artifact" in sql
-    assert re.search(r"INDEX\s+idx_workflow_artifact_project_key", sql, re.I)
+    assert "CREATE TABLE `tb_project_workflow_artifact`" in sql
+    assert re.search(r"INDEX\s+`?idx_workflow_artifact_project_key`?", sql, re.I)

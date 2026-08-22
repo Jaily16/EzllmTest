@@ -4,7 +4,7 @@
 
 **Goal:** Publish the completed Iteration 2 implementation to GitHub `main` with schema-only SQL and no local project documents, credentials, or runtime data.
 
-**Architecture:** Convert the tracked base SQL dump from sample-data form to deterministic empty-table DDL while retaining the additive Iteration 2 migration. Enforce the release boundary with repository tests and ignore rules, run the complete offline gate, stage only Git-visible source/schema/docs changes, commit on local `main`, fetch/reconcile `origin/main`, and push only after the staged tree passes the same safety checks.
+**Architecture:** Convert the tracked SQL dump from sample-data form to deterministic seven-table empty-schema DDL. Enforce the release boundary with repository tests and ignore rules, run the complete offline gate, stage only Git-visible source/schema/docs changes, commit on local `main`, fetch/reconcile `origin/main`, and push only after the staged tree passes the same safety checks.
 
 **Tech Stack:** Git, GitHub HTTPS remote, MySQL DDL, Python 3.11/pytest, Vue 3/npm.
 
@@ -28,12 +28,12 @@
 - Modify: `.gitignore`
 
 **Interfaces:**
-- Consumes: existing six-table base dump and additive `iteration_2_workflow_artifacts.sql` migration.
-- Produces: base schema DDL with six empty tables plus a seventh-table additive schema-only migration.
+- Consumes: the existing six-table base dump and the workflow artifact table definition.
+- Produces: one base schema file containing all seven empty tables.
 
 - [ ] **Step 1: Change repository-data tests first**
 
-Replace the seven-project/47-document assertions with checks that both SQL files contain `CREATE TABLE` statements and contain no `INSERT`, `REPLACE`, `LOAD DATA`, or executable MySQL dump data directives.
+Replace the seven-project/47-document assertions with checks that the schema file contains all seven `CREATE TABLE` statements and contains no `INSERT`, `REPLACE`, `LOAD DATA`, or executable MySQL dump data directives.
 
 - [ ] **Step 2: Run the focused test and verify it fails**
 
@@ -49,7 +49,7 @@ Add `/ez_back_dev/static/projects/` to `.gitignore`. Keep the existing `/example
 
 - [ ] **Step 5: Correct setup documentation**
 
-Describe `ezllmtest.sql` as six empty legacy tables and the Iteration 2 migration as the seventh empty table. Remove instructions that promise seven sample projects.
+Describe `ezllmtest.sql` as the single source for six empty legacy tables and the empty workflow artifact table. Remove instructions that promise seven sample projects.
 
 - [ ] **Step 6: Run the focused repository test**
 
@@ -81,7 +81,7 @@ Run the credential scanner, schema-only SQL audit, generated/runtime asset track
 ### Task 3: Commit and synchronize main safely
 
 **Files:**
-- Stage: all intended Iteration 2 source, tests, documentation, schema-only SQL, migration, and tracked project-document deletions.
+- Stage: all intended Iteration 2 source, tests, documentation, the consolidated schema-only SQL, and tracked project-document deletions.
 - Exclude: ignored runtime/local files.
 
 **Interfaces:**

@@ -102,7 +102,7 @@ Expected: PASS with zero sockets/provider clients created.
 
 **Files:**
 - Modify: `ez_back_dev/model/TestProject.py`
-- Create: `ez_back_dev/migrations/iteration_2_workflow_artifacts.sql`
+- Modify: `ezllmtest.sql`
 - Create: `ez_back_dev/dao/workflowArtifactDao.py`
 - Create: `ez_back_dev/service/projectRevisionService.py`
 - Create: `ez_back_dev/tests/test_workflow_artifact_dao.py`
@@ -125,7 +125,7 @@ def test_changed_document_makes_artifact_stale(fake_session):
     assert get_fresh_artifact("Ez1", "api_info", "rev-2", "input-1", "prompt-v1", "DeepSeek") is None
 ```
 
-- [x] **Step 2: Define the additive table and idempotent SQL migration**
+- [x] **Step 2: Define the workflow artifact table schema**
 
 Use a composite unique key on `(project_id, artifact_key, input_hash, source_revision, prompt_version, model_label)`. Store final content and a small metadata JSON object; never store reasoning. Include `created_at`/`updated_at` timestamps and an index on `(project_id, artifact_key)`.
 
@@ -180,7 +180,7 @@ def get_fresh_artifact(
 
 - [x] **Step 5: Verify without touching live MySQL**
 
-Run DAO tests with a fake/in-memory-compatible session and statically assert the migration contains only additive `CREATE TABLE IF NOT EXISTS`/`CREATE INDEX` statements.
+Run DAO tests with a fake/in-memory-compatible session and statically assert the consolidated schema contains the workflow artifact table and its project/key index.
 
 ## Task 2: Make project creation idempotent, recoverable, and explicit
 

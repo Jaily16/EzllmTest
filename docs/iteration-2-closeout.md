@@ -2,7 +2,7 @@
 
 日期：2026-08-20
 代码状态：Task 0–9 的离线实现与审计已完成，全部改动仍在用户的未提交 worktree 中。
-发布状态：离线门禁通过；真实 MySQL 迁移未执行，真实 provider 付费 A/B 未执行。
+发布状态：离线门禁通过；真实 MySQL 结构变更未执行，真实 provider 付费 A/B 未执行。
 
 ## 1. 完成范围
 
@@ -34,7 +34,7 @@ Iteration 2 建立了 19 个 workflow catalog、固定 small/large 离线成本�
 - `tb_project_type`
 - `tb_project_info`
 
-新表 `tb_project_workflow_artifact` 是独立的可加性表。artifact 与旧 `InfoType` 更新在同一事务中写入；保存失败会回滚，不会用半成品替换旧结果。迁移 SQL 不包含 `DROP TABLE`、`ALTER TABLE`、`TRUNCATE` 或 `DELETE FROM`。
+新表 `tb_project_workflow_artifact` 与六张旧表统一定义在根目录 `ezllmtest.sql`。artifact 与旧 `InfoType` 更新在同一事务中写入；保存失败会回滚，不会用半成品替换旧结果。仓库结构文件不包含项目数据或其他业务数据写入语句。
 
 ## 4. 离线效率验收
 
@@ -70,17 +70,9 @@ Iteration 2 建立了 19 个 workflow catalog、固定 small/large 离线成本�
 
 离线测试进程设置 `PYTHON_DOTENV_DISABLED=1`，使用内存 SQLite，清空全部 provider key，并在成本基线中阻止 socket、provider 和 embedding 客户端创建。因此没有读取真实 `.env`，没有连接 MySQL，也没有产生模型费用。
 
-## 6. 迁移状态与批准门禁
+## 6. 数据库结构状态与批准门禁
 
-状态：**未执行**。生产或现有 `ezllmtest_dev` 数据库迁移需要用户另行明确批准，并应先完成备份、校验目标库和安排应用停写窗口。
-
-批准后，在仓库根目录执行一次以下可加性命令：
-
-```powershell
-mysql.exe --host=127.0.0.1 --port=3306 --user=root --password --database=ezllmtest_dev --execute="SOURCE ez_back_dev/migrations/iteration_2_workflow_artifacts.sql"
-```
-
-命令只创建 `tb_project_workflow_artifact`；不要把密码写在命令行。迁移后应只读确认表结构，再运行一个用户批准的代表性缓存恢复请求。未经批准不得执行该命令。
+状态：**未执行**。根目录 `ezllmtest.sql` 现在是包含七张空表的唯一结构文件，仓库中不再保留独立迁移目录。该文件包含面向空库初始化的 `DROP TABLE IF EXISTS`，不得直接覆盖已有数据的数据库。生产或现有 `ezllmtest_dev` 数据库变更需要用户另行明确批准，并应先完成备份、校验目标库和安排应用停写窗口；旧六表数据库如需升级，应由数据库管理员从结构文件中审核并单独执行工作流表 DDL。
 
 ## 7. 可选付费 A/B 检查清单
 
@@ -97,7 +89,7 @@ mysql.exe --host=127.0.0.1 --port=3306 --user=root --password --database=ezllmte
 
 ## 8. 已知限制
 
-- 可加性迁移尚未在真实 MySQL 验证；生产发布在迁移前仍处于 gated 状态。
+- 七表结构尚未在真实 MySQL 验证；生产数据库变更前仍处于 gated 状态。
 - index registry 是单进程内存缓存，容量 16、空闲 TTL 30 分钟。多 worker、进程重启、TTL/LRU 淘汰会分别重建索引。
 - `sessionStorage` 是标签会话级恢复；跨浏览器/设备需要用户点击“继续”读取后端 artifact。
 - 离线 Token 使用项目固定 tokenizer，是相对比较代理，不代表 GLM、Qwen、DeepSeek 或 Kimi 的实际账单，也不替代质量评测。

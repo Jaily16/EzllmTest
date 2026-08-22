@@ -1147,10 +1147,10 @@
 ## 2026-08-22 — Iteration 2 schema-only main release
 
 - Prepared the repository database assets as schema-only deliverables. The
-  base `ezllmtest.sql` retains its six table definitions but contains no sample
-  rows; six historical `INSERT` statements were removed. The additive
-  `iteration_2_workflow_artifacts.sql` migration creates the seventh workflow
-  artifact table and likewise contains no `INSERT`, `REPLACE`, or `LOAD DATA`.
+  base `ezllmtest.sql` initially retained its six table definitions without
+  sample rows; six historical `INSERT` statements were removed. The workflow
+  artifact table was initially delivered separately and was later consolidated
+  into the base schema as recorded below.
 - Updated the repository-data contract and database verification script so a
   clean installation with zero project rows is valid. The migration remains
   additive and no existing runtime database was accessed or changed.
@@ -1166,3 +1166,19 @@
   with the local pre-release head (`0` behind, `0` ahead). No real model,
   embedding, MySQL, external network service, dependency install, or `.env`
   access was used by the verification steps.
+
+## 2026-08-22 — Consolidated seven-table schema delivery
+
+- Merged the complete `tb_project_workflow_artifact` DDL into the root
+  `ezllmtest.sql` and removed the standalone migration file and directory.
+- The root SQL is now the repository's only database structure deliverable: it
+  defines all seven tables and still contains no `INSERT`, `REPLACE`, or
+  `LOAD DATA` statements.
+- Updated setup guidance, closeout notes, database verification, and repository
+  contracts to use the consolidated schema. Tests were changed first and
+  produced the expected four failures; the focused schema/API/DAO contracts
+  then passed `51 passed`, and the complete offline backend suite passed
+  `289 passed in 8.66s`.
+- Credential and stale-path scans were clean, `git diff --check` reported no
+  errors, and the final schema audit found seven unique tables with zero data
+  writes. No real MySQL, model, or embedding service was accessed.

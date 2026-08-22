@@ -16,6 +16,7 @@ EXPECTED_TABLES = {
     "tb_project_knowledge",
     "tb_project_requirement_testdoc",
     "tb_project_type",
+    "tb_project_workflow_artifact",
     "tb_test_project",
 }
 
@@ -31,7 +32,7 @@ def main() -> None:
             text("SELECT COUNT(*) FROM tb_test_project")
         ).scalar_one()
 
-    print(f"Database OK: 6 tables available; project rows={project_count}.")
+    print(f"Database OK: 7 tables available; project rows={project_count}.")
 
 
 if __name__ == "__main__":
