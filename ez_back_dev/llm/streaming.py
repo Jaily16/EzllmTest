@@ -130,19 +130,30 @@ def get_stream_model_metadata(name: str) -> dict[str, str]:
 
 
 def build_stream_request(
-    name: str, prompt: str, max_tokens: int
+    name: str,
+    prompt: str,
+    max_tokens: int,
+    *,
+    request_options: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     spec = get_model_spec(name)
     settings = get_settings()
     request: dict[str, Any] = {
         "model": getattr(settings, spec.model_field),
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": max_tokens,
+        "max_tokens": min(
+            max_tokens,
+            int((request_options or {}).get("max_tokens", max_tokens)),
+        ),
         "stream": True,
         "stream_options": {"include_usage": True},
     }
 
-    if spec.provider == "zhipu":
+    if request_options is not None:
+        for key in ("temperature", "extra_body", "reasoning_effort"):
+            if key in request_options:
+                request[key] = request_options[key]
+    elif spec.provider == "zhipu":
         request["temperature"] = 0.5
         request["extra_body"] = {"thinking": {"type": "enabled"}}
     elif spec.provider == "alibaba":
@@ -177,9 +188,16 @@ async def stream_chat_completion(
     prompt: str,
     max_tokens: int,
     minimum_timeout_seconds: float = 0.0,
+    *,
+    request_options: dict[str, Any] | None = None,
 ) -> AsyncIterator[ModelStreamEvent]:
     spec = get_model_spec(name)
-    request = build_stream_request(name, prompt, max_tokens)
+    request = build_stream_request(
+        name,
+        prompt,
+        max_tokens,
+        request_options=request_options,
+    )
 
     try:
         async with _create_stream_client(spec, minimum_timeout_seconds) as client:

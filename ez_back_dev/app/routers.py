@@ -3,7 +3,7 @@ import json
 import os.path
 
 from fastapi import APIRouter, Request, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from dao import testProjectDao
 from service.llmAcceptanceTestService import find_out_requirement_info, generate_acceptance_test_cases
 from service.llmApiTestService import find_out_apis_info, generate_api_test_cases
@@ -18,6 +18,8 @@ from service.llmTestPlanStreamService import (
 )
 from service.llmWorkflowStreamCore import WorkflowStreamError
 from service.llmWorkflowStreamService import stream_llm_workflow
+from service import projectSetupService, projectWorkflowStatusService
+from service.projectSetupService import ProjectSetupError
 from service.llmUITestService import find_out_ui_info, generate_ui_test_cases
 from tools.status import Status
 from llm.provider import (
@@ -28,8 +30,7 @@ from llm.provider import (
     LLMTimeoutError,
     ensure_supported_model,
 )
-from tools import fileTools, documentTools
-from vectorstore.loader import load_document
+from tools import fileTools
 from model.HttpModel import MenuModel, UnitTestInvokeModel, InfoModel, IntegrationTestInvokeModel, ApiTestInvokeModel, \
     UITestInvokeModel, DBTestInvokeModel, FunctionalTestInvokeModel, NFunctionalTestInvokeModel, \
     AcceptanceTestInvokeModel, PlanStreamRequest, WorkflowStreamRequest
@@ -204,79 +205,94 @@ async def get_project_info(pid: str, info_type: int):
 
 
 @router.get("/project/type/{pid}")
+@router.get("/project/type/analyze/{pid}")
 async def type_project(pid: str):
-    total_requirement_tokens = 0
-    total_design_tokens = 0
-    requirement_overflow = False
-    design_overflow = False
-    requirement_test_paths = testProjectDao.find_project_requirement_testdoc_list(pid)
-    design_test_paths = testProjectDao.find_project_design_testdoc_list(pid)
-    if requirement_test_paths:
-        for path in requirement_test_paths:
-            doc = load_document(path.path)
-            doc_str = documentTools.docs_to_string(doc)
-            total_requirement_tokens += documentTools.num_tokens_from_string(doc_str)
-            if total_requirement_tokens > 14500:
-                requirement_overflow = True
-                break
+    try:
+        overflow = await asyncio.to_thread(projectSetupService.analyze_project_type, pid)
+    except ProjectSetupError:
+        return {
+            "status": Status.PROJECT_ADD_FAILURE.value,
+            "reason": "项目分析失败",
+            "data": False,
+        }
+    return {
+        "status": Status.SUCCESS.value,
+        "reason": "成功分析并建立项目",
+        "data": -1 if overflow == 0 else overflow,
+    }
+
+
+def _project_setup_error_response(exc: ProjectSetupError) -> JSONResponse:
+    if exc.status is not None:
+        data = exc.status.model_dump(mode="json")
     else:
-        return {"status": Status.PROJECT_ADD_FAILURE.value,
-                "reason": "项目建立失败",
-                "data": False}
-    if design_test_paths:
-        for path in design_test_paths:
-            doc = load_document(path.path)
-            doc_str = documentTools.docs_to_string(doc)
-            total_design_tokens += documentTools.num_tokens_from_string(doc_str)
-            if total_design_tokens > 14500:
-                design_overflow = True
-                break
-    else:
-        return {"status": Status.PROJECT_ADD_FAILURE.value,
-                "reason": "项目建立失败",
-                "data": False}
-    # 知识库token值过多采用map-reduce方式分析业务文档, 若不多则可以一次性全输入给llm模型
-    # 需求文档和设计文档都超token-4
-    if requirement_overflow and design_overflow:
-        if testProjectDao.add_project_type(pid, 4):
-            return {"status": Status.SUCCESS.value, "reason": "成功分析并建立项目", "data": 4}
-        else:
-            return {"status": Status.PROJECT_ADD_FAILURE.value,
-                    "reason": "项目分析失败",
-                    "data": False}
-    # 只是开发设计文档超token-3
-    if design_overflow:
-        if testProjectDao.add_project_type(pid, 3):
-            return {"status": Status.SUCCESS.value, "reason": "成功分析并建立项目", "data": 3}
-        else:
-            return {"status": Status.PROJECT_ADD_FAILURE.value,
-                    "reason": "项目分析失败",
-                    "data": False}
-    # 只是需求文档超token-2
-    if requirement_overflow:
-        if testProjectDao.add_project_type(pid, 2):
-            return {"status": Status.SUCCESS.value, "reason": "成功分析并建立项目", "data": 2}
-        else:
-            return {"status": Status.PROJECT_ADD_FAILURE.value,
-                    "reason": "项目分析失败",
-                    "data": False}
-    total_tokens = total_requirement_tokens + total_design_tokens
-    # 两者都没超token，但加起来超了
-    if total_tokens > 14500:
-        if testProjectDao.add_project_type(pid, 1):
-            return {"status": Status.SUCCESS.value, "reason": "成功分析并建立项目", "data": 1}
-        else:
-            return {"status": Status.PROJECT_ADD_FAILURE.value,
-                    "reason": "项目分析失败",
-                    "data": False}
-    # 两者都没超token，加起来也没超
-    else:
-        if testProjectDao.add_project_type(pid, 0):
-            return {"status": Status.SUCCESS.value, "reason": "成功分析并建立项目", "data": -1}
-        else:
-            return {"status": Status.PROJECT_ADD_FAILURE.value,
-                    "reason": "项目分析失败",
-                    "data": False}
+        data = {
+            "pid": exc.pid,
+            "project_exists": False,
+            "stage": None,
+            "document_counts": {
+                "knowledge": 0,
+                "requirements": 0,
+                "design": 0,
+            },
+            "document_files": {
+                "knowledge": [],
+                "requirements": [],
+                "design": [],
+            },
+            "allowed_actions": ["create_project"],
+            "source_revision": None,
+            "message": str(exc),
+        }
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "status": Status.PROJECT_ADD_FAILURE.value,
+            "reason": str(exc),
+            "data": data,
+        },
+    )
+
+
+@router.get("/project/setup/status/{pid}")
+async def project_setup_status(pid: str):
+    try:
+        status = await asyncio.to_thread(projectSetupService.get_status, pid)
+    except ProjectSetupError as exc:
+        return _project_setup_error_response(exc)
+    return {
+        "status": Status.SUCCESS.value,
+        "reason": "项目资料状态获取成功",
+        "data": status.model_dump(mode="json"),
+    }
+
+
+@router.post("/project/setup/finalize/{pid}")
+async def finalize_project_setup(pid: str):
+    try:
+        status = await asyncio.to_thread(projectSetupService.finalize, pid)
+    except ProjectSetupError as exc:
+        return _project_setup_error_response(exc)
+    return {
+        "status": Status.SUCCESS.value,
+        "reason": "项目资料已确认",
+        "data": status.model_dump(mode="json"),
+    }
+
+
+@router.get("/project/workflow/status/{pid}")
+async def project_workflow_status(pid: str):
+    try:
+        status = await asyncio.to_thread(
+            projectWorkflowStatusService.get_project_workflow_status, pid
+        )
+    except ProjectSetupError as exc:
+        return _project_setup_error_response(exc)
+    return {
+        "status": Status.SUCCESS.value,
+        "reason": "项目工作流状态获取成功",
+        "data": status.model_dump(mode="json"),
+    }
 
 
 @router.get("/project/llm/menu/analyze/{pid}")

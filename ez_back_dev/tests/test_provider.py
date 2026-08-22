@@ -34,3 +34,29 @@ def test_provider_builds_zhipu_clients_without_network(monkeypatch):
     assert embeddings.model == "embedding-3"
     assert embeddings.chunk_size == 64
     provider.clear_provider_caches()
+
+
+def test_lazy_embeddings_expose_configured_model_without_creating_client(
+    monkeypatch,
+):
+    settings = SimpleNamespace(zhipu_embedding_model="embedding-custom")
+    monkeypatch.setattr(provider, "get_settings", lambda: settings)
+    monkeypatch.setattr(
+        provider,
+        "get_embeddings",
+        lambda: pytest.fail("embedding client was created"),
+    )
+
+    embeddings = provider.LazyZhipuEmbeddings()
+
+    assert embeddings.model_name == "embedding-custom"
+
+
+def test_supported_model_context_capabilities_cover_application_baseline():
+    specs = {spec.label: spec for spec in provider.list_model_specs()}
+
+    assert specs["GLM-4.7"].context_window_tokens == 200_000
+    assert specs["通义千问"].context_window_tokens == 1_000_000
+    assert specs["DeepSeek"].context_window_tokens == 1_000_000
+    assert specs["Moonshot Kimi"].context_window_tokens == 256_000
+    assert all(spec.max_output_tokens >= 32_768 for spec in specs.values())

@@ -45,7 +45,7 @@
 - Produces `WORKFLOW_DEFINITIONS`, `get_workflow_definition(operation)`, and `list_workflow_definitions()` for the plan workflow plus all 18 generic operations.
 - Produces an offline baseline fixture recording model-call count, embedding-build count, input-context token count, and output cap per operation without calling a provider.
 
-- [ ] **Step 1: Add a failing complete-inventory test**
+- [x] **Step 1: Add a failing complete-inventory test**
 
 ```python
 EXPECTED_OPERATIONS = {
@@ -62,13 +62,13 @@ def test_workflow_catalog_is_complete_and_unique():
     assert len({item.result_artifact for item in definitions}) == len(definitions)
 ```
 
-- [ ] **Step 2: Run the focused test and confirm failure**
+- [x] **Step 2: Run the focused test and confirm failure**
 
 Run: `D:\tool\anaconda3\envs\ezllmtest\python.exe -m pytest tests/test_workflow_catalog.py -q`
 
 Expected: FAIL because the catalog does not exist.
 
-- [ ] **Step 3: Implement immutable definitions without changing dispatch behavior**
+- [x] **Step 3: Implement immutable definitions without changing dispatch behavior**
 
 ```python
 @dataclass(frozen=True)
@@ -84,11 +84,11 @@ class WorkflowDefinition:
 
 Use the catalog as metadata only in Task 0. Add a contract proving the existing dispatcher's operation set equals the catalog's 18 generic operations.
 
-- [ ] **Step 4: Add mocked baseline counters**
+- [x] **Step 4: Add mocked baseline counters**
 
 Create deterministic small-document and large-document fixtures. Patch `stream_chat_completion`, embedding construction, and document loaders; record calls by stage and count prompt input tokens with the existing tokenizer. Do not store prompt bodies or reasoning text in the report.
 
-- [ ] **Step 5: Write the baseline report and run current gates**
+- [x] **Step 5: Write the baseline report and run current gates**
 
 Document each operation's small/large call graph and repeated-run behavior in `docs/iteration-2-token-baseline.md`.
 
@@ -112,7 +112,7 @@ Expected: PASS with zero sockets/provider clients created.
 - Adds table `tb_project_workflow_artifact` without modifying the six legacy tables.
 - Produces `compute_source_revision(entries) -> str`, `compute_project_source_revision(pid) -> str`, `artifact_input_hash(operation, payload) -> str`, `get_fresh_artifact(...)`, `save_artifact(...)`, and `invalidate_project_artifacts(pid, source_revision)`.
 
-- [ ] **Step 1: Add failing source-revision and artifact tests**
+- [x] **Step 1: Add failing source-revision and artifact tests**
 
 ```python
 def test_source_revision_is_order_independent(tmp_path):
@@ -125,7 +125,7 @@ def test_changed_document_makes_artifact_stale(fake_session):
     assert get_fresh_artifact("Ez1", "api_info", "rev-2", "input-1", "prompt-v1", "DeepSeek") is None
 ```
 
-- [ ] **Step 2: Define the additive table and idempotent SQL migration**
+- [x] **Step 2: Define the additive table and idempotent SQL migration**
 
 Use a composite unique key on `(project_id, artifact_key, input_hash, source_revision, prompt_version, model_label)`. Store final content and a small metadata JSON object; never store reasoning. Include `created_at`/`updated_at` timestamps and an index on `(project_id, artifact_key)`.
 
@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS tb_project_workflow_artifact (
 );
 ```
 
-- [ ] **Step 3: Implement canonical hashes**
+- [x] **Step 3: Implement canonical hashes**
 
 The source revision must hash sorted relative path, document kind, size, and file SHA-256. The input hash must use UTF-8 JSON with sorted keys and compact separators. Exclude request IDs, timestamps, and UI-only labels.
 
@@ -161,7 +161,7 @@ def artifact_input_hash(operation: str, payload: dict[str, Any]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 ```
 
-- [ ] **Step 4: Implement atomic upsert and stale lookup**
+- [x] **Step 4: Implement atomic upsert and stale lookup**
 
 Use one SQLAlchemy session and rollback on error. Keep all existing `testProjectDao` methods unchanged; later tasks may read legacy `InfoType` values as a compatibility fallback.
 
@@ -178,7 +178,7 @@ def get_fresh_artifact(
 ) -> WorkflowArtifactRecord | None: ...
 ```
 
-- [ ] **Step 5: Verify without touching live MySQL**
+- [x] **Step 5: Verify without touching live MySQL**
 
 Run DAO tests with a fake/in-memory-compatible session and statically assert the migration contains only additive `CREATE TABLE IF NOT EXISTS`/`CREATE INDEX` statements.
 
@@ -201,7 +201,7 @@ Run DAO tests with a fake/in-memory-compatible session and statically assert the
 - Produces setup stages `project_created`, `knowledge_uploaded`, `requirements_uploaded`, `design_uploaded`, `documents_ready`, and `setup_complete`.
 - Existing `/project/add`, `/uploadFile/{pid}/{doctype}`, and `/project/type/analyze/{pid}` remain valid.
 
-- [ ] **Step 1: Add failing setup-status and idempotency tests**
+- [x] **Step 1: Add failing setup-status and idempotency tests**
 
 Assert that repeated finalize calls return the same source revision, missing required documents return 422 without deleting uploaded files, and retrying one failed document group does not re-upload successful groups.
 
@@ -213,7 +213,7 @@ def test_finalize_is_idempotent(client, ready_project):
     assert finalize_write_count() == 1
 ```
 
-- [ ] **Step 2: Implement read-only setup status**
+- [x] **Step 2: Implement read-only setup status**
 
 Return project existence, counts for knowledge/requirements/design documents, allowed next actions, source revision when ready, and a sanitized user message. Return paths only as file names, never absolute server paths.
 
@@ -229,7 +229,7 @@ class ProjectSetupStatus(BaseModel):
     source_revision: str | None = None
 ```
 
-- [ ] **Step 3: Implement idempotent finalize**
+- [x] **Step 3: Implement idempotent finalize**
 
 Validate required document groups, compute the source revision, persist the setup artifact, and mark prior workflow artifacts stale by revision. Do not call a chat or embedding model during finalize.
 
@@ -240,7 +240,7 @@ async def finalize_project_setup(pid: str):
     return {"status": Status.SUCCESS.value, "reason": "项目资料已确认", "data": status.model_dump()}
 ```
 
-- [ ] **Step 4: Replace CreateView's chained booleans with a stepper state**
+- [x] **Step 4: Replace CreateView's chained booleans with a stepper state**
 
 Show per-group upload success/failure, retry only failed groups, restore status after refresh, prevent duplicate submission while a request is active, and route to `/plan` only after `setup_complete`.
 
@@ -254,7 +254,7 @@ export interface ProjectSetupState {
 }
 ```
 
-- [ ] **Step 5: Verify API compatibility and frontend behavior**
+- [x] **Step 5: Verify API compatibility and frontend behavior**
 
 Run focused API/source contracts, lint, and build. Existing project creation paths must continue passing their prior envelope tests.
 
@@ -276,7 +276,7 @@ Run focused API/source contracts, lint, and build. Existing project creation pat
 - Adds `GET /project/workflow/status/{pid}`.
 - Produces stages `setup_required`, `analysis_required`, `analysis_ready`, `testing_in_progress`, and `testing_ready`, plus `allowed_routes`, `completed_operations`, and `stale_operations`.
 
-- [ ] **Step 1: Add a table-driven lifecycle test**
+- [x] **Step 1: Add a table-driven lifecycle test**
 
 Cover no documents, finalized documents, partial analysis bundle, complete plan/menu bundle, saved test artifacts, and changed documents. Assert deterministic stage and allowed-route results.
 
@@ -290,7 +290,7 @@ def test_project_stage_is_derived(setup, analysis, artifact_count, expected):
     assert derive_project_stage(setup, analysis, artifact_count).value == expected
 ```
 
-- [ ] **Step 2: Derive lifecycle state from persisted facts**
+- [x] **Step 2: Derive lifecycle state from persisted facts**
 
 Do not add a mutable status flag that can drift. Derive state from project setup, current source revision, fresh artifacts, and the legacy plan/menu bundle.
 
@@ -303,7 +303,7 @@ class ProjectStage(str, Enum):
     TESTING_READY = "testing_ready"
 ```
 
-- [ ] **Step 3: Unify frontend route authorization**
+- [x] **Step 3: Unify frontend route authorization**
 
 Replace scattered readiness checks with `loadProjectWorkflowStatus(baseUrl, pid)`. Keep `/plan` available after setup, unlock `/menu` and enabled test types only when the analysis bundle is fresh, and redirect stale projects to the first required step with an explanation.
 
@@ -316,7 +316,7 @@ export interface ProjectWorkflowStatus {
 }
 ```
 
-- [ ] **Step 4: Display resumable progress**
+- [x] **Step 4: Display resumable progress**
 
 Show completed, current, locked, and stale states in the left navigation and test menu. Do not trigger an LLM request merely by loading status.
 
@@ -338,11 +338,11 @@ Show completed, current, locked, and stale states in the left navigation and tes
 - Reuses the digest as the only business context for final test-plan generation.
 - Keeps existing SSE fields and adds additive `meta.budget_profile`, `meta.source_revision`, and `completed.artifact_key`.
 
-- [ ] **Step 1: Lock the target call counts in failing tests**
+- [x] **Step 1: Lock the target call counts in failing tests**
 
 For a small document, assert at most two chat calls: one digest call and one streamed plan call. For a complete fresh cache, assert zero chat and zero embedding calls. For a large document, assert one map call per selected chunk, one digest reduce call, and one final plan call—never a separate test-menu call.
 
-- [ ] **Step 2: Combine summary and menu extraction**
+- [x] **Step 2: Combine summary and menu extraction**
 
 Use one validated Pydantic schema. Keep map summaries compact and require evidence-oriented fields only. If parsing fails, allow one bounded repair call that receives only the invalid structured result and schema, not the source documents again.
 
@@ -354,7 +354,7 @@ class ProjectAnalysisDigest(BaseModel):
 PROJECT_ANALYSIS_PROMPT_VERSION = "project-analysis-v2"
 ```
 
-- [ ] **Step 3: Generate the plan from the canonical digest**
+- [x] **Step 3: Generate the plan from the canonical digest**
 
 Do not resend raw documents to the plan call. Stream reasoning and plan body as before. Save digest, plan, and menu only after both calls complete and the client remains connected.
 
@@ -365,11 +365,11 @@ plan_prompt = TEST_PLAN_FROM_DIGEST_TEMPLATE.format(
 )
 ```
 
-- [ ] **Step 4: Reuse only fresh artifacts**
+- [x] **Step 4: Reuse only fresh artifacts**
 
 Key cache lookup by source revision, prompt version, and model. A normal page revisit must return the saved bundle with `from_cache=true`; explicit regeneration must create a new artifact before replacing the active one.
 
-- [ ] **Step 5: Verify compatibility and measured reduction**
+- [x] **Step 5: Verify compatibility and measured reduction**
 
 Run plan stream, API contract, persistence, cancellation, and baseline tests. Record call-count and prompt-token changes in the Iteration 2 log.
 
@@ -386,12 +386,17 @@ Run plan stream, API contract, persistence, cancellation, and baseline tests. Re
 - Modify: `ez_back_dev/tests/test_llm_workflow_stream_service.py`
 - Create: `ez_back_dev/tests/test_workflow_resume.py`
 
+Implementation note: the analysis and case services already emit the complete
+`_workflow_result` plus deferred legacy `pending_info` required by this task.
+Task 5 therefore keeps those two files unchanged and normalizes/persists their
+outputs at the shared dispatcher boundary.
+
 **Interfaces:**
 - Produces `WorkflowArtifactKey(operation, input_hash, source_revision, prompt_version, model_label)`.
 - Adds additive SSE events `artifact` and `stale`; existing clients may ignore them.
 - Persists final analysis, structured choices, user selections, knowledge answers, and final cases; reasoning remains session-only.
 
-- [ ] **Step 1: Add parameterized resume tests for all 18 operations**
+- [x] **Step 1: Add parameterized resume tests for all 18 operations**
 
 For each operation, first execution may call mocked models and save once; an identical repeated request must stream the saved result with zero model/embedding calls. Changing a relevant selection, source revision, prompt version, model label, or `regenerate=true` must produce a cache miss.
 
@@ -405,7 +410,7 @@ def test_identical_workflow_request_resumes_without_provider_calls(operation):
     assert embedding_call_count(second) == 0
 ```
 
-- [ ] **Step 2: Route dispatcher metadata through the catalog**
+- [x] **Step 2: Route dispatcher metadata through the catalog**
 
 Validate prerequisites, source corpus, artifact name, and regeneration support from one definition. Remove duplicated operation sets after the catalog tests prove parity.
 
@@ -414,7 +419,7 @@ definition = get_workflow_definition(operation)
 validate_prerequisites(pid, definition.prerequisites)
 ```
 
-- [ ] **Step 3: Save complete step artifacts atomically**
+- [x] **Step 3: Save complete step artifacts atomically**
 
 Case artifacts include the normalized selection payload and final case body. Do not overwrite the previous active artifact until generation and persistence succeed.
 
@@ -428,11 +433,11 @@ class WorkflowArtifactKey:
     model_label: str
 ```
 
-- [ ] **Step 4: Preserve legacy cache compatibility**
+- [x] **Step 4: Preserve legacy cache compatibility**
 
 Read existing `InfoType` 1–23 values as seed artifacts when their source revision is known; keep legacy writes required by old GET/POST endpoints during the compatibility window.
 
-- [ ] **Step 5: Verify cancellation and stale-document behavior**
+- [x] **Step 5: Verify cancellation and stale-document behavior**
 
 Disconnects, provider errors, parsing errors, and failed commits must leave the previous artifact readable. A changed document must show `stale` and never silently reuse the old answer.
 
@@ -453,7 +458,7 @@ Disconnects, provider errors, parsing errors, and failed commits must leave the 
 - Produces `get_project_index(pid, corpus, source_revision, documents, embeddings)`, `invalidate_project_indexes(pid)`, and bounded `RetrievalPolicy(top_k, fetch_k, max_context_tokens, min_score)`.
 - Registry keys are `(pid, corpus, source_revision, embedding_model)` and never cross projects.
 
-- [ ] **Step 1: Add isolation, concurrency, and reuse tests**
+- [x] **Step 1: Add isolation, concurrency, and reuse tests**
 
 Assert one embedding build for concurrent identical requests, separate indexes for different projects/revisions/corpora, explicit invalidation after document changes, and zero embedding calls when a complete fresh artifact is returned.
 
@@ -463,7 +468,7 @@ async def test_concurrent_requests_build_one_index():
     assert fake_embeddings.document_call_count == 1
 ```
 
-- [ ] **Step 2: Implement bounded in-process index reuse**
+- [x] **Step 2: Implement bounded in-process index reuse**
 
 Use per-key async locks, LRU capacity 16, and a 30-minute idle TTL. Store no API keys or document bodies in logs. Do not persist vectors to Git-tracked paths.
 
@@ -473,7 +478,7 @@ INDEX_CAPACITY = 16
 INDEX_IDLE_TTL_SECONDS = 1800
 ```
 
-- [ ] **Step 3: Deduplicate retrieved context**
+- [x] **Step 3: Deduplicate retrieved context**
 
 Normalize whitespace, remove chunks with identical content hashes, keep source/page metadata, apply a score threshold, and stop adding chunks when `max_context_tokens` is reached.
 
@@ -486,11 +491,11 @@ class RetrievalPolicy:
     min_score: float
 ```
 
-- [ ] **Step 4: Reorder cache checks ahead of retrieval**
+- [x] **Step 4: Reorder cache checks ahead of retrieval**
 
 Every workflow must look up its fresh final/knowledge artifact before loading documents, constructing embeddings, or querying the index.
 
-- [ ] **Step 5: Prove embedding and context reductions**
+- [x] **Step 5: Prove embedding and context reductions**
 
 Record embedding-build counts and selected-context tokens for repeated unit, API, functional, and nonfunctional workflows using offline fixtures.
 
@@ -503,17 +508,22 @@ Record embedding-build counts and selected-context tokens for repeated unit, API
 - Modify: `ez_back_dev/llm/provider.py`
 - Create: `ez_back_dev/service/workflowBudget.py`
 - Modify: `ez_back_dev/service/llmWorkflowStreamCore.py`
+- Modify: `ez_back_dev/service/llmWorkflowStreamService.py`
 - Modify: `ez_back_dev/service/llmTestPlanStreamService.py`
 - Modify: `ez_back_dev/prompt/promptStr.py`
 - Modify: `ez_back_dev/prompt/templates.py`
 - Create: `ez_back_dev/tests/test_workflow_budget.py`
-- Modify: `ez_back_dev/tests/test_streaming_adapter.py`
+- Modify: `ez_back_dev/tests/test_streaming.py`
+- Modify: `ez_back_dev/tests/test_llm_workflow_stream_core.py`
+- Modify: `ez_back_dev/tests/test_llm_workflow_stream_service.py`
+- Modify: `ez_back_dev/tests/test_test_plan_stream_service.py`
+- Modify: `ez_back_dev/tests/test_workflow_cost_baseline.py`
 
 **Interfaces:**
 - Produces `WorkflowBudgetProfile(map_output_tokens, structured_output_tokens, final_output_tokens, max_context_tokens, reasoning_mode, reasoning_budget)` and stage-specific provider request options.
 - Adds token/call counters to `usage` and `completed` without including prompt or reasoning text.
 
-- [ ] **Step 1: Add provider-parameter and hard-cap tests**
+- [x] **Step 1: Add provider-parameter and hard-cap tests**
 
 Assert mechanical map/extraction stages use `reasoning_mode="off"` or the provider's lowest supported effort, final analysis/case stages use the configured balanced mode, Qwen receives a bounded thinking budget, and no stage exceeds its profile's output cap.
 
@@ -524,7 +534,7 @@ def test_structured_stage_never_uses_high_reasoning():
     assert options["max_tokens"] <= 2048
 ```
 
-- [ ] **Step 2: Define explicit default profiles**
+- [x] **Step 2: Define explicit default profiles**
 
 Use compact map summaries, small structured extraction caps, and larger final-answer caps. Keep provider quirks in the provider adapter, not in business services. Emit the effective profile in sanitized `meta`.
 
@@ -539,11 +549,11 @@ class WorkflowBudgetProfile:
     reasoning_budget: int | None
 ```
 
-- [ ] **Step 3: Compact prompts and eliminate duplicated instructions**
+- [x] **Step 3: Compact prompts and eliminate duplicated instructions**
 
 Move common role/output/safety instructions into shared builders. Send artifact summaries instead of raw source documents when a fresh prerequisite exists. Never include the same RAG context in both system and user messages.
 
-- [ ] **Step 4: Add preflight context enforcement**
+- [x] **Step 4: Add preflight context enforcement**
 
 Count selected context before the provider call. If over budget, reduce retrieved chunks or map summaries deterministically; do not rely on provider-side truncation. Emit progress describing reduction without displaying source content.
 
@@ -552,7 +562,7 @@ selected = select_within_token_budget(chunks, profile.max_context_tokens)
 assert num_tokens_from_string(join_chunks(selected)) <= profile.max_context_tokens
 ```
 
-- [ ] **Step 5: Verify savings and quality contracts**
+- [x] **Step 5: Verify savings and quality contracts**
 
 Require nonempty outputs and existing structured schemas while asserting lower or equal input tokens and strictly lower calls/embeddings for the optimized repeated flows.
 
@@ -578,7 +588,7 @@ Require nonempty outputs and existing structured schemas while asserting lower o
 - Produces step states `locked`, `ready`, `running`, `completed`, `stale`, and `failed`.
 - Consumes workflow status/artifact SSE metadata and keeps the existing contextual `LlmWorkflowExecution` placement.
 
-- [ ] **Step 1: Add failing cross-page flow contracts**
+- [x] **Step 1: Add failing cross-page flow contracts**
 
 Assert every page loads saved step state, prevents out-of-order case generation, distinguishes “继续” from “重新生成”, displays stale-source warnings, and mounts the active execution panel under its triggering button.
 
@@ -590,7 +600,7 @@ for page in TEST_PAGES:
     assert "activeOperation" in source
 ```
 
-- [ ] **Step 2: Implement one workflow-state composable**
+- [x] **Step 2: Implement one workflow-state composable**
 
 Hydrate from the status API, normalize selections, expose allowed next actions, and retain results across refresh. The composable must not automatically call an LLM.
 
@@ -604,11 +614,11 @@ export interface TestWorkflowStep<Result = unknown> {
 }
 ```
 
-- [ ] **Step 3: Add a shared stepper without flattening business-specific choices**
+- [x] **Step 3: Add a shared stepper without flattening business-specific choices**
 
 Unit and integration keep three stages; the other six keep analysis and case stages. Preserve API/use-case/method/strategy/output-format controls while moving shared status/retry/reset behavior into the composable.
 
-- [ ] **Step 4: Add scoped regeneration**
+- [x] **Step 4: Add scoped regeneration**
 
 Regenerating an earlier step must mark only its dependent later steps stale. Ask for confirmation before replacing a saved valid result and keep the old result visible if regeneration fails.
 
@@ -619,7 +629,7 @@ async function regenerateStep(operation: string): Promise<boolean> {
 }
 ```
 
-- [ ] **Step 5: Run frontend contracts, lint, and build**
+- [x] **Step 5: Run frontend contracts, lint, and build**
 
 Expected: zero ESLint errors/warnings; production build succeeds with only explicitly documented asset-size warnings.
 
@@ -638,25 +648,25 @@ Expected: zero ESLint errors/warnings; production build succeeds with only expli
 **Interfaces:**
 - Produces an offline before/after efficiency report and a user-approved migration/paid-validation checklist.
 
-- [ ] **Step 1: Run the full offline suite**
+- [x] **Step 1: Run the full offline suite**
 
 Run: `D:\tool\anaconda3\envs\ezllmtest\python.exe -m pytest .\tests -q`
 
 Expected: all tests pass without socket, provider, embedding, or live database access.
 
-- [ ] **Step 2: Enforce measurable efficiency acceptance thresholds**
+- [x] **Step 2: Enforce measurable efficiency acceptance thresholds**
 
 Require: fresh cached workflows use zero chat and zero embedding calls; identical project/corpus/revision retrieval builds one index; small initial analysis uses at most two chat calls; context passed to a model never exceeds the operation profile; and no intermediate stage uses high reasoning by default.
 
-- [ ] **Step 3: Run frontend and Git safety gates**
+- [x] **Step 3: Run frontend and Git safety gates**
 
 Run `npm run lint`, `npm run build`, `python scripts/scan_credentials.py`, generated-artifact tracking checks, and `git diff --check`. Do not print raw diffs that could contain historical secrets.
 
-- [ ] **Step 4: Gate live migration and optional paid A/B checks**
+- [x] **Step 4: Gate live migration and optional paid A/B checks**
 
 Provide the exact additive migration command but do not execute it without explicit approval. Run at most one representative old/new request per approved provider, record numeric usage only, and never run all providers automatically.
 
-- [ ] **Step 5: Close the iteration**
+- [x] **Step 5: Close the iteration**
 
 Document compatibility evidence, before/after call and token counts, migration status, paid checks actually performed, known limits, and rollback instructions. Commit/push only after a separate explicit user instruction.
 

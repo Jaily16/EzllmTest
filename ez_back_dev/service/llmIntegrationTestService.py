@@ -14,6 +14,7 @@ from prompt.templates import (INTEGRATION_TEST_INFO_STUFF_TEMPLATE, INTEGRATION_
                               INTEGRATION_TEST_INFO_REDUCE_TEMPLATE, INTEGRATION_TEST_STRATEGY_KNOWLEDGE_TEMPLATE,
                               INTEGRATION_TEST_GENERATE_TEST_CASE_TEMPLATE)
 from vectorstore.splitter import testdoc_text_splitter_for_integration
+from service.legacyLongTextService import invoke_exhaustive_document_analysis
 
 llm = ChatGPTModel().get_model()
 llm_cn = ChatGLMModel().get_model()
@@ -33,89 +34,42 @@ def get_integration_test_info(units_info: str):
 
 def get_integration_description(pid: str, integration_type: int, unit_name: str = ''):
     try:
-        map_str = ""
-        reduce_str = ""
-        unit_type = ""
-        docs = None
-        doc_str = ""
-        if_map_reduce = False
         if integration_type == 0:
-            overflow = testProjectDao.get_project_type(pid).overflow
-            if overflow >= 3:
-                map_str = prompt.INTEGRATION_TEST_SYSTEM_INFO_MAP_PROMPT_STR
-                reduce_str = prompt.INTEGRATION_TEST_SYSTEM_INFO_REDUCE_PROMPT_STR
-                # 先将所有的业务开发文档进行拼接成一个大的document数组
-                all_docs = documentTools.generate_design_testdocs_docs(pid)
-                # 对文档进行切分
-                docs = testdoc_text_splitter_for_integration.split_documents(all_docs)
-                if_map_reduce = True
-            else:
-                doc_str = documentTools.generate_design_testdocs_str(pid)
-        elif integration_type == 1:
-            overflow = testProjectDao.get_project_type(pid).overflow
-            if overflow >= 3:
-                map_str = prompt.INTEGRATION_TEST_SUBSYSTEM_INFO_MAP_PROMPT_STR
-                reduce_str = prompt.INTEGRATION_TEST_SUBSYSTEM_INFO_REDUCE_PROMPT_STR
-                # 先将所有的业务开发文档进行拼接成一个大的document数组
-                all_docs = documentTools.generate_design_testdocs_docs(pid)
-                # 对文档进行切分
-                docs = testdoc_text_splitter_for_integration.split_documents(all_docs)
-                if_map_reduce = True
-            else:
-                doc_str = documentTools.generate_design_testdocs_str(pid)
-        else:
-            design_docs = documentTools.generate_design_testdocs_docs(pid)
-            docs = design_retriever(design_docs).invoke(unit_name)
-            doc_str = documentTools.docs_to_string(docs)
-            tokens = documentTools.num_tokens_from_string(doc_str)
-            if tokens > 14500:
-                if_map_reduce = True
-                if integration_type == 2:
-                    map_str = INTEGRATION_TEST_INFO_MAP_TEMPLATE.format(integration_unit=unit_name,
-                                                                        unit_type="类(class)或模块")
-                    reduce_str = INTEGRATION_TEST_INFO_REDUCE_TEMPLATE.format(integration_unit=unit_name,
-                                                                              unit_type="类(class)或模块")
-                elif integration_type == 3:
-                    map_str = INTEGRATION_TEST_INFO_MAP_TEMPLATE.format(integration_unit=unit_name,
-                                                                        unit_type="类(class)或函数")
-                    reduce_str = INTEGRATION_TEST_INFO_REDUCE_TEMPLATE.format(integration_unit=unit_name,
-                                                                              unit_type="类(class)或函数")
-                else:
-                    map_str = INTEGRATION_TEST_INFO_MAP_TEMPLATE.format(integration_unit=unit_name,
-                                                                        unit_type="函数")
-                    reduce_str = INTEGRATION_TEST_INFO_REDUCE_TEMPLATE.format(integration_unit=unit_name,
-                                                                              unit_type="函数")
-            else:
-                if integration_type == 2:
-                    unit_type = "类(class)或模块"
-                elif integration_type == 3:
-                    unit_type = "类(class)或函数"
-                else:
-                    unit_type = "函数"
-        if if_map_reduce:
-            return BasicChain.invoke_map_reduce_chain_get_str(
-                map_str,
-                reduce_str,
-                docs,
-                llm_cn,
-                5
+            return invoke_exhaustive_document_analysis(
+                operation="integration_info",
+                pid=pid,
+                document_loader=documentTools.generate_design_testdocs_docs,
+                splitter=testdoc_text_splitter_for_integration,
+                stuff_prompt=prompt.INTEGRATION_TEST_SYSTEM_INFO_STUFF_PROMPT_STR,
+                map_prompt=prompt.INTEGRATION_TEST_SYSTEM_INFO_MAP_PROMPT_STR,
+                reduce_prompt=prompt.INTEGRATION_TEST_SYSTEM_INFO_REDUCE_PROMPT_STR,
+                llm=llm_cn,
+                max_concurrency=5,
             )
+        if integration_type == 1:
+            return invoke_exhaustive_document_analysis(
+                operation="integration_info",
+                pid=pid,
+                document_loader=documentTools.generate_design_testdocs_docs,
+                splitter=testdoc_text_splitter_for_integration,
+                stuff_prompt=prompt.INTEGRATION_TEST_SUBSYSTEM_INFO_STUFF_PROMPT_STR,
+                map_prompt=prompt.INTEGRATION_TEST_SUBSYSTEM_INFO_MAP_PROMPT_STR,
+                reduce_prompt=prompt.INTEGRATION_TEST_SUBSYSTEM_INFO_REDUCE_PROMPT_STR,
+                llm=llm_cn,
+                max_concurrency=5,
+            )
+
+        if integration_type == 2:
+            unit_type = "类(class)或模块"
+        elif integration_type == 3:
+            unit_type = "类(class)或函数"
         else:
-            if integration_type == 0:
-                return BasicChain.invoke_stuff_chain_get_str_with_str(
-                    prompt.INTEGRATION_TEST_SYSTEM_INFO_STUFF_PROMPT_STR,
-                    doc_str,
-                    llm_cn
-                )
-            elif integration_type == 1:
-                return BasicChain.invoke_stuff_chain_get_str_with_str(
-                    prompt.INTEGRATION_TEST_SUBSYSTEM_INFO_STUFF_PROMPT_STR,
-                    doc_str,
-                    llm_cn
-                )
-            else:
-                stuff_chain = BasicChain.stuff_chain(INTEGRATION_TEST_INFO_STUFF_TEMPLATE, llm_cn)
-                return stuff_chain.invoke({"integration_unit": unit_name, "unit_type": unit_type, "docs": doc_str})
+            unit_type = "函数"
+        design_docs = documentTools.generate_design_testdocs_docs(pid)
+        selected_docs = design_retriever(design_docs).invoke(unit_name)
+        doc_str = documentTools.docs_to_string(selected_docs)
+        stuff_chain = BasicChain.stuff_chain(INTEGRATION_TEST_INFO_STUFF_TEMPLATE, llm_cn)
+        return stuff_chain.invoke({"integration_unit": unit_name, "unit_type": unit_type, "docs": doc_str})
     except LLMError:
         raise
     except Exception as e:

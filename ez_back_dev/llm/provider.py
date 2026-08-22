@@ -23,6 +23,8 @@ class ModelSpec:
     model_field: str
     timeout_field: str
     temperature: float | None = 0.5
+    context_window_tokens: int = 200_000
+    max_output_tokens: int = 32_768
 
 
 _MODEL_SPECS = (
@@ -35,6 +37,8 @@ _MODEL_SPECS = (
         "zhipu_base_url",
         "zhipu_chat_model",
         "zhipu_timeout_seconds",
+        context_window_tokens=200_000,
+        max_output_tokens=128_000,
     ),
     ModelSpec(
         "通义千问",
@@ -45,6 +49,8 @@ _MODEL_SPECS = (
         "dashscope_base_url",
         "dashscope_chat_model",
         "dashscope_timeout_seconds",
+        context_window_tokens=1_000_000,
+        max_output_tokens=65_536,
     ),
     ModelSpec(
         "DeepSeek",
@@ -55,6 +61,8 @@ _MODEL_SPECS = (
         "deepseek_base_url",
         "deepseek_chat_model",
         "deepseek_timeout_seconds",
+        context_window_tokens=1_000_000,
+        max_output_tokens=384_000,
     ),
     ModelSpec(
         "Moonshot Kimi",
@@ -66,6 +74,8 @@ _MODEL_SPECS = (
         "moonshot_chat_model",
         "moonshot_timeout_seconds",
         temperature=None,
+        context_window_tokens=256_000,
+        max_output_tokens=32_768,
     ),
 )
 _MODEL_REGISTRY = {spec.label: spec for spec in _MODEL_SPECS}
@@ -124,6 +134,51 @@ def get_model_spec(name: str) -> ModelSpec:
 
 def ensure_supported_model(name: str) -> None:
     get_model_spec(name)
+
+
+def provider_options(profile: Any, name: str) -> dict[str, Any]:
+    """Translate a resolved workflow budget into provider request fields."""
+    spec = get_model_spec(name)
+    max_tokens = int(profile.output_token_limit)
+    reasoning_mode = profile.reasoning_mode
+    options: dict[str, Any] = {
+        "max_tokens": max_tokens,
+        "reasoning_mode": reasoning_mode,
+    }
+
+    if spec.provider in {"zhipu", "alibaba"}:
+        options["temperature"] = 0.5
+
+    if reasoning_mode == "off":
+        if spec.provider == "alibaba":
+            options["enable_thinking"] = False
+            options["extra_body"] = {"enable_thinking": False}
+        elif spec.provider == "deepseek":
+            options["extra_body"] = {"thinking": {"type": "disabled"}}
+        else:
+            options["extra_body"] = {"thinking": {"type": "disabled"}}
+        return options
+
+    if spec.provider == "alibaba":
+        default_budget = 1_024 if reasoning_mode == "low" else 4_096
+        requested_budget = profile.reasoning_budget or default_budget
+        thinking_budget = min(
+            requested_budget,
+            default_budget,
+            max_tokens,
+        )
+        options["enable_thinking"] = True
+        options["thinking_budget"] = thinking_budget
+        options["extra_body"] = {
+            "enable_thinking": True,
+            "thinking_budget": thinking_budget,
+        }
+    elif spec.provider == "deepseek":
+        options["reasoning_effort"] = "high"
+        options["extra_body"] = {"thinking": {"type": "enabled"}}
+    else:
+        options["extra_body"] = {"thinking": {"type": "enabled"}}
+    return options
 
 
 def _configured_api_key(spec: ModelSpec, settings: Any) -> str:
@@ -222,6 +277,10 @@ def get_embeddings() -> OpenAIEmbeddings:
 
 class LazyZhipuEmbeddings(Embeddings):
     """Delay API-key validation until vectors are actually requested."""
+
+    @property
+    def model_name(self) -> str:
+        return get_settings().zhipu_embedding_model
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return get_embeddings().embed_documents(texts)

@@ -1,3 +1,6 @@
+from types import SimpleNamespace
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -14,6 +17,7 @@ from llm.provider import (
 
 
 client = TestClient(app)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_required_testing_workflow_routes_are_preserved():
@@ -26,6 +30,10 @@ def test_required_testing_workflow_routes_are_preserved():
         ("POST", "/project/info/update"),
         ("GET", "/project/info/{pid}/{info_type}"),
         ("GET", "/project/type/{pid}"),
+        ("GET", "/project/type/analyze/{pid}"),
+        ("GET", "/project/setup/status/{pid}"),
+        ("POST", "/project/setup/finalize/{pid}"),
+        ("GET", "/project/workflow/status/{pid}"),
         ("GET", "/project/llm/menu/analyze/{pid}"),
         ("GET", "/project/llm/menu/analyze/update/{pid}/{llm_name}"),
         ("POST", "/project/llm/menu/acquire"),
@@ -62,6 +70,123 @@ def test_required_testing_workflow_routes_are_preserved():
         if path not in paths or method.lower() not in paths[path]
     }
     assert missing == set()
+
+
+def _setup_status(stage="documents_ready"):
+    data = {
+        "pid": "Ez1",
+        "project_exists": True,
+        "stage": stage,
+        "document_counts": {"knowledge": 1, "requirements": 1, "design": 1},
+        "document_files": {
+            "knowledge": ["knowledge.txt"],
+            "requirements": ["requirements.txt"],
+            "design": ["design.txt"],
+        },
+        "allowed_actions": ["continue_to_plan"] if stage == "setup_complete" else ["finalize"],
+        "source_revision": "rev-1",
+        "message": "项目资料已确认" if stage == "setup_complete" else "项目资料已齐全，可以确认创建",
+    }
+    return SimpleNamespace(model_dump=lambda mode="python": data)
+
+
+def test_project_setup_routes_keep_legacy_envelopes(monkeypatch):
+    monkeypatch.setattr(
+        routers.projectSetupService, "get_status", lambda _pid: _setup_status()
+    )
+    monkeypatch.setattr(
+        routers.projectSetupService,
+        "finalize",
+        lambda _pid: _setup_status("setup_complete"),
+    )
+
+    status_response = client.get("/project/setup/status/Ez1")
+    finalize_response = client.post("/project/setup/finalize/Ez1")
+
+    assert status_response.status_code == 200
+    assert status_response.json()["status"] == 2001
+    assert status_response.json()["data"]["stage"] == "documents_ready"
+    assert finalize_response.status_code == 200
+    assert finalize_response.json()["status"] == 2001
+    assert finalize_response.json()["data"]["stage"] == "setup_complete"
+
+
+def test_project_workflow_status_route_keeps_legacy_envelope(monkeypatch):
+    data = {
+        "pid": "Ez1",
+        "stage": "analysis_ready",
+        "allowed_routes": ["/plan", "/menu", "/ui"],
+        "completed_operations": ["project_analysis"],
+        "stale_operations": [],
+        "menu": {"ui_test": True},
+        "source_revision": "rev-1",
+        "message": "项目分析已就绪，可以开始测试",
+    }
+    service = SimpleNamespace(
+        get_project_workflow_status=lambda _pid: SimpleNamespace(
+            model_dump=lambda mode="python": data
+        )
+    )
+    monkeypatch.setattr(
+        routers, "projectWorkflowStatusService", service, raising=False
+    )
+
+    response = client.get("/project/workflow/status/Ez1")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": 2001,
+        "reason": "项目工作流状态获取成功",
+        "data": data,
+    }
+
+
+def test_project_setup_finalize_maps_missing_documents_to_422(monkeypatch):
+    from service.projectSetupService import (
+        ProjectSetupStatus,
+        ProjectSetupValidationError,
+    )
+
+    status = ProjectSetupStatus(
+        pid="Ez1",
+        project_exists=True,
+        stage="requirements_uploaded",
+        document_counts={"knowledge": 1, "requirements": 1, "design": 0},
+        document_files={"knowledge": [], "requirements": [], "design": []},
+        allowed_actions=["upload_design"],
+        source_revision=None,
+        message="请补充开发设计文档",
+    )
+
+    def fail(_pid):
+        raise ProjectSetupValidationError("请补充开发设计文档", status)
+
+    monkeypatch.setattr(routers.projectSetupService, "finalize", fail)
+
+    response = client.post("/project/setup/finalize/Ez1")
+
+    assert response.status_code == 422
+    assert response.json()["status"] == 5001
+    assert response.json()["reason"] == "请补充开发设计文档"
+    assert response.json()["data"]["document_counts"]["knowledge"] == 1
+
+
+@pytest.mark.parametrize(
+    "path", ["/project/type/Ez1", "/project/type/analyze/Ez1"]
+)
+def test_project_type_legacy_path_and_planned_alias_match(monkeypatch, path):
+    monkeypatch.setattr(
+        routers.projectSetupService, "analyze_project_type", lambda _pid: 0
+    )
+
+    response = client.get(path)
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": 2001,
+        "reason": "成功分析并建立项目",
+        "data": -1,
+    }
 
 
 @pytest.mark.parametrize(
@@ -397,3 +522,36 @@ def test_typed_llm_errors_have_deterministic_http_mapping(
         "reason": str(error),
         "data": False,
     }
+
+
+def test_iteration2_release_keeps_migration_additive_and_user_gated():
+    migration = (
+        PROJECT_ROOT
+        / "ez_back_dev"
+        / "migrations"
+        / "iteration_2_workflow_artifacts.sql"
+    ).read_text(encoding="utf-8")
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    closeout = (
+        PROJECT_ROOT / "docs" / "iteration-2-closeout.md"
+    ).read_text(encoding="utf-8")
+
+    assert "CREATE TABLE IF NOT EXISTS tb_project_workflow_artifact" in migration
+    assert all(
+        forbidden not in migration.upper()
+        for forbidden in ("DROP TABLE", "ALTER TABLE", "TRUNCATE", "DELETE FROM")
+    )
+    for legacy_table in (
+        "tb_test_project",
+        "tb_project_knowledge",
+        "tb_project_requirement_testdoc",
+        "tb_project_design_testdoc",
+        "tb_project_type",
+        "tb_project_info",
+    ):
+        assert legacy_table in closeout
+    assert "iteration_2_workflow_artifacts.sql" in readme
+    assert "--execute=\"SOURCE ez_back_dev/migrations/iteration_2_workflow_artifacts.sql\"" in readme
+    assert "未执行" in closeout
+    assert "需要用户另行明确批准" in closeout
+    assert "DROP TABLE IF EXISTS tb_project_workflow_artifact" in closeout

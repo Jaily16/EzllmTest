@@ -12,6 +12,7 @@ from tools.InfoType import InfoType
 from vectorstore.retrievers import api_retriever
 import prompt.promptStr as prompt
 from vectorstore.splitter import testdoc_text_splitter_for_unit
+from service.legacyLongTextService import invoke_exhaustive_document_analysis
 
 llm = ChatGPTModel().get_model()
 llm_cn = ChatGLMModel().get_model()
@@ -20,29 +21,20 @@ llm_cn = ChatGLMModel().get_model()
 def find_out_apis_info(pid: str):
     try:
         history_result = testProjectDao.get_project_info(pid, InfoType.PROJECT_APIS_SUMMARY.value)
-        overflow = testProjectDao.get_project_type(pid).overflow
         if history_result:
             apis_info = history_result
         else:
-            if overflow >= 3:
-                # 先将所有的业务开发文档进行拼接成一个大的document数组
-                test_all_docs = documentTools.generate_design_testdocs_docs(pid)
-                # 对文档进行切分
-                all_docs = testdoc_text_splitter_for_unit.split_documents(test_all_docs)
-                map_str = prompt.API_TEST_SUMMARY_MAP_PROMPT_STR
-                reduce_str = prompt.API_TEST_SUMMARY_REDUCE_PROMPT_STR
-                apis_info = BasicChain.invoke_map_reduce_chain_get_str(
-                    map_str,
-                    reduce_str,
-                    all_docs,
-                    llm_cn,
-                    3
-                )
-            else:
-                test_str = documentTools.generate_design_testdocs_str(pid)
-                apis_info = BasicChain.invoke_stuff_chain_get_str_with_str(prompt.API_TEST_SUMMARY_PROMPT_STR,
-                                                                           test_str,
-                                                                           llm_cn)
+            apis_info = invoke_exhaustive_document_analysis(
+                operation="api_info",
+                pid=pid,
+                document_loader=documentTools.generate_design_testdocs_docs,
+                splitter=testdoc_text_splitter_for_unit,
+                stuff_prompt=prompt.API_TEST_SUMMARY_PROMPT_STR,
+                map_prompt=prompt.API_TEST_SUMMARY_MAP_PROMPT_STR,
+                reduce_prompt=prompt.API_TEST_SUMMARY_REDUCE_PROMPT_STR,
+                llm=llm_cn,
+                max_concurrency=3,
+            )
             testProjectDao.add_project_info(pid, InfoType.PROJECT_APIS_SUMMARY.value, apis_info)
         api_list_chain = BasicChain.json_chain(ApiList, llm)
         query = prompt.API_TEST_JSON_PROMPT_STR + apis_info
@@ -61,20 +53,8 @@ def find_out_api_info(pid: str, api_name: str):
         retriever = api_retriever(design_docs)
         api_docs = retriever.invoke(api_name)
         api_docs_str = documentTools.docs_to_meaningful_strings(api_docs)
-        tokens = documentTools.num_tokens_from_string(api_docs_str)
-        if tokens > 14500:
-            map_str = API_TEST_INFO_MAP_REDUCE_TEMPLATE.format(api_name=api_name)
-            reduce_str = API_TEST_INFO_MAP_REDUCE_TEMPLATE.format(api_name=api_name)
-            api_info = BasicChain.invoke_map_reduce_chain_get_str(
-                map_str,
-                reduce_str,
-                api_docs,
-                llm_cn,
-                2
-            )
-        else:
-            stuff_chain = BasicChain.stuff_chain(API_TEST_INFO_TEMPLATE, llm_cn)
-            api_info = stuff_chain.invoke({"api_name": api_name, "docs": api_docs_str})
+        stuff_chain = BasicChain.stuff_chain(API_TEST_INFO_TEMPLATE, llm_cn)
+        api_info = stuff_chain.invoke({"api_name": api_name, "docs": api_docs_str})
         return api_info
     except LLMError:
         raise

@@ -17,6 +17,15 @@
           <el-row style="text-align: center">
             <div class="info" style="margin-left: 5px">项目id: {{ id }}</div>
           </el-row>
+          <el-row v-if="workflowStatusLoaded" class="workflow-summary">
+            <el-tag :type="workflowStageTagType" effect="plain">
+              {{ workflowStageLabel }}
+            </el-tag>
+            <span>已完成 {{ completedOperations.length }} 项</span>
+            <el-tag v-if="staleOperations.length" type="danger" size="small">
+              已过期 {{ staleOperations.length }} 项
+            </el-tag>
+          </el-row>
           <el-menu :default-active="route.path" class="el-menu-vertical-demo" router>
             <el-sub-menu index="analysis">
               <template #title>
@@ -24,14 +33,23 @@
                 <span>LLM智能测试分析</span>
               </template>
               <el-menu-item-group title="业务分析与测试规划">
-                <el-menu-item index="/plan">
+                <el-menu-item index="/plan" :disabled="!isWorkflowRouteAllowed('/plan')">
                   <el-icon><Notebook /></el-icon>
                   <span>测试计划</span>
+                  <el-tag
+                    class="nav-state"
+                    size="small"
+                    :type="navigationTagType('/plan', 'project_analysis')"
+                  >{{ navigationStateLabel('/plan', 'project_analysis') }}</el-tag>
                 </el-menu-item>
-                <el-menu-item index="/menu" :disabled="!analysisReady">
+                <el-menu-item index="/menu" :disabled="!isWorkflowRouteAllowed('/menu')">
                   <el-icon><Menu /></el-icon>
                   <span>测试菜单</span>
-                  <el-icon v-if="!analysisReady" class="lock-icon"><Lock /></el-icon>
+                  <el-tag
+                    class="nav-state"
+                    size="small"
+                    :type="navigationTagType('/menu', 'project_analysis')"
+                  >{{ navigationStateLabel('/menu', 'project_analysis') }}</el-tag>
                 </el-menu-item>
               </el-menu-item-group>
               <el-menu-item-group title="如何正确使用本平台">
@@ -46,34 +64,42 @@
               <template #title>
                 <el-icon><HelpFilled /></el-icon>
                 <span>手动选择LLM测试类型</span>
-                <el-icon v-if="!analysisReady" class="lock-icon"><Lock /></el-icon>
+                <el-icon v-if="!hasEnabledTestRoute" class="lock-icon"><Lock /></el-icon>
               </template>
               <el-menu-item-group
-                :title="analysisReady ? '所有目前支持的测试类型' : '请先完成业务分析、测试计划和测试菜单'"
+                :title="hasEnabledTestRoute ? '当前项目已启用的测试类型' : '请先完成业务分析、测试计划和测试菜单'"
               >
-                <el-menu-item index="/unit" :disabled="!analysisReady">
+                <el-menu-item index="/unit" :disabled="!isWorkflowRouteAllowed('/unit')">
                   <el-icon><CollectionTag /></el-icon><span>单元测试</span>
+                  <el-tag class="nav-state" size="small" :type="navigationTagType('/unit', 'unit_case')">{{ navigationStateLabel('/unit', 'unit_case') }}</el-tag>
                 </el-menu-item>
-                <el-menu-item index="/integration" :disabled="!analysisReady">
+                <el-menu-item index="/integration" :disabled="!isWorkflowRouteAllowed('/integration')">
                   <el-icon><Files /></el-icon><span>集成测试</span>
+                  <el-tag class="nav-state" size="small" :type="navigationTagType('/integration', 'integration_case')">{{ navigationStateLabel('/integration', 'integration_case') }}</el-tag>
                 </el-menu-item>
-                <el-menu-item index="/api" :disabled="!analysisReady">
+                <el-menu-item index="/api" :disabled="!isWorkflowRouteAllowed('/api')">
                   <el-icon><Magnet /></el-icon><span>api接口测试</span>
+                  <el-tag class="nav-state" size="small" :type="navigationTagType('/api', 'api_case')">{{ navigationStateLabel('/api', 'api_case') }}</el-tag>
                 </el-menu-item>
-                <el-menu-item index="/ui" :disabled="!analysisReady">
+                <el-menu-item index="/ui" :disabled="!isWorkflowRouteAllowed('/ui')">
                   <el-icon><Monitor /></el-icon><span>前端UI测试</span>
+                  <el-tag class="nav-state" size="small" :type="navigationTagType('/ui', 'ui_case')">{{ navigationStateLabel('/ui', 'ui_case') }}</el-tag>
                 </el-menu-item>
-                <el-menu-item index="/database" :disabled="!analysisReady">
+                <el-menu-item index="/database" :disabled="!isWorkflowRouteAllowed('/database')">
                   <el-icon><MessageBox /></el-icon><span>数据库测试</span>
+                  <el-tag class="nav-state" size="small" :type="navigationTagType('/database', 'db_case')">{{ navigationStateLabel('/database', 'db_case') }}</el-tag>
                 </el-menu-item>
-                <el-menu-item index="/functional" :disabled="!analysisReady">
+                <el-menu-item index="/functional" :disabled="!isWorkflowRouteAllowed('/functional')">
                   <el-icon><Orange /></el-icon><span>系统功能性测试</span>
+                  <el-tag class="nav-state" size="small" :type="navigationTagType('/functional', 'functional_case')">{{ navigationStateLabel('/functional', 'functional_case') }}</el-tag>
                 </el-menu-item>
-                <el-menu-item index="/nfunctional" :disabled="!analysisReady">
+                <el-menu-item index="/nfunctional" :disabled="!isWorkflowRouteAllowed('/nfunctional')">
                   <el-icon><HelpFilled /></el-icon><span>系统非功能性测试</span>
+                  <el-tag class="nav-state" size="small" :type="navigationTagType('/nfunctional', 'nonfunctional_case')">{{ navigationStateLabel('/nfunctional', 'nonfunctional_case') }}</el-tag>
                 </el-menu-item>
-                <el-menu-item index="/acceptance" :disabled="!analysisReady">
+                <el-menu-item index="/acceptance" :disabled="!isWorkflowRouteAllowed('/acceptance')">
                   <el-icon><Box /></el-icon><span>验收测试</span>
+                  <el-tag class="nav-state" size="small" :type="navigationTagType('/acceptance', 'acceptance_case')">{{ navigationStateLabel('/acceptance', 'acceptance_case') }}</el-tag>
                 </el-menu-item>
               </el-menu-item-group>
             </el-sub-menu>
@@ -93,14 +119,21 @@
 </template>
 
 <script lang="ts" setup>
-import { getCurrentInstance, onMounted, ref } from "vue";
+import { computed, getCurrentInstance, onMounted, ref } from "vue";
 import { ElMessage } from "element-plus";
 import axios from "axios";
 import { useRoute, useRouter } from "vue-router";
 import {
   analysisMenu,
-  analysisReady,
-  loadProjectAnalysisStatus,
+  completedOperations,
+  getWorkflowRedirectPath,
+  isWorkflowRouteAllowed,
+  loadProjectWorkflowStatus,
+  projectAnalysisRegenerating,
+  projectWorkflowStatus,
+  staleOperations,
+  workflowRedirectMessage,
+  workflowStatusLoaded,
 } from "@/state/projectAnalysis";
 
 const instance = getCurrentInstance();
@@ -108,6 +141,84 @@ const route = useRoute();
 const router = useRouter();
 const id = ref("");
 const name = ref("");
+type NavigationState = "completed" | "current" | "locked" | "stale" | "available" | "regenerating";
+type TagType = "primary" | "success" | "warning" | "info" | "danger";
+
+const testRoutes = [
+  "/unit",
+  "/integration",
+  "/api",
+  "/ui",
+  "/database",
+  "/functional",
+  "/nfunctional",
+  "/acceptance",
+];
+const hasEnabledTestRoute = computed(() =>
+  testRoutes.some((path) => isWorkflowRouteAllowed(path))
+);
+const workflowStageLabel = computed(() => {
+  if (projectAnalysisRegenerating.value) return "测试计划重新生成中";
+  const labels = {
+    setup_required: "资料待确认",
+    analysis_required: "分析待完成",
+    analysis_ready: "分析已就绪",
+    testing_in_progress: "测试进行中",
+    testing_ready: "测试已就绪",
+  };
+  const stage = projectWorkflowStatus.value?.stage;
+  return stage ? labels[stage] : "状态加载中";
+});
+const workflowStageTagType = computed<TagType>(() => {
+  const stage = projectWorkflowStatus.value?.stage;
+  if (stage === "testing_ready") return "success";
+  if (stage === "testing_in_progress" || stage === "analysis_ready") return "primary";
+  return "warning";
+});
+
+const operationIsStale = (operation: string): boolean => {
+  if (operation === "project_analysis") {
+    return staleOperations.value.includes(operation);
+  }
+  const family = operation.replace(/_case$/, "");
+  return staleOperations.value.some(
+    (item) => item === operation || item.startsWith(`${family}_`)
+  );
+};
+
+const navigationState = (path: string, operation: string): NavigationState => {
+  if (projectAnalysisRegenerating.value && path !== "/plan") return "regenerating";
+  if (operationIsStale(operation)) return "stale";
+  if (!isWorkflowRouteAllowed(path)) return "locked";
+  if (route.path === path) return "current";
+  if (testRoutes.includes(path)) return "available";
+  if (completedOperations.value.includes(operation)) return "completed";
+  return "available";
+};
+
+const navigationStateLabel = (path: string, operation: string): string => {
+  const labels: Record<NavigationState, string> = {
+    completed: "已完成",
+    current: "当前",
+    locked: "已锁定",
+    stale: "已过期",
+    available: "可进入",
+    regenerating: "分析中",
+  };
+  return labels[navigationState(path, operation)];
+};
+
+const navigationTagType = (path: string, operation: string): TagType => {
+  const types: Record<NavigationState, TagType> = {
+    completed: "success",
+    current: "primary",
+    locked: "info",
+    stale: "danger",
+    available: "warning",
+    regenerating: "warning",
+  };
+  return types[navigationState(path, operation)];
+};
 
 if (instance === null) {
   ElMessage({ message: "平台出现了一些问题,无法获取关键信息", type: "error" });
@@ -124,16 +235,21 @@ const initializeProject = async () => {
 
   id.value = String(projectId);
   try {
-    const [projectResponse] = await Promise.all([
+    const [projectResponse, workflowStatus] = await Promise.all([
       axios.get(`${requestUrl}/project/login/${id.value}`),
-      loadProjectAnalysisStatus(requestUrl, id.value),
+      loadProjectWorkflowStatus(requestUrl, id.value),
     ]);
     name.value = String(projectResponse.data?.data || "");
     if (instance) {
       instance.appContext.config.globalProperties.$test_menu = analysisMenu.value;
     }
-    if (!analysisReady.value && route.meta.requiresAnalysis) {
-      await router.replace("/plan");
+    if (!isWorkflowRouteAllowed(route.path)) {
+      ElMessage({ message: workflowStatus.message, type: "warning" });
+      const redirect = getWorkflowRedirectPath();
+      if (redirect !== route.path) await router.replace(redirect);
+    } else if (workflowRedirectMessage.value) {
+      ElMessage({ message: workflowRedirectMessage.value, type: "warning" });
+      workflowRedirectMessage.value = "";
     }
   } catch (caught) {
     ElMessage({
@@ -169,6 +285,16 @@ onMounted(initializeProject);
   left: 50%;
 }
 .lock-icon {
+  margin-left: auto;
+}
+.workflow-summary {
+  align-items: center;
+  gap: 8px;
+  margin: 10px 5px;
+  font-family: "Ali";
+  font-size: 13px;
+}
+.nav-state {
   margin-left: auto;
 }
 </style>

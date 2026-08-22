@@ -6,6 +6,32 @@ import json
 from operator import itemgetter
 
 from llm.provider import LLMOutputParsingError
+from tools import documentTools
+
+
+LEGACY_REDUCE_CONTEXT_TOKENS = 32_000
+LEGACY_REDUCE_MAX_LEVELS = 8
+
+
+def _partition_summaries_within_budget(summaries, *, max_tokens):
+    """Group every summary in order without silently truncating reduce input."""
+
+    batches = []
+    current = []
+    current_tokens = 0
+    for summary in summaries:
+        summary_tokens = documentTools.num_tokens_from_string(summary)
+        if summary_tokens > max_tokens:
+            raise ValueError("one map summary exceeds the reduce context budget")
+        if current and current_tokens + summary_tokens > max_tokens:
+            batches.append(current)
+            current = []
+            current_tokens = 0
+        current.append(summary)
+        current_tokens += summary_tokens
+    if current:
+        batches.append(current)
+    return batches
 
 
 # 用BasicChain类统一整合stuff、mapreduce和refine链,用于灵活调整大语言模型
@@ -68,8 +94,23 @@ class BasicChain:
                 | StrOutputParser()
         )
 
-        map_reduce = map_chain.map() | reduce_chain
-        return map_reduce.invoke(documents, config={"max_concurrency": max_syn})
+        summaries = map_chain.map().invoke(
+            documents,
+            config={"max_concurrency": max_syn},
+        )
+        for _ in range(LEGACY_REDUCE_MAX_LEVELS):
+            combined = "\n\n".join(summaries)
+            if documentTools.num_tokens_from_string(combined) <= LEGACY_REDUCE_CONTEXT_TOKENS:
+                return reduce_chain.invoke(summaries)
+            batches = _partition_summaries_within_budget(
+                summaries,
+                max_tokens=LEGACY_REDUCE_CONTEXT_TOKENS,
+            )
+            summaries = reduce_chain.batch(
+                batches,
+                config={"max_concurrency": max_syn},
+            )
+        raise ValueError("map-reduce summaries did not converge within the reduce budget")
 
     @staticmethod
     def invoke_refine_chain_get_str(first_summary_str, previous_summary_str, final_summary_str, documents, llm):

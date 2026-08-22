@@ -17,6 +17,7 @@ from tools.InfoType import InfoType
 from vectorstore.retrievers import require_retriever
 import prompt.promptStr as prompt
 from vectorstore.splitter import testdoc_text_splitter_for_use_case
+from service.legacyLongTextService import invoke_exhaustive_document_analysis
 
 llm = ChatGPTModel().get_model()
 llm_cn = GPT4Model().get_model()
@@ -24,43 +25,26 @@ llm_cn = GPT4Model().get_model()
 
 def find_out_use_cases_info(pid: str):
     try:
-        overflow = testProjectDao.get_project_type(pid).overflow
         # 如果此前分析过了就取历史数据
         history_result = testProjectDao.get_project_info(pid, InfoType.PROJECT_FUNCTIONAL_SUMMARY.value)
-        if overflow == 1 or overflow == 4:
-            # 先将所有的业务需求文档进行拼接成一个大的document数组
-            test_all_docs = documentTools.generate_require_testdocs_docs(pid)
-            # 对文档进行切分
-            all_docs = testdoc_text_splitter_for_use_case.split_documents(test_all_docs)
-            if history_result:
-                result = history_result
-            else:
-                # 用map-reduce链进行分析
-                result = BasicChain.invoke_map_reduce_chain_get_str(
-                    prompt.FUNCTIONAL_TEST_SUMMARY_MAP_PROMPT_STR,
-                    prompt.FUNCTIONAL_TEST_SUMMARY_REDUCE_PROMPT_STR,
-                    all_docs,
-                    llm,
-                    3
-                )
-                testProjectDao.add_project_info(pid, InfoType.PROJECT_FUNCTIONAL_SUMMARY.value, result)
-            json_chain = BasicChain.json_chain(UseCaseList, llm)
-            query = prompt.FUNCTIONAL_TEST_JSON_PROMPT_STR + result
-            return {"text_info": result, "list_info": json_chain.invoke({"query": query})}
+        if history_result:
+            result = history_result
         else:
-            test_str = documentTools.generate_require_testdocs_str(pid)
-            if history_result:
-                result = history_result
-            else:
-                result = BasicChain.invoke_stuff_chain_get_str_with_str(
-                    prompt.FUNCTIONAL_TEST_SUMMARY_STUFF_PROMPT_STR,
-                    test_str,
-                    llm_cn
-                )
-                testProjectDao.add_project_info(pid, InfoType.PROJECT_FUNCTIONAL_SUMMARY.value, result)
-            json_chain = BasicChain.json_chain(UseCaseList, llm)
-            query = prompt.FUNCTIONAL_TEST_JSON_PROMPT_STR + result
-            return {"text_info": result, "list_info": json_chain.invoke({"query": query})}
+            result = invoke_exhaustive_document_analysis(
+                operation="functional_info",
+                pid=pid,
+                document_loader=documentTools.generate_require_testdocs_docs,
+                splitter=testdoc_text_splitter_for_use_case,
+                stuff_prompt=prompt.FUNCTIONAL_TEST_SUMMARY_STUFF_PROMPT_STR,
+                map_prompt=prompt.FUNCTIONAL_TEST_SUMMARY_MAP_PROMPT_STR,
+                reduce_prompt=prompt.FUNCTIONAL_TEST_SUMMARY_REDUCE_PROMPT_STR,
+                llm=llm_cn,
+                max_concurrency=3,
+            )
+            testProjectDao.add_project_info(pid, InfoType.PROJECT_FUNCTIONAL_SUMMARY.value, result)
+        json_chain = BasicChain.json_chain(UseCaseList, llm)
+        query = prompt.FUNCTIONAL_TEST_JSON_PROMPT_STR + result
+        return {"text_info": result, "list_info": json_chain.invoke({"query": query})}
     except LLMError:
         raise
     except Exception as e:
@@ -73,20 +57,8 @@ def find_out_use_case_info(pid: str, use_case_name: str):
         require_docs = documentTools.generate_require_testdocs_docs(pid)
         uc_docs = require_retriever(require_docs).invoke(use_case_name)
         uc_str = documentTools.docs_to_meaningful_strings(uc_docs)
-        tokens = documentTools.num_tokens_from_string(uc_str)
-        if tokens > 14500:
-            map_str = USE_CASE_INFO_MAP_TEMPLATE.format(use_case_name=use_case_name)
-            reduce_str = USE_CASE_INFO_MAP_REDUCE_TEMPLATE.format(use_case_name=use_case_name)
-            uc_info = BasicChain.invoke_map_reduce_chain_get_str(
-                map_str,
-                reduce_str,
-                uc_docs,
-                llm_cn,
-                2
-            )
-        else:
-            stuff_chain = BasicChain.stuff_chain(USE_CASE_INFO_TEMPLATE, llm_cn)
-            uc_info = stuff_chain.invoke({"use_case_name": use_case_name, "docs": uc_str})
+        stuff_chain = BasicChain.stuff_chain(USE_CASE_INFO_TEMPLATE, llm_cn)
+        uc_info = stuff_chain.invoke({"use_case_name": use_case_name, "docs": uc_str})
         return uc_info
     except LLMError:
         raise

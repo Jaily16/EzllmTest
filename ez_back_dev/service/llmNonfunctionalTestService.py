@@ -32,22 +32,10 @@ def find_out_nonfunctional_info(pid: str):
                                                   "国际化和本地化 (Internationalization and Localization) 日志记录 (Logging)"
                                                   "监控 (Monitoring) 存储需求 (Storage Requirements)]")
             nonfunctional_docs_str = documentTools.docs_to_meaningful_strings(nonfunctional_docs)
-            tokens = documentTools.num_tokens_from_string(nonfunctional_docs_str)
-            if tokens > 14500:
-                map_str = prompt.NONFUNCTIONAL_TEST_SUMMARY_MAP_PROMPT_STR
-                reduce_str = prompt.NONFUNCTIONAL_SUMMARY_REDUCE_PROMPT_STR
-                nonfunctional_info = BasicChain.invoke_map_reduce_chain_get_str(
-                    map_str,
-                    reduce_str,
-                    nonfunctional_docs,
-                    llm_cn,
-                    3
-                )
-            else:
-                nonfunctional_info = BasicChain.invoke_stuff_chain_get_str_with_str(
-                    prompt.NONFUNCTIONAL_TEST_SUMMARY_PROMPT_STR,
-                    nonfunctional_docs_str,
-                    llm_cn)
+            nonfunctional_info = BasicChain.invoke_stuff_chain_get_str_with_str(
+                prompt.NONFUNCTIONAL_TEST_SUMMARY_PROMPT_STR,
+                nonfunctional_docs_str,
+                llm_cn)
             testProjectDao.add_project_info(pid, InfoType.PROJECT_NONFUNCTIONAL_SUMMARY.value, nonfunctional_info)
         nonfunctional_list_chain = BasicChain.json_chain(NonfunctionalTestMethodList, llm)
         query = prompt.NONFUNCTIONAL_TEST_JSON_PROMPT_STR + nonfunctional_info

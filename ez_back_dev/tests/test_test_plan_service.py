@@ -7,11 +7,6 @@ def test_regenerated_plan_uses_long_task_timeout_without_network(monkeypatch):
     fake_llm = object()
 
     monkeypatch.setattr(
-        service.testProjectDao,
-        "get_project_type",
-        lambda _pid: type("ProjectType", (), {"overflow": 0})(),
-    )
-    monkeypatch.setattr(
         service,
         "choose_llm_by_name",
         lambda name, minimum_timeout_seconds: (
@@ -19,14 +14,9 @@ def test_regenerated_plan_uses_long_task_timeout_without_network(monkeypatch):
         ),
     )
     monkeypatch.setattr(
-        service.documentTools,
-        "generate_require_testdocs_str",
-        lambda _pid: "project requirements",
-    )
-    monkeypatch.setattr(
-        service.BasicChain,
-        "invoke_stuff_chain_get_str_with_str",
-        lambda _prompt, _content, llm: "generated plan" if llm is fake_llm else "",
+        service,
+        "invoke_exhaustive_document_analysis",
+        lambda **kwargs: "generated plan" if kwargs["llm"] is fake_llm else "",
     )
     monkeypatch.setattr(
         service.testProjectDao,

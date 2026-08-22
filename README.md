@@ -106,13 +106,13 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-回到项目根目录，导入完整样例数据：
+回到项目根目录，导入六张空的基础表结构。仓库中的 SQL 不包含项目、文档路径、分析结果或其他业务数据：
 
 ```powershell
 cmd /c "mysql -u root -p ezllmtest_dev < ezllmtest.sql"
 ```
 
-验证六张表和七个样例项目：
+验证六张基础表。新安装完成后 `project rows` 应为 `0`：
 
 ```powershell
 conda activate ezllmtest
@@ -120,6 +120,14 @@ Set-Location .\ez_back_dev
 python .\scripts\verify_database.py
 Set-Location ..
 ```
+
+随后执行 Iteration 2 的加法迁移，创建第七张空表 `tb_project_workflow_artifact`：
+
+```powershell
+cmd /c "mysql -u root -p ezllmtest_dev < ez_back_dev\migrations\iteration_2_workflow_artifacts.sql"
+```
+
+两份 SQL 都只包含表结构，不包含 `INSERT`、`REPLACE` 或 `LOAD DATA` 数据写入语句。
 
 ## 4. 安装前端依赖
 
@@ -158,9 +166,11 @@ Ez1800887156818837504
 
 项目分析会先进入测试计划页面。`POST /project/llm/plan/stream` 使用 SSE 展示文档加载、分块分析、汇总生成和数据库保存进度，并在一次可恢复流程中保存业务摘要、测试计划和测试菜单。分析完成前，测试菜单和后续测试类型处于锁定状态。
 
-单元、集成、API、UI、数据库、功能、非功能和验收测试通过 `POST /project/llm/workflow/stream` 执行 18 个分析/用例工作流。各步骤均展示真实进度、模型思考、流式正文、Token 用量和取消操作；多步骤页面会把执行面板显示在当前所点击按钮下方。页面离开、取消或模型错误会终止请求，只有完整生成结束后才保存可复用结果。所有原有 GET/POST/PUT LLM 接口继续保留。
+单元、集成、API、UI、数据库、功能、非功能和验收测试通过 `POST /project/llm/workflow/stream` 执行 18 个分析/用例工作流。连同测试计划，共有 19 个可恢复流式工作流。各步骤均展示真实进度、模型思考、流式正文、Token 用量和取消操作；多步骤页面会把执行面板显示在当前所点击按钮下方。页面离开、取消或模型错误会终止请求，只有完整生成结束后才原子保存可复用结果。缓存键包含项目文档版本、提示词版本、相关用户选择和模型标签；相同键直接恢复最终 artifact，不产生聊天或 embedding 调用。所有原有 GET/POST/PUT LLM 接口继续保留。
 
-流式模型使用均衡预算：中间分块最多 8192 token，最终汇总最多 32768 token，Qwen 思考预算为 8192 token。分类 token 用量仅展示厂商实际返回的数据，不进行本地估算。
+刷新或重新进入项目时，前端先读取只读 `workflow status`，恢复允许路由以及完成/过期步骤；当前浏览器会话内已显示的步骤结果由 `sessionStorage` 恢复。状态加载不会自动发起 LLM。用户可明确选择“继续”读取后端缓存，或确认后“重新生成”；重新生成上游步骤只把依赖的下游步骤标记为过期，并在失败时保留旧结果。
+
+流式模型按阶段使用硬预算：项目分析为 `1024/2048/8192`，通用分析为 `1024/1536/8192`，用例工作流为 `1024/1536/12288`（map/structured/final 输出上限）。项目分析上下文上限为 12000 token，其余工作流为 6000 token。机械中间阶段关闭思考或使用 provider 最低 effort，最终阶段使用均衡思考；Qwen 最终思考预算不超过 4096 token。分类 Token 用量仅展示厂商实际返回的数据，不进行本地估算。
 
 ## 6. 测试与模型连通性
 
@@ -212,20 +222,33 @@ npm run build
 - 文档加载直接使用 `pypdf`、`docx2txt` 和文本读取，不再依赖 `langchain-community`。
 - FastAPI 路径、请求字段、`{status, reason, data}` 响应信封及前端调用方式保持兼容。
 
+Iteration 2 新增的 `tb_project_workflow_artifact` 使用独立、可加性迁移，不修改或删除六张旧表。当前工作区未对真实 MySQL 执行该迁移。备份并获得用户另行明确批准后，才可在仓库根目录运行：
+
+```powershell
+mysql.exe --host=127.0.0.1 --port=3306 --user=root --password --database=ezllmtest_dev --execute="SOURCE ez_back_dev/migrations/iteration_2_workflow_artifacts.sql"
+```
+
+该命令会提示输入密码；不要把密码写入命令、脚本、日志或文档。执行前应先在目标 MySQL 上确认数据库名称、备份状态和应用停写窗口。迁移 SQL 位于 [`ez_back_dev/migrations/iteration_2_workflow_artifacts.sql`](ez_back_dev/migrations/iteration_2_workflow_artifacts.sql)。
+
 ## 迭代文档
 
 - Iteration 1 完成报告：[`docs/iteration-1-closeout.md`](docs/iteration-1-closeout.md)
 - Iteration 1 任务与过程记录：[`docs/iteration-1-tasks.md`](docs/iteration-1-tasks.md)、[`docs/iteration-development-log.md`](docs/iteration-development-log.md)
 - Iteration 2 流程与 Token 效率计划：[`docs/iteration-2-tasks.md`](docs/iteration-2-tasks.md)
+- Iteration 2 完成报告：[`docs/iteration-2-closeout.md`](docs/iteration-2-closeout.md)
+- Iteration 2 离线调用/Token 基线：[`docs/iteration-2-token-baseline.md`](docs/iteration-2-token-baseline.md)
+- Iteration 2 开发日志：[`docs/iteration-2-development-log.md`](docs/iteration-2-development-log.md)
 - 新对话第一、第二提示词：[`docs/iteration-2-prompts.md`](docs/iteration-2-prompts.md)
 
 ## 已知限制
 
 - 真实 provider smoke 只证明 Key、Base URL、模型 ID 和模型工厂可用，不代表十个 FastAPI 业务页面都已经逐接口完成真实付费 E2E。
 - RAG 仍统一使用智谱 `embedding-3`；选择其他聊天模型时也需要智谱 Key 才能执行向量检索流程。
-- Task 6 已通过静态 SQL 和假引擎证明数据库兼容及验证脚本只读，但没有在自动验收中连接真实 MySQL。
+- Iteration 2 可加性迁移已通过静态 SQL、SQLAlchemy 元数据和内存 SQLite 验证，但尚未在真实 MySQL 执行；生产启用 revision-aware artifact 前仍需用户批准、备份和迁移。
 - `npm run lint` 当前为零错误、零警告；生产构建仍有 Node `fs.Stats` 弃用提示和字体、Logo、vendor 包体积建议，但构建成功。
-- 当前工作流缓存尚未全面按文档版本、提示词版本、用户选择和模型建立统一键；重复 RAG 请求仍可能重新构建向量索引。Iteration 2 将以离线调用/Token 基线验证这些优化。
+- revision-aware 向量索引是进程内缓存，容量 16、空闲 TTL 30 分钟；进程重启、TTL/LRU 淘汰或不同后端 worker 会各自重建，但同一进程内相同项目/corpus/文档版本/embedding 模型会复用一次构建。
+- `sessionStorage` 只保证当前浏览器标签会话的正文即时恢复；换浏览器或会话存储不可用时，步骤状态仍从后端恢复，但需用户点击“继续”通过缓存 SSE 取回正文。
+- Task 9 未运行任何真实 provider 付费 A/B，也未连接真实 MySQL；离线 Token 是稳定比较代理，不是 provider 账单或质量评测。
 - 凭证扫描覆盖当前 tracked、staged 和非忽略 untracked 文本，不重写或扫描完整 Git 历史。历史中出现过的 Key 必须在供应商控制台撤销或轮换。
 
 ## 常见问题

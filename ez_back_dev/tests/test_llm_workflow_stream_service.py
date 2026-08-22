@@ -3,7 +3,12 @@ import asyncio
 import pytest
 
 from service import llmWorkflowStreamService as service
+from llm.streaming import TokenUsage
 from service.llmWorkflowStreamCore import event
+from service.workflowArtifactService import (
+    WorkflowArtifactKey,
+    WorkflowArtifactLookup,
+)
 
 
 def configure(monkeypatch):
@@ -13,6 +18,26 @@ def configure(monkeypatch):
         lambda name: {"label": name, "provider": "fake", "model": "fake-model"},
     )
     monkeypatch.setattr(service.testProjectDao, "find_project", lambda _pid: object())
+    monkeypatch.setattr(
+        service.workflowArtifactService,
+        "lookup_workflow_artifact",
+        lambda _pid, definition, _payload, model_label: WorkflowArtifactLookup(
+            key=WorkflowArtifactKey(
+                operation=definition.operation,
+                input_hash="input-hash",
+                source_revision="source-revision",
+                prompt_version=definition.prompt_version,
+                model_label=model_label,
+            ),
+            artifact=None,
+            stale=False,
+        ),
+    )
+    monkeypatch.setattr(
+        service.workflowArtifactService,
+        "validate_workflow_prerequisites",
+        lambda *_args: None,
+    )
 
 
 async def collect(**kwargs):
@@ -22,17 +47,22 @@ async def collect(**kwargs):
 def test_dispatcher_saves_pending_values_then_emits_public_result(monkeypatch):
     configure(monkeypatch)
     saved = []
+    source_revisions = []
 
     async def fake_analysis(context):
+        source_revisions.append(context.source_revision)
+        context.usages.append(TokenUsage(2, 1, 3, 6))
         context.pending_info[11] = "summary"
         yield event("answer_delta", text="summary")
         yield event("_workflow_result", result={"apis_info": "summary"})
 
     monkeypatch.setattr(service, "stream_analysis_operation", fake_analysis)
     monkeypatch.setattr(
-        service.testProjectDao,
-        "save_project_info_values",
-        lambda *args: saved.append(args) or True,
+        service.workflowArtifactService,
+        "save_workflow_artifact",
+        lambda pid, _definition, _key, _payload, result, pending, **_kwargs: (
+            saved.append((pid, result, pending.copy())) or True
+        ),
     )
 
     events = asyncio.run(
@@ -44,11 +74,19 @@ def test_dispatcher_saves_pending_values_then_emits_public_result(monkeypatch):
         )
     )
 
-    assert saved == [("p", {11: "summary"})]
+    assert saved == [("p", {"apis_info": "summary"}, {11: "summary"})]
+    assert source_revisions == ["source-revision"]
     assert next(item for item in events if item["event"] == "result")["data"] == {
         "result": {"apis_info": "summary"}
     }
     assert events[-1]["event"] == "completed"
+    meta = next(item["data"] for item in events if item["event"] == "meta")
+    usage = next(item["data"] for item in events if item["event"] == "usage")
+    completed = events[-1]["data"]
+    assert meta["budget"]["final_output_tokens"] == 8_192
+    assert usage["model_call_count"] == 1
+    assert completed["model_call_count"] == 1
+    assert completed["total_tokens"] == 6
 
 
 def test_disconnect_before_persistence_keeps_pending_values_unwritten(monkeypatch):
@@ -61,9 +99,9 @@ def test_disconnect_before_persistence_keeps_pending_values_unwritten(monkeypatc
 
     monkeypatch.setattr(service, "stream_analysis_operation", fake_analysis)
     monkeypatch.setattr(
-        service.testProjectDao,
-        "save_project_info_values",
-        lambda *_args: writes.append(True) or True,
+        service.workflowArtifactService,
+        "save_workflow_artifact",
+        lambda *_args, **_kwargs: writes.append(True) or True,
     )
     checks = 0
 

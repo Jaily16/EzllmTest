@@ -42,6 +42,16 @@
     @cancel="cancelTestPlan"
   />
 
+  <el-alert
+    v-if="isRunning && projectAnalysisRegenerating"
+    style="margin-top: 12px; width: 99%"
+    title="正在重新分析，测试菜单和各测试类型已临时锁定"
+    description="本轮测试计划成功生成后将按新菜单重新解锁；取消或失败会恢复上一份有效菜单。"
+    type="warning"
+    :closable="false"
+    show-icon
+  />
+
   <el-divider v-if="summary" />
   <el-row v-if="summary">
     <span class="cn_name" style="color: #06b009">业务文档的初步分析与总结</span>
@@ -102,7 +112,11 @@ import { DEFAULT_MODEL, MODEL_OPTIONS } from "@/config/models";
 import {
   analysisReady,
   analysisStatusLoaded,
+  beginProjectAnalysisRegeneration,
+  finishProjectAnalysisRegeneration,
   loadProjectAnalysisStatus,
+  loadProjectWorkflowStatus,
+  projectAnalysisRegenerating,
   setProjectAnalysisReady,
 } from "@/state/projectAnalysis";
 
@@ -137,27 +151,40 @@ const {
 } = useLlmStream(requestUrl);
 
 const runTestPlan = async (regenerate: boolean) => {
-  const succeeded = await start("/project/llm/plan/stream", {
-    pid: projectId,
-    llm_name: llm.value,
-    regenerate,
-  });
-  if (succeeded) {
-    if (ready.value) {
-      setProjectAnalysisReady(menu.value);
-      if (instance) instance.appContext.config.globalProperties.$test_menu = menu.value;
+  if (regenerate) beginProjectAnalysisRegeneration();
+  try {
+    const succeeded = await start("/project/llm/plan/stream", {
+      pid: projectId,
+      llm_name: llm.value,
+      regenerate,
+    });
+    if (succeeded) {
+      if (ready.value) {
+        setProjectAnalysisReady(menu.value);
+        if (instance) instance.appContext.config.globalProperties.$test_menu = menu.value;
+        try {
+          await loadProjectWorkflowStatus(requestUrl, projectId);
+        } catch {
+          ElMessage({
+            message: "分析结果已保存，但项目导航状态刷新失败，请稍后重试",
+            type: "warning",
+          });
+        }
+      }
+      ElMessage({
+        message: fromCache.value
+          ? "已读取保存的业务分析、测试计划和测试菜单"
+          : "业务分析、测试计划和测试菜单已生成并保存",
+        type: "success",
+      });
+    } else if (streamError.value) {
+      ElMessage({
+        message: `业务分析与测试计划生成失败：${streamError.value.message}`,
+        type: "error",
+      });
     }
-    ElMessage({
-      message: fromCache.value
-        ? "已读取保存的业务分析、测试计划和测试菜单"
-        : "业务分析、测试计划和测试菜单已生成并保存",
-      type: "success",
-    });
-  } else if (streamError.value) {
-    ElMessage({
-      message: `业务分析与测试计划生成失败：${streamError.value.message}`,
-      type: "error",
-    });
+  } finally {
+    if (regenerate) finishProjectAnalysisRegeneration();
   }
 };
 

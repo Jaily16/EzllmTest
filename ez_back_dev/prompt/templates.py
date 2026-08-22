@@ -1,5 +1,33 @@
 from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 
+
+COMMON_SOFTWARE_TEST_ROLE = "角色：软件测试专家。"
+COMMON_GROUNDED_RULES = "仅据输入；缺失不推测。"
+COMMON_STRUCTURED_RULES = "仅输出 Schema 对应的 JSON。"
+
+
+def build_grounded_prompt(
+    instruction: str,
+    context_text: str,
+    *,
+    context_label: str = "上下文",
+) -> str:
+    return (
+        f"{COMMON_SOFTWARE_TEST_ROLE}{COMMON_GROUNDED_RULES}\n"
+        f"{instruction}\n{context_label}：\n{context_text}"
+    )
+
+
+def build_structured_output_prompt(
+    instruction: str,
+    schema: str,
+) -> str:
+    return (
+        f"{COMMON_SOFTWARE_TEST_ROLE}{COMMON_STRUCTURED_RULES}\n"
+        f"{schema}\n{instruction}"
+    )
+
+
 # 用于提取单元测试中的相关信息
 # 用于stuff链
 UNIT_TEST_UNIT_INFO_STUFF_TEMPLATE = ChatPromptTemplate.from_messages(

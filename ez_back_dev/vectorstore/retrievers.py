@@ -1,10 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+import hashlib
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
+from typing import Any
+
 from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
 
 from llm.provider import get_lazy_embeddings
+from tools.documentTools import num_tokens_from_string
+from vectorstore.indexRegistry import IndexCorpus, get_project_index
 from vectorstore.splitter import (
     design_child_text_splitter,
     design_parent_text_splitter,
@@ -16,6 +22,99 @@ from vectorstore.splitter import (
 )
 
 _PARENT_ID_KEY = "_ezllm_parent_id"
+
+
+@dataclass(frozen=True)
+class RetrievalPolicy:
+    top_k: int
+    fetch_k: int
+    max_context_tokens: int
+    min_score: float
+
+    def __post_init__(self) -> None:
+        if self.top_k <= 0:
+            raise ValueError("top_k must be positive")
+        if self.fetch_k < self.top_k:
+            raise ValueError("fetch_k must be at least top_k")
+        if self.max_context_tokens <= 0:
+            raise ValueError("max_context_tokens must be positive")
+        if not -1.0 <= self.min_score <= 1.0:
+            raise ValueError("min_score must be between -1 and 1")
+
+
+DESIGN_RETRIEVAL_POLICY = RetrievalPolicy(4, 8, 6_000, 0.20)
+REQUIREMENTS_RETRIEVAL_POLICY = RetrievalPolicy(4, 8, 6_000, 0.20)
+KNOWLEDGE_RETRIEVAL_POLICY = RetrievalPolicy(4, 8, 6_000, 0.20)
+
+
+class BoundedRetriever:
+    def __init__(
+        self,
+        index: Any,
+        policy: RetrievalPolicy,
+        *,
+        token_counter: Callable[[str], int] = num_tokens_from_string,
+    ) -> None:
+        self._index = index
+        self._policy = policy
+        self._token_counter = token_counter
+        self.last_context_tokens = 0
+
+    def invoke(self, query: str, config=None, **_kwargs) -> list[Document]:
+        del config
+        scored = self._index.similarity_search_with_score(
+            query,
+            k=self._policy.fetch_k,
+        )
+        result: list[Document] = []
+        seen: set[str] = set()
+        total_tokens = 0
+        for document, score in scored:
+            if score < self._policy.min_score:
+                continue
+            content = " ".join(document.page_content.split())
+            if not content:
+                continue
+            content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+            if content_hash in seen:
+                continue
+            tokens = self._token_counter(content)
+            if total_tokens + tokens > self._policy.max_context_tokens:
+                break
+            seen.add(content_hash)
+            result.append(
+                Document(page_content=content, metadata=dict(document.metadata))
+            )
+            total_tokens += tokens
+            if len(result) >= self._policy.top_k:
+                break
+        self.last_context_tokens = total_tokens
+        return result
+
+
+async def get_project_retriever(
+    pid: str,
+    corpus: IndexCorpus,
+    source_revision: str,
+    documents: Sequence[Document],
+    *,
+    embedding_model=None,
+    policy: RetrievalPolicy | None = None,
+) -> BoundedRetriever:
+    embeddings = embedding_model or get_lazy_embeddings()
+    index = await get_project_index(
+        pid,
+        corpus,
+        source_revision,
+        documents,
+        embeddings,
+    )
+    selected_policy = policy or {
+        "design": DESIGN_RETRIEVAL_POLICY,
+        "requirements": REQUIREMENTS_RETRIEVAL_POLICY,
+        "knowledge": KNOWLEDGE_RETRIEVAL_POLICY,
+    }[corpus]
+    return BoundedRetriever(index, selected_policy)
 
 
 class EmptyRetriever:

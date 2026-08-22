@@ -10,43 +10,30 @@ from tools import documentTools
 from tools.InfoType import InfoType
 import prompt.promptStr as prompt
 from vectorstore.splitter import testdoc_text_splitter_for_acceptance
+from service.legacyLongTextService import invoke_exhaustive_document_analysis
 
 llm = ChatGPTModel().get_model()
 
 
 def find_out_requirement_info(pid: str):
     try:
-        overflow = testProjectDao.get_project_type(pid).overflow
         # 如果此前分析过了就取历史数据
         history_result = testProjectDao.get_project_info(pid, InfoType.PROJECT_ACCEPTANCE_SUMMARY.value)
-        if overflow == 1 or overflow == 4:
-            # 先将所有的业务需求文档进行拼接成一个大的document数组
-            test_all_docs = documentTools.generate_require_testdocs_docs(pid)
-            # 对文档进行切分
-            all_docs = testdoc_text_splitter_for_acceptance.split_documents(test_all_docs)
-            if history_result:
-                result = history_result
-            else:
-                # 用map-reduce链进行分析
-                result = BasicChain.invoke_map_reduce_chain_get_str(
-                    prompt.ACCEPTANCE_TEST_SUMMARY_MAP_PROMPT_STR,
-                    prompt.ACCEPTANCE_TEST_SUMMARY_REDUCE_PROMPT_STR,
-                    all_docs,
-                    llm,
-                    5
-                )
-                testProjectDao.add_project_info(pid, InfoType.PROJECT_ACCEPTANCE_SUMMARY.value, result)
+        if history_result:
+            result = history_result
         else:
-            test_str = documentTools.generate_require_testdocs_str(pid)
-            if history_result:
-                result = history_result
-            else:
-                result = BasicChain.invoke_stuff_chain_get_str_with_str(
-                    prompt.ACCEPTANCE_TEST_SUMMARY_PROMPT_STR,
-                    test_str,
-                    llm
-                )
-                testProjectDao.add_project_info(pid, InfoType.PROJECT_ACCEPTANCE_SUMMARY.value, result)
+            result = invoke_exhaustive_document_analysis(
+                operation="acceptance_info",
+                pid=pid,
+                document_loader=documentTools.generate_require_testdocs_docs,
+                splitter=testdoc_text_splitter_for_acceptance,
+                stuff_prompt=prompt.ACCEPTANCE_TEST_SUMMARY_PROMPT_STR,
+                map_prompt=prompt.ACCEPTANCE_TEST_SUMMARY_MAP_PROMPT_STR,
+                reduce_prompt=prompt.ACCEPTANCE_TEST_SUMMARY_REDUCE_PROMPT_STR,
+                llm=llm,
+                max_concurrency=5,
+            )
+            testProjectDao.add_project_info(pid, InfoType.PROJECT_ACCEPTANCE_SUMMARY.value, result)
         return result
     except LLMError:
         raise

@@ -7,6 +7,9 @@ from scripts import verify_database
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SQL_PATH = PROJECT_ROOT / "ezllmtest.sql"
 BACKEND_ROOT = PROJECT_ROOT / "ez_back_dev"
+MIGRATION_PATH = (
+    BACKEND_ROOT / "migrations" / "iteration_2_workflow_artifacts.sql"
+)
 
 
 class _ScalarResult:
@@ -57,30 +60,28 @@ def test_sample_database_declares_expected_six_tables():
     assert tables == verify_database.EXPECTED_TABLES
 
 
-def test_sample_database_contains_seven_projects():
-    sql = SQL_PATH.read_text(encoding="utf-8")
-    project_insert = re.search(r"INSERT INTO `tb_test_project` VALUES (.*?);", sql, re.S)
-
-    assert project_insert is not None
-    assert len(re.findall(r"\('Ez\d{19}'", project_insert.group(1))) == 7
-
-
-def test_all_referenced_documents_are_present():
-    sql = SQL_PATH.read_text(encoding="utf-8")
-    paths = set(
-        re.findall(
-            r"'(static/projects/[^']+\.(?:pdf|docx|doc|md|txt))'",
-            sql,
-            flags=re.IGNORECASE,
-        )
+def test_uploaded_sql_files_define_empty_tables_only():
+    data_write = re.compile(
+        r"(?im)^\s*(?:INSERT|REPLACE)\s+INTO\b|^\s*LOAD\s+DATA\b"
     )
+    base_sql = SQL_PATH.read_text(encoding="utf-8")
+    migration_sql = MIGRATION_PATH.read_text(encoding="utf-8")
 
-    assert len(paths) == 47
-    assert not [path for path in paths if not (BACKEND_ROOT / path).is_file()]
+    assert data_write.search(base_sql) is None
+    assert data_write.search(migration_sql) is None
+    assert "static/projects/" not in base_sql
+    assert "CREATE TABLE IF NOT EXISTS tb_project_workflow_artifact" in migration_sql
+
+
+def test_runtime_project_documents_and_examples_are_git_ignored():
+    ignore = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8")
+
+    assert "/example/" in ignore
+    assert "/ez_back_dev/static/projects/" in ignore
 
 
 def test_live_database_verifier_is_metadata_and_select_only(monkeypatch, capsys):
-    engine = _RecordingEngine(project_count=7)
+    engine = _RecordingEngine(project_count=0)
     monkeypatch.setattr(verify_database, "engine", engine)
     monkeypatch.setattr(
         verify_database,
@@ -91,4 +92,4 @@ def test_live_database_verifier_is_metadata_and_select_only(monkeypatch, capsys)
     verify_database.main()
 
     assert engine.statements == ["SELECT COUNT(*) FROM tb_test_project"]
-    assert "Database OK: 6 tables and 7 sample projects found." in capsys.readouterr().out
+    assert "Database OK: 6 tables available; project rows=0." in capsys.readouterr().out

@@ -1,5 +1,10 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import { analysisReady } from '@/state/projectAnalysis'
+import {
+  getWorkflowRedirectPath,
+  isWorkflowRouteAllowed,
+  setWorkflowRedirectMessage,
+  workflowStatusLoaded,
+} from '@/state/projectAnalysis'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -28,51 +33,52 @@ const routes: Array<RouteRecordRaw> = [
     children:[
       {
         path: '/menu',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/TestMenu.vue')
       },
       {
         path: '/plan',
+        meta: { requiresWorkflow: true },
         component: () => import('../components/TestPlan.vue')
       },
       {
         path: '/unit',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/UnitTest.vue')
       },
       {
         path: '/integration',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/IntegrationTest.vue')
       },
       {
         path: '/api',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/ApiTest.vue')
       },
       {
         path: '/ui',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/UITest.vue')
       },
       {
         path: '/database',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/DatabaseTest.vue')
       },
       {
         path: '/functional',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/FounctionalTest.vue')
       },
       {
         path: '/nfunctional',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/NonfunctionalTest.vue')
       },
       {
         path: '/acceptance',
-        meta: { requiresAnalysis: true },
+        meta: { requiresWorkflow: true },
         component: () => import('../components/AcceptanceTest.vue')
       }
     ]
@@ -85,7 +91,15 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  if (to.meta.requiresAnalysis && !analysisReady.value) return '/plan'
+  if (
+    to.meta.requiresWorkflow &&
+    workflowStatusLoaded.value &&
+    !isWorkflowRouteAllowed(to.path)
+  ) {
+    setWorkflowRedirectMessage(to.path)
+    const redirect = getWorkflowRedirectPath()
+    if (redirect !== to.path) return redirect
+  }
   return true
 })
 

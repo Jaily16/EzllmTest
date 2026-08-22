@@ -44,3 +44,7 @@ Desktop.ini
 **/index.pkl
 **/docstore.pkl
 .cache/
+
+# Local project recreation examples and document exports.
+/example/
+/ez_back_dev/static/projects/

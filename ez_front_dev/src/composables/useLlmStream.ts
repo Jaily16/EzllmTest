@@ -29,6 +29,15 @@ export interface LlmStreamError {
   retryable: boolean;
 }
 
+export interface LlmArtifactMetadata {
+  artifactKey: string;
+  sourceRevision: string;
+  promptVersion: string;
+  modelLabel: string;
+  status: string;
+  stale: boolean;
+}
+
 interface StreamRequestBody {
   pid: string;
   llm_name: string;
@@ -82,6 +91,14 @@ export const useLlmStream = (baseUrl: string) => {
   const usage = ref<LlmTokenUsage>(emptyUsage());
   const usageReceived = ref(false);
   const error = ref<LlmStreamError | null>(null);
+  const artifact = reactive<LlmArtifactMetadata>({
+    artifactKey: "",
+    sourceRevision: "",
+    promptVersion: "",
+    modelLabel: "",
+    status: "",
+    stale: false,
+  });
   const progress = reactive<LlmProgress>({
     stage: "",
     label: "等待开始",
@@ -153,6 +170,12 @@ export const useLlmStream = (baseUrl: string) => {
     meta.provider = "";
     meta.model = "";
     meta.operation = "";
+    artifact.artifactKey = "";
+    artifact.sourceRevision = "";
+    artifact.promptVersion = "";
+    artifact.modelLabel = "";
+    artifact.status = "";
+    artifact.stale = false;
   };
 
   const applyEvent = (event: ParsedSseEvent) => {
@@ -164,6 +187,22 @@ export const useLlmStream = (baseUrl: string) => {
         meta.provider = String(data.provider || "");
         meta.model = String(data.model || "");
         meta.operation = String(data.operation || "");
+        artifact.artifactKey = String(data.artifact_key || "");
+        artifact.sourceRevision = String(data.source_revision || "");
+        artifact.promptVersion = String(data.prompt_version || "");
+        break;
+      case "stale":
+        artifact.stale = true;
+        artifact.artifactKey = String(data.artifact_key || artifact.artifactKey);
+        artifact.sourceRevision = String(data.source_revision || artifact.sourceRevision);
+        break;
+      case "artifact":
+        artifact.artifactKey = String(data.artifact_key || artifact.artifactKey);
+        artifact.sourceRevision = String(data.source_revision || artifact.sourceRevision);
+        artifact.promptVersion = String(data.prompt_version || artifact.promptVersion);
+        artifact.modelLabel = String(data.model_label || artifact.modelLabel);
+        artifact.status = String(data.status || "");
+        artifact.stale = false;
         break;
       case "progress":
         progress.stage = String(data.stage || "");
@@ -333,7 +372,7 @@ export const useLlmStream = (baseUrl: string) => {
   return {
     isRunning, completed, cancelled, saved, fromCache, ready, summary, menu, result,
     answer, reasoningSections,
-    usage, usageReceived, error, progress, meta, hasActivity, start, cancel,
+    usage, usageReceived, error, progress, meta, artifact, hasActivity, start, cancel,
     resetStream: reset,
   };
 };

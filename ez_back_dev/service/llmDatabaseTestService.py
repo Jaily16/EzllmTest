@@ -8,7 +8,8 @@ from prompt.templates import DATABASE_TEST_GENERATE_TEST_CASE_TEMPLATE
 from tools import documentTools
 from tools.InfoType import InfoType
 import prompt.promptStr as prompt
-from vectorstore.splitter import testdoc_text_splitter_for_unit
+from vectorstore.splitter import testdoc_text_splitter_for_db
+from service.legacyLongTextService import invoke_exhaustive_document_analysis
 
 llm = ChatGPTModel().get_model()
 llm_cn = ChatGLMModel().get_model()
@@ -17,29 +18,20 @@ llm_cn = ChatGLMModel().get_model()
 def find_out_database_info(pid: str):
     try:
         history_result = testProjectDao.get_project_info(pid, InfoType.PROJECT_DB_SUMMARY.value)
-        overflow = testProjectDao.get_project_type(pid).overflow
         if history_result:
             db_info = history_result
         else:
-            if overflow >= 3:
-                # 先将所有的业务开发文档进行拼接成一个大的document数组
-                test_all_docs = documentTools.generate_design_testdocs_docs(pid)
-                # 对文档进行切分
-                all_docs = testdoc_text_splitter_for_unit.split_documents(test_all_docs)
-                map_str = prompt.DATABASE_TEST_SUMMARY_MAP_PROMPT_STR
-                reduce_str = prompt.DATABASE_TEST_SUMMARY_REDUCE_PROMPT_STR
-                db_info = BasicChain.invoke_map_reduce_chain_get_str(
-                    map_str,
-                    reduce_str,
-                    all_docs,
-                    llm_cn,
-                    4
-                )
-            else:
-                test_str = documentTools.generate_design_testdocs_str(pid)
-                db_info = BasicChain.invoke_stuff_chain_get_str_with_str(prompt.DATABASE_TEST_SUMMARY_PROMPT_STR,
-                                                                         test_str,
-                                                                         llm_cn)
+            db_info = invoke_exhaustive_document_analysis(
+                operation="db_info",
+                pid=pid,
+                document_loader=documentTools.generate_design_testdocs_docs,
+                splitter=testdoc_text_splitter_for_db,
+                stuff_prompt=prompt.DATABASE_TEST_SUMMARY_PROMPT_STR,
+                map_prompt=prompt.DATABASE_TEST_SUMMARY_MAP_PROMPT_STR,
+                reduce_prompt=prompt.DATABASE_TEST_SUMMARY_REDUCE_PROMPT_STR,
+                llm=llm_cn,
+                max_concurrency=4,
+            )
             testProjectDao.add_project_info(pid, InfoType.PROJECT_DB_SUMMARY.value, db_info)
         return db_info
     except LLMError:

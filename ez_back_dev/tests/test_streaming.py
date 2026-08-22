@@ -2,6 +2,8 @@ import asyncio
 from types import SimpleNamespace
 
 from llm import streaming
+from llm.provider import provider_options
+from service.workflowBudget import profile_for
 
 
 def stream_settings():
@@ -47,6 +49,27 @@ def test_vendor_stream_requests_enable_thinking_with_balanced_budget(monkeypatch
         request["stream_options"] == {"include_usage": True}
         for request in (glm, qwen, deepseek, kimi)
     )
+
+
+def test_stream_request_applies_stage_cap_and_disables_qwen_thinking(
+    monkeypatch,
+):
+    monkeypatch.setattr(streaming, "get_settings", stream_settings)
+    options = provider_options(
+        profile_for("api_info", "structured"),
+        "通义千问",
+    )
+
+    request = streaming.build_stream_request(
+        "通义千问",
+        "prompt",
+        32_768,
+        request_options=options,
+    )
+
+    assert request["max_tokens"] <= 2_048
+    assert request["extra_body"] == {"enable_thinking": False}
+    assert request["messages"] == [{"role": "user", "content": "prompt"}]
 
 
 def test_token_usage_is_classified_without_guessing():

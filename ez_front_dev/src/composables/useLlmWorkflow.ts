@@ -1,13 +1,22 @@
 import { computed, ref } from "vue";
 import { useLlmStream } from "@/composables/useLlmStream";
+import type {
+  RunStepOptions,
+  TestWorkflowController,
+} from "@/composables/useTestWorkflow";
 
 interface RunWorkflowOptions {
   answerTitle: string;
   successTitle: string;
   regenerate?: boolean;
+  keepPreviousOnFailure?: boolean;
 }
 
-export const useLlmWorkflow = (baseUrl: string, pid: string) => {
+export const useLlmWorkflow = (
+  baseUrl: string,
+  pid: string,
+  testWorkflow?: TestWorkflowController
+) => {
   const stream = useLlmStream(baseUrl);
   const activeOperation = ref("");
   const answerTitle = ref("模型流式输出");
@@ -19,16 +28,40 @@ export const useLlmWorkflow = (baseUrl: string, pid: string) => {
     payload: Record<string, unknown>,
     options: RunWorkflowOptions
   ) => {
+    const stepOptions: RunStepOptions = {
+      regenerate: options.regenerate === true,
+      keepPreviousOnFailure: options.keepPreviousOnFailure === true,
+    };
+    if (testWorkflow && !testWorkflow.beginStep(operation, stepOptions)) {
+      return false;
+    }
     activeOperation.value = operation;
     answerTitle.value = options.answerTitle;
     successTitle.value = options.successTitle;
-    return stream.start("/project/llm/workflow/stream", {
+    const succeeded = await stream.start("/project/llm/workflow/stream", {
       operation,
       pid,
       llm_name: llmName,
       regenerate: options.regenerate === true,
       payload,
     });
+    if (testWorkflow) {
+      if (succeeded) {
+        testWorkflow.completeStep(
+          operation,
+          stream.result.value,
+          payload,
+          {
+            artifactKey: stream.artifact.artifactKey || null,
+            sourceRevision: stream.artifact.sourceRevision || null,
+          },
+          stepOptions
+        );
+      } else {
+        testWorkflow.failStep(operation);
+      }
+    }
+    return succeeded;
   };
 
   const executionProps = computed(() => ({

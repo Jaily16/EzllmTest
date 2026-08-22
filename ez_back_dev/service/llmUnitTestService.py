@@ -9,11 +9,13 @@ from tools import documentTools
 from tools.InfoType import InfoType
 from tools.llmTools import choose_llm_by_name
 from vectorstore.splitter import testdoc_text_splitter_for_unit
-from model.ChainJsonModel import UnitTestMenu, UnitTestMethod
+from model.ChainJsonModel import QualifiedUnitTestMenu, UnitTestMethod
 from vectorstore.retrievers import design_retriever
 from prompt.templates import (UNIT_TEST_UNIT_INFO_MAP_TEMPLATE, UNIT_TEST_UNIT_INFO_REDUCE_TEMPLATE,
                               UNIT_TEST_UNIT_INFO_STUFF_TEMPLATE, UNIT_TEST_TYPE_JSON_TEMPLATE,
                               UNIT_TEST_GENERATE_TEST_CASE_TEMPLATE_2)
+from service.legacyLongTextService import invoke_exhaustive_document_analysis
+from service.unitReferenceService import encode_unit_menu
 
 llm = ChatGPTModel().get_model()
 
@@ -29,35 +31,35 @@ def summarize_unit_info(pid: str, llm_name: str):
         # 如果此前分析过了就取历史数据
         history_result = testProjectDao.get_project_info(pid, InfoType.PROJECT_UNITS_SUMMARY.value)
         if history_result:
-            json_chain = BasicChain.json_chain(UnitTestMenu, llm)
+            json_chain = BasicChain.json_chain(QualifiedUnitTestMenu, llm)
             query = prompt.UNIT_TEST_FIND_UNIT_INFO_JSON_STR + history_result
-            return {"text_info": history_result, "list_info": json_chain.invoke({"query": query})}
-        overflow = testProjectDao.get_project_type(pid).overflow
+            return {
+                "text_info": history_result,
+                "list_info": encode_unit_menu(
+                    json_chain.invoke({"query": query})
+                ).model_dump(),
+            }
         summarize_llm = choose_llm_by_name(llm_name)
-        if overflow >= 3:
-            # 先将所有的业务开发文档进行拼接成一个大的document数组
-            test_all_docs = documentTools.generate_design_testdocs_docs(pid)
-            # 对文档进行切分
-            all_docs = testdoc_text_splitter_for_unit.split_documents(test_all_docs)
-            # 用map-reduce链进行分析
-            result = BasicChain.invoke_map_reduce_chain_get_str(
-                prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_PART_PROMPT_STR,
-                prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_TOTAL_PROMPT_STR,
-                all_docs,
-                summarize_llm,
-                5
-            )
-        else:
-            test_str = documentTools.generate_design_testdocs_str(pid)
-            result = BasicChain.invoke_stuff_chain_get_str_with_str(
-                prompt.UNIT_TEST_FIND_UNIT_INFO_STUFF_PROMPT_STR,
-                test_str,
-                summarize_llm
-            )
+        result = invoke_exhaustive_document_analysis(
+            operation="unit_menu",
+            pid=pid,
+            document_loader=documentTools.generate_design_testdocs_docs,
+            splitter=testdoc_text_splitter_for_unit,
+            stuff_prompt=prompt.UNIT_TEST_FIND_UNIT_INFO_STUFF_PROMPT_STR,
+            map_prompt=prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_PART_PROMPT_STR,
+            reduce_prompt=prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_TOTAL_PROMPT_STR,
+            llm=summarize_llm,
+            max_concurrency=5,
+        )
         testProjectDao.add_project_info(pid, InfoType.PROJECT_UNITS_SUMMARY.value, result)
-        json_chain = BasicChain.json_chain(UnitTestMenu, llm)
+        json_chain = BasicChain.json_chain(QualifiedUnitTestMenu, llm)
         query = prompt.UNIT_TEST_FIND_UNIT_INFO_JSON_STR + result
-        return {"text_info": result, "list_info": json_chain.invoke({"query": query})}
+        return {
+            "text_info": result,
+            "list_info": encode_unit_menu(
+                json_chain.invoke({"query": query})
+            ).model_dump(),
+        }
     except LLMError:
         raise
     except Exception as e:
@@ -67,32 +69,27 @@ def summarize_unit_info(pid: str, llm_name: str):
 
 def summarize_unit_info_again(pid: str, llm_name: str):
     try:
-        overflow = testProjectDao.get_project_type(pid).overflow
         summarize_llm = choose_llm_by_name(llm_name)
-        if overflow >= 3:
-            # 先将所有的业务开发文档进行拼接成一个大的document数组
-            test_all_docs = documentTools.generate_design_testdocs_docs(pid)
-            # 对文档进行切分
-            all_docs = testdoc_text_splitter_for_unit.split_documents(test_all_docs)
-            # 用map-reduce链进行分析
-            result = BasicChain.invoke_map_reduce_chain_get_str(
-                prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_PART_PROMPT_STR,
-                prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_TOTAL_PROMPT_STR,
-                all_docs,
-                summarize_llm,
-                5
-            )
-        else:
-            test_str = documentTools.generate_design_testdocs_str(pid)
-            result = BasicChain.invoke_stuff_chain_get_str_with_str(
-                prompt.UNIT_TEST_FIND_UNIT_INFO_STUFF_PROMPT_STR,
-                test_str,
-                summarize_llm
-            )
+        result = invoke_exhaustive_document_analysis(
+            operation="unit_menu",
+            pid=pid,
+            document_loader=documentTools.generate_design_testdocs_docs,
+            splitter=testdoc_text_splitter_for_unit,
+            stuff_prompt=prompt.UNIT_TEST_FIND_UNIT_INFO_STUFF_PROMPT_STR,
+            map_prompt=prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_PART_PROMPT_STR,
+            reduce_prompt=prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_TOTAL_PROMPT_STR,
+            llm=summarize_llm,
+            max_concurrency=5,
+        )
         testProjectDao.update_project_info(pid, InfoType.PROJECT_UNITS_SUMMARY.value, result)
-        json_chain = BasicChain.json_chain(UnitTestMenu, llm)
+        json_chain = BasicChain.json_chain(QualifiedUnitTestMenu, llm)
         query = prompt.UNIT_TEST_FIND_UNIT_INFO_JSON_STR + result
-        return {"text_info": result, "list_info": json_chain.invoke({"query": query})}
+        return {
+            "text_info": result,
+            "list_info": encode_unit_menu(
+                json_chain.invoke({"query": query})
+            ).model_dump(),
+        }
     except LLMError:
         raise
     except Exception as e:
@@ -106,20 +103,8 @@ def find_out_test_unit_info(pid: str, unit_name: str, llm_name: str):
         design_docs = documentTools.generate_design_testdocs_docs(pid)
         unit_docs = design_retriever(design_docs).invoke(unit_name)
         unit_docs_str = documentTools.docs_to_string(unit_docs)
-        tokens = documentTools.num_tokens_from_string(unit_docs_str)
-        if tokens > 14500:
-            map_str = UNIT_TEST_UNIT_INFO_MAP_TEMPLATE.format(unit=unit_name)
-            reduce_str = UNIT_TEST_UNIT_INFO_REDUCE_TEMPLATE.format(unit=unit_name)
-            unit_info = BasicChain.invoke_map_reduce_chain_get_str(
-                map_str,
-                reduce_str,
-                unit_docs,
-                analyze_llm,
-                5
-            )
-        else:
-            stuff_chain = BasicChain.stuff_chain(UNIT_TEST_UNIT_INFO_STUFF_TEMPLATE, analyze_llm)
-            unit_info = stuff_chain.invoke({"unit": unit_name, "docs": unit_docs_str})
+        stuff_chain = BasicChain.stuff_chain(UNIT_TEST_UNIT_INFO_STUFF_TEMPLATE, analyze_llm)
+        unit_info = stuff_chain.invoke({"unit": unit_name, "docs": unit_docs_str})
         test_type_chain = BasicChain.json_chain(UnitTestMethod, llm)
         query = UNIT_TEST_TYPE_JSON_TEMPLATE.format(unit=unit_name, content=unit_info)
         type_json = test_type_chain.invoke({"query": query})

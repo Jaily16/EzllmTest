@@ -86,14 +86,17 @@ def configure(monkeypatch):
         "generate_knowledge_docs",
         lambda _pid: knowledge_documents,
     )
-    monkeypatch.setattr(
-        cases,
-        "knowledge_retriever",
-        lambda _docs: type(
+    async def fake_project_retriever(
+        _pid, _corpus, _source_revision, source_documents
+    ):
+        return type(
             "Retriever",
             (),
-            {"invoke": lambda self, _query: knowledge_documents},
-        )(),
+            {"invoke": lambda self, _query: source_documents},
+        )()
+
+    monkeypatch.setattr(
+        cases, "get_project_retriever", fake_project_retriever
     )
 
     async def fake_model(_name, prompt_text, _max_tokens, **_kwargs):
@@ -122,7 +125,11 @@ def test_each_case_operation_streams_final_answer_and_legacy_result(
             cases.testProjectDao, "get_project_info", lambda *_args: False
         )
     context = core.WorkflowContext(
-        "p", "DeepSeek", fixture.operation, fixture.payload
+        "p",
+        "DeepSeek",
+        fixture.operation,
+        fixture.payload,
+        source_revision="rev-1",
     )
 
     events = asyncio.run(collect(context))
@@ -152,11 +159,100 @@ def test_new_knowledge_is_queued_not_written_by_case_operation(monkeypatch):
     monkeypatch.setattr(
         cases.testProjectDao, "get_project_info", lambda *_args: False
     )
+    documents = [Document(page_content="testing knowledge")]
+    retrieval_calls = []
+
+    async def fake_project_retriever(
+        pid, corpus, source_revision, source_documents
+    ):
+        retrieval_calls.append(
+            (pid, corpus, source_revision, source_documents)
+        )
+        return type(
+            "Retriever",
+            (),
+            {"invoke": lambda self, _query: documents},
+        )()
+
+    monkeypatch.setattr(
+        cases,
+        "get_project_retriever",
+        fake_project_retriever,
+        raising=False,
+    )
     context = core.WorkflowContext(
         "p", "DeepSeek", "ui_case", {"info": "ui info"}
     )
+    context.source_revision = "rev-1"
 
     events = asyncio.run(collect(context))
 
     assert any(item["event"] == "_workflow_result" for item in events)
     assert context.pending_info == {14: "generated knowledge"}
+    assert retrieval_calls == [("p", "knowledge", "rev-1", documents)]
+
+
+@pytest.mark.parametrize(
+    ("operation", "payload", "corpus", "loader_name"),
+    [
+        (
+            "api_case",
+            {
+                "info": "api summary",
+                "test_type": 1,
+                "output_type": 0,
+                "api_name": "/orders",
+            },
+            "design",
+            "generate_design_testdocs_docs",
+        ),
+        (
+            "functional_case",
+            {
+                "info": "use case summary",
+                "test_type": 1,
+                "output_type": 0,
+                "use_case_name": "创建订单",
+            },
+            "requirements",
+            "generate_require_testdocs_docs",
+        ),
+    ],
+)
+def test_named_case_detail_uses_revision_scoped_project_index(
+    monkeypatch, operation, payload, corpus, loader_name
+):
+    configure(monkeypatch)
+    documents = [Document(page_content="named business object")]
+    retrieval_calls = []
+    monkeypatch.setattr(
+        cases.documentTools, loader_name, lambda _pid: documents
+    )
+
+    async def fake_project_retriever(
+        pid, actual_corpus, source_revision, source_documents
+    ):
+        retrieval_calls.append(
+            (pid, actual_corpus, source_revision, source_documents)
+        )
+        return type(
+            "Retriever",
+            (),
+            {"invoke": lambda self, _query: documents},
+        )()
+
+    monkeypatch.setattr(
+        cases, "get_project_retriever", fake_project_retriever
+    )
+    context = core.WorkflowContext(
+        "p",
+        "DeepSeek",
+        operation,
+        payload,
+        source_revision="rev-1",
+    )
+
+    events = asyncio.run(collect(context))
+
+    assert any(item["event"] == "_workflow_result" for item in events)
+    assert retrieval_calls == [("p", corpus, "rev-1", documents)]

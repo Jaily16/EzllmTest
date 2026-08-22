@@ -11,7 +11,6 @@ from prompt.templates import (
     ACCEPTANCE_TEST_GENERATE_TEST_CASE_TEMPLATE,
     APIS_TEST_GENERATE_TEST_CASE_TEMPLATE,
     API_TEST_GENERATE_TEST_CASE_TEMPLATE,
-    API_TEST_INFO_MAP_REDUCE_TEMPLATE,
     API_TEST_INFO_TEMPLATE,
     DATABASE_TEST_GENERATE_TEST_CASE_TEMPLATE,
     FUNCTIONAL_TEST_GENERATE_ALL_TEST_CASE_TEMPLATE,
@@ -22,8 +21,6 @@ from prompt.templates import (
     NONFUNCTIONAL_TEST_KNOWLEDGE_TEMPLATE,
     UI_TEST_GENERATE_TEST_CASE_TEMPLATE,
     UNIT_TEST_GENERATE_TEST_CASE_TEMPLATE_2,
-    USE_CASE_INFO_MAP_REDUCE_TEMPLATE,
-    USE_CASE_INFO_MAP_TEMPLATE,
     USE_CASE_INFO_TEMPLATE,
 )
 from service.llmWorkflowStreamCore import (
@@ -34,17 +31,14 @@ from service.llmWorkflowStreamCore import (
     progress,
     rag_prompt,
     require_integer,
+    require_source_revision,
     require_string,
-    stream_map_reduce,
     stream_model_call,
 )
+from service.unitReferenceService import parse_unit_reference
 from tools import documentTools
 from tools.InfoType import InfoType
-from vectorstore.retrievers import (
-    api_retriever,
-    knowledge_retriever,
-    require_retriever,
-)
+from vectorstore.retrievers import get_project_retriever
 
 
 @dataclass(frozen=True)
@@ -95,34 +89,6 @@ async def _model_value(
     yield event("_workflow_value", value=value)
 
 
-async def _map_reduce_value(
-    context: WorkflowContext,
-    documents: list[Any],
-    *,
-    map_prompt: str,
-    reduce_prompt: str,
-    stage_prefix: str,
-    label: str,
-    start_percent: int,
-    end_percent: int,
-    output_event: str | None = None,
-) -> AsyncIterator[dict[str, Any]]:
-    async for item in stream_map_reduce(
-        context,
-        documents,
-        map_prompt=map_prompt,
-        reduce_prompt=reduce_prompt,
-        stage_prefix=stage_prefix,
-        label=label,
-        start_percent=start_percent,
-        end_percent=end_percent,
-        output_event=output_event or "_hidden_delta",
-    ):
-        if item["event"] == "_hidden_delta":
-            continue
-        yield item
-
-
 async def _knowledge_bundle(
     context: WorkflowContext,
     specs: list[KnowledgeSpec],
@@ -164,7 +130,12 @@ async def _knowledge_bundle(
                 status=422,
                 retryable=False,
             )
-        retriever = await asyncio.to_thread(knowledge_retriever, documents)
+        retriever = await get_project_retriever(
+            context.pid,
+            "knowledge",
+            require_source_revision(context),
+            documents,
+        )
 
     total = len(missing)
     for index, spec in enumerate(missing, start=1):
@@ -231,6 +202,15 @@ async def stream_unit_case(
 ) -> AsyncIterator[dict[str, Any]]:
     method_type = require_integer(context.payload, "method_type")
     unit = require_string(context.payload, "unit")
+    unit_type_value = context.payload.get("unit_type", "")
+    if not isinstance(unit_type_value, str):
+        raise WorkflowStreamError(
+            "invalid_payload",
+            "请求字段 unit_type 必须是字符串",
+            status=422,
+            retryable=False,
+        )
+    target = parse_unit_reference(unit, unit_type_value)
     unit_info = require_string(context.payload, "unit_info")
     static_method = require_string(context.payload, "static_method")
     output_type = require_integer(context.payload, "output_type")
@@ -270,7 +250,7 @@ async def stream_unit_case(
         unit_test_knowledge=knowledge["unit_test_knowledge"],
         static_method=static_method,
         unit_test_method_knowledge=knowledge["unit_method_knowledge"],
-        unit=unit,
+        unit=target.prompt_label,
         case_template=_output_template(output_type),
         unit_info=unit_info,
     )
@@ -278,7 +258,7 @@ async def stream_unit_case(
         context,
         case_prompt,
         knowledge,
-        label=f"正在为 {unit} 生成单元测试用例",
+        label=f"正在为 {target.display_name} 生成单元测试用例",
     ):
         yield item
 
@@ -357,9 +337,13 @@ async def _named_api_info(
     source_documents = await asyncio.to_thread(
         documentTools.generate_design_testdocs_docs, context.pid
     )
-    documents = await asyncio.to_thread(
-        lambda: api_retriever(source_documents).invoke(api_name)
+    retriever = await get_project_retriever(
+        context.pid,
+        "design",
+        require_source_revision(context),
+        source_documents,
     )
+    documents = await asyncio.to_thread(retriever.invoke, api_name)
     document_text = documentTools.docs_to_meaningful_strings(documents)
     if not document_text:
         raise WorkflowStreamError(
@@ -368,40 +352,17 @@ async def _named_api_info(
             status=422,
             retryable=False,
         )
-    tokens = await asyncio.to_thread(
-        documentTools.num_tokens_from_string, document_text
-    )
     result = ""
-    if tokens > 14500:
-        async for item in _map_reduce_value(
-            context,
-            documents,
-            map_prompt=API_TEST_INFO_MAP_REDUCE_TEMPLATE.format(
-                api_name=api_name
-            ),
-            reduce_prompt=API_TEST_INFO_MAP_REDUCE_TEMPLATE.format(
-                api_name=api_name
-            ),
-            stage_prefix="api_detail",
-            label=f"分析 API {api_name}",
-            start_percent=15,
-            end_percent=35,
-        ):
-            if item["event"] == "_workflow_value":
-                result = item["data"]["value"]
-            else:
-                yield item
-    else:
-        async for item in _model_value(
-            context,
-            API_TEST_INFO_TEMPLATE.format(api_name=api_name, docs=document_text),
-            stage="api_detail",
-            label=f"正在分析 API {api_name}",
-        ):
-            if item["event"] == "_workflow_value":
-                result = item["data"]["value"]
-            else:
-                yield item
+    async for item in _model_value(
+        context,
+        API_TEST_INFO_TEMPLATE.format(api_name=api_name, docs=document_text),
+        stage="api_detail",
+        label=f"正在分析 API {api_name}",
+    ):
+        if item["event"] == "_workflow_value":
+            result = item["data"]["value"]
+        else:
+            yield item
     yield event("_workflow_value", value=result)
 
 
@@ -465,9 +426,13 @@ async def _named_use_case_info(
     source_documents = await asyncio.to_thread(
         documentTools.generate_require_testdocs_docs, context.pid
     )
-    documents = await asyncio.to_thread(
-        lambda: require_retriever(source_documents).invoke(use_case_name)
+    retriever = await get_project_retriever(
+        context.pid,
+        "requirements",
+        require_source_revision(context),
+        source_documents,
     )
+    documents = await asyncio.to_thread(retriever.invoke, use_case_name)
     document_text = documentTools.docs_to_meaningful_strings(documents)
     if not document_text:
         raise WorkflowStreamError(
@@ -476,42 +441,19 @@ async def _named_use_case_info(
             status=422,
             retryable=False,
         )
-    tokens = await asyncio.to_thread(
-        documentTools.num_tokens_from_string, document_text
-    )
     result = ""
-    if tokens > 14500:
-        async for item in _map_reduce_value(
-            context,
-            documents,
-            map_prompt=USE_CASE_INFO_MAP_TEMPLATE.format(
-                use_case_name=use_case_name
-            ),
-            reduce_prompt=USE_CASE_INFO_MAP_REDUCE_TEMPLATE.format(
-                use_case_name=use_case_name
-            ),
-            stage_prefix="use_case_detail",
-            label=f"分析用例 {use_case_name}",
-            start_percent=15,
-            end_percent=35,
-        ):
-            if item["event"] == "_workflow_value":
-                result = item["data"]["value"]
-            else:
-                yield item
-    else:
-        async for item in _model_value(
-            context,
-            USE_CASE_INFO_TEMPLATE.format(
-                use_case_name=use_case_name, docs=document_text
-            ),
-            stage="use_case_detail",
-            label=f"正在分析用例 {use_case_name}",
-        ):
-            if item["event"] == "_workflow_value":
-                result = item["data"]["value"]
-            else:
-                yield item
+    async for item in _model_value(
+        context,
+        USE_CASE_INFO_TEMPLATE.format(
+            use_case_name=use_case_name, docs=document_text
+        ),
+        stage="use_case_detail",
+        label=f"正在分析用例 {use_case_name}",
+    ):
+        if item["event"] == "_workflow_value":
+            result = item["data"]["value"]
+        else:
+            yield item
     yield event("_workflow_value", value=result)
 
 

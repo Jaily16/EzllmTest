@@ -1,11 +1,16 @@
 <template>
+  <WorkflowStepper :steps="workflowSteps" :active-operation="activeOperation" />
+  <el-alert v-if="staleWarning('functional_info')" :title="staleWarning('functional_info')" type="warning" show-icon :closable="false" />
   <el-row><span class="cn_name">请选择本页使用的大语言模型</span></el-row>
   <el-row>
     <el-segmented v-model="llm" :options="MODEL_OPTIONS" size="large" :disabled="isRunning" />
   </el-row>
   <el-row>
-    <el-button class="action-button" type="primary" :icon="Right" :disabled="isRunning" plain round @click="analyzeUseCases">
-      开始系统功能性测试分析
+    <el-button class="action-button" type="primary" :icon="Right" :disabled="isRunning || !canRunStep('functional_info')" plain round @click="analyzeUseCases(false)">
+      {{ hasSavedResult("functional_info") ? "继续系统功能性测试分析" : "开始系统功能性测试分析" }}
+    </el-button>
+    <el-button v-if="hasSavedResult('functional_info')" class="action-button" type="info" :icon="Refresh" :disabled="isRunning" plain round @click="regenerateAnalysis">
+      重新生成系统功能性测试分析
     </el-button>
   </el-row>
   <LlmWorkflowExecution v-if="activeOperation === 'functional_info'" v-bind="executionProps" @cancel="cancel" />
@@ -28,14 +33,18 @@
       </el-radio-group>
     </el-row>
     <el-row>
-      <el-button class="action-button" type="success" :icon="Right" :disabled="isRunning" plain round @click="generateCases">
-        生成功能性测试用例
+      <el-button class="action-button" type="success" :icon="Right" :disabled="isRunning || !canRunStep('functional_case')" plain round @click="generateCases(false)">
+        {{ hasSavedResult("functional_case") ? "继续查看功能性测试用例" : "生成功能性测试用例" }}
+      </el-button>
+      <el-button v-if="hasSavedResult('functional_case')" class="action-button" type="info" :icon="Refresh" :disabled="isRunning" plain round @click="regenerateCases">
+        重新生成功能性测试用例
       </el-button>
     </el-row>
     <LlmWorkflowExecution v-if="activeOperation === 'functional_case'" v-bind="executionProps" @cancel="cancel" />
   </template>
 
   <template v-if="showCases">
+    <el-alert v-if="staleWarning('functional_case')" :title="staleWarning('functional_case')" type="warning" show-icon :closable="false" />
     <el-divider />
     <el-row><span class="cn_name">知识库中的系统功能性测试知识</span></el-row>
     <el-row class="result-row">
@@ -50,11 +59,13 @@
 </template>
 
 <script lang="ts" setup>
-import { getCurrentInstance, ref } from "vue";
-import { Right } from "@element-plus/icons-vue";
+import { getCurrentInstance, onMounted, ref } from "vue";
+import { Refresh, Right } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import LlmWorkflowExecution from "@/components/LlmWorkflowExecution.vue";
+import WorkflowStepper from "@/components/WorkflowStepper.vue";
 import { useLlmWorkflow } from "@/composables/useLlmWorkflow";
+import { useTestWorkflow } from "@/composables/useTestWorkflow";
 import { DEFAULT_MODEL, MODEL_OPTIONS } from "@/config/models";
 
 interface FunctionalAnalysisResult {
@@ -79,14 +90,27 @@ const useCaseName = ref("");
 const useCases = ref<string[]>([]);
 const knowledge = ref("");
 const testCases = ref("");
+const testWorkflow = useTestWorkflow({
+  baseUrl: requestUrl,
+  pid: projectId,
+  steps: [
+    { operation: "functional_info", label: "功能需求分析", artifactKey: "functional_info" },
+    { operation: "functional_case", label: "功能测试用例", artifactKey: "functional_case", dependsOn: ["functional_info"], selectionFields: ["test_type", "output_type", "use_case_name"], persistResult: false },
+  ],
+});
+const {
+  steps: workflowSteps, hydrateWorkflow, canRunStep, regenerateStep,
+  resetStep, resultFor, selectionFor, hasSavedResult, staleWarning,
+} = testWorkflow;
 const { isRunning, result, error, activeOperation, executionProps, runWorkflow, cancel, resetStream } =
-  useLlmWorkflow(requestUrl, projectId);
+  useLlmWorkflow(requestUrl, projectId, testWorkflow);
 
-const analyzeUseCases = async () => {
-  showAnalysis.value = false;
+const analyzeUseCases = async (regenerate = false): Promise<boolean> => {
   const succeeded = await runWorkflow("functional_info", llm.value, {}, {
     answerTitle: "系统功能性需求分析（流式输出）",
     successTitle: "系统功能性需求分析已完成",
+    regenerate,
+    keepPreviousOnFailure: true,
   });
   if (succeeded) {
     const value = result.value as FunctionalAnalysisResult;
@@ -96,14 +120,18 @@ const analyzeUseCases = async () => {
   } else if (error.value) {
     ElMessage.error(error.value.message);
   }
+  return succeeded;
 };
 
-const generateCases = async () => {
+const generateCases = async (regenerate = false): Promise<boolean> => {
+  if (!canRunStep("functional_case")) {
+    ElMessage.warning("请先完成有效的功能需求分析");
+    return false;
+  }
   if (!useCaseName.value) {
     ElMessage.warning("请先选择要测试的用例（故事）");
-    return;
+    return false;
   }
-  showCases.value = false;
   const succeeded = await runWorkflow("functional_case", llm.value, {
     info: useCasesInfo.value,
     test_type: 1,
@@ -112,6 +140,8 @@ const generateCases = async () => {
   }, {
     answerTitle: "系统功能性测试用例（流式输出）",
     successTitle: "系统功能性测试用例已生成",
+    regenerate,
+    keepPreviousOnFailure: true,
   });
   if (succeeded) {
     const value = result.value as FunctionalCaseResult;
@@ -121,13 +151,39 @@ const generateCases = async () => {
   } else if (error.value) {
     ElMessage.error(error.value.message);
   }
+  return succeeded;
 };
+
+const regenerateAnalysis = () =>
+  regenerateStep("functional_info", () => analyzeUseCases(true));
+const regenerateCases = () =>
+  regenerateStep("functional_case", () => generateCases(true));
+
+onMounted(async () => {
+  await hydrateWorkflow();
+  const savedInfo = resultFor<FunctionalAnalysisResult>("functional_info");
+  const savedCases = resultFor<FunctionalCaseResult>("functional_case");
+  const savedSelection = selectionFor("functional_case");
+  if (savedInfo) {
+    useCasesInfo.value = savedInfo.text_info;
+    useCases.value = savedInfo.list_info.use_case_list;
+    showAnalysis.value = true;
+  }
+  if (typeof savedSelection.use_case_name === "string") useCaseName.value = savedSelection.use_case_name;
+  if (typeof savedSelection.output_type === "number") outputFormat.value = savedSelection.output_type;
+  if (savedCases) {
+    knowledge.value = savedCases.functional_test_knowledge;
+    testCases.value = savedCases.test_cases;
+    showCases.value = true;
+  }
+});
 
 const reset = () => {
   resetStream();
   showCases.value = false;
   knowledge.value = "";
   testCases.value = "";
+  resetStep("functional_case");
 };
 </script>
 

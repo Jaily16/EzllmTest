@@ -13,7 +13,7 @@ from model.ChainJsonModel import (
     ApiList,
     IntegrationTestMenu,
     NonfunctionalTestMethodList,
-    UnitTestMenu,
+    QualifiedUnitTestMenu,
     UnitTestMethod,
     UseCaseList,
 )
@@ -36,16 +36,20 @@ from service.llmWorkflowStreamCore import (
     progress,
     prompt_with_content,
     require_integer,
+    require_source_revision,
     require_string,
     stream_map_reduce,
     stream_model_call,
     structured_prompt,
 )
+from service.longTextPolicy import LongTextStrategy, strategy_for
+from service.unitReferenceService import encode_unit_menu, parse_unit_reference
 from tools import documentTools
 from tools.InfoType import InfoType
-from vectorstore.retrievers import design_retriever, nfunctional_retriever
+from vectorstore.retrievers import get_project_retriever
 from vectorstore.splitter import (
     testdoc_text_splitter_for_acceptance,
+    testdoc_text_splitter_for_db,
     testdoc_text_splitter_for_integration,
     testdoc_text_splitter_for_ui,
     testdoc_text_splitter_for_unit,
@@ -60,7 +64,6 @@ class AnalysisSpec:
     string_loader: Callable[[str], Any]
     document_loader: Callable[[str], Any]
     splitter: Any
-    uses_map: Callable[[int], bool]
     stuff_prompt: str
     map_prompt: str
     reduce_prompt: str
@@ -77,12 +80,11 @@ ANALYSIS_SPECS: dict[str, AnalysisSpec] = {
         documentTools.generate_design_testdocs_str,
         documentTools.generate_design_testdocs_docs,
         testdoc_text_splitter_for_unit,
-        lambda overflow: overflow >= 3,
         prompt.UNIT_TEST_FIND_UNIT_INFO_STUFF_PROMPT_STR,
         prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_PART_PROMPT_STR,
         prompt.UNIT_TEST_FIND_UNIT_INFO_MAP_REDUCE_TOTAL_PROMPT_STR,
         "text_info",
-        UnitTestMenu,
+        QualifiedUnitTestMenu,
         prompt.UNIT_TEST_FIND_UNIT_INFO_JSON_STR,
         "list_info",
     ),
@@ -92,7 +94,6 @@ ANALYSIS_SPECS: dict[str, AnalysisSpec] = {
         documentTools.generate_design_testdocs_str,
         documentTools.generate_design_testdocs_docs,
         testdoc_text_splitter_for_unit,
-        lambda overflow: overflow >= 3,
         prompt.API_TEST_SUMMARY_PROMPT_STR,
         prompt.API_TEST_SUMMARY_MAP_PROMPT_STR,
         prompt.API_TEST_SUMMARY_REDUCE_PROMPT_STR,
@@ -107,7 +108,6 @@ ANALYSIS_SPECS: dict[str, AnalysisSpec] = {
         documentTools.generate_design_testdocs_str,
         documentTools.generate_design_testdocs_docs,
         testdoc_text_splitter_for_ui,
-        lambda overflow: overflow >= 3,
         prompt.UI_TEST_SUMMARY_PROMPT_STR,
         prompt.UI_TEST_SUMMARY_MAP_PROMPT_STR,
         prompt.UI_TEST_SUMMARY_REDUCE_PROMPT_STR,
@@ -117,8 +117,7 @@ ANALYSIS_SPECS: dict[str, AnalysisSpec] = {
         "业务开发设计文档",
         documentTools.generate_design_testdocs_str,
         documentTools.generate_design_testdocs_docs,
-        testdoc_text_splitter_for_unit,
-        lambda overflow: overflow >= 3,
+        testdoc_text_splitter_for_db,
         prompt.DATABASE_TEST_SUMMARY_PROMPT_STR,
         prompt.DATABASE_TEST_SUMMARY_MAP_PROMPT_STR,
         prompt.DATABASE_TEST_SUMMARY_REDUCE_PROMPT_STR,
@@ -129,7 +128,6 @@ ANALYSIS_SPECS: dict[str, AnalysisSpec] = {
         documentTools.generate_require_testdocs_str,
         documentTools.generate_require_testdocs_docs,
         testdoc_text_splitter_for_use_case,
-        lambda overflow: overflow in (1, 4),
         prompt.FUNCTIONAL_TEST_SUMMARY_STUFF_PROMPT_STR,
         prompt.FUNCTIONAL_TEST_SUMMARY_MAP_PROMPT_STR,
         prompt.FUNCTIONAL_TEST_SUMMARY_REDUCE_PROMPT_STR,
@@ -144,7 +142,6 @@ ANALYSIS_SPECS: dict[str, AnalysisSpec] = {
         documentTools.generate_require_testdocs_str,
         documentTools.generate_require_testdocs_docs,
         testdoc_text_splitter_for_acceptance,
-        lambda overflow: overflow in (1, 4),
         prompt.ACCEPTANCE_TEST_SUMMARY_PROMPT_STR,
         prompt.ACCEPTANCE_TEST_SUMMARY_MAP_PROMPT_STR,
         prompt.ACCEPTANCE_TEST_SUMMARY_REDUCE_PROMPT_STR,
@@ -231,17 +228,22 @@ async def stream_configured_analysis(
 
     if generated:
         yield progress("documents", f"正在读取{spec.source_name}", 20)
-        if spec.uses_map(project_type.overflow):
-            source_documents = await asyncio.to_thread(
-                spec.document_loader, context.pid
+        source_documents = await asyncio.to_thread(
+            spec.document_loader, context.pid
+        )
+        if not source_documents:
+            raise WorkflowStreamError(
+                "documents_missing",
+                f"没有找到可分析的{spec.source_name}",
+                status=422,
+                retryable=False,
             )
-            if not source_documents:
-                raise WorkflowStreamError(
-                    "documents_missing",
-                    f"没有找到可分析的{spec.source_name}",
-                    status=422,
-                    retryable=False,
-                )
+        source_text = documentTools.docs_to_string(source_documents)
+        source_tokens = await asyncio.to_thread(
+            documentTools.num_tokens_from_string, source_text
+        )
+        selected_strategy = strategy_for(context.operation, source_tokens)
+        if selected_strategy is LongTextStrategy.MAP_REDUCE:
             documents = await asyncio.to_thread(
                 spec.splitter.split_documents, source_documents
             )
@@ -265,14 +267,6 @@ async def stream_configured_analysis(
                 else:
                     yield item
         else:
-            source_text = await asyncio.to_thread(spec.string_loader, context.pid)
-            if not source_text:
-                raise WorkflowStreamError(
-                    "documents_missing",
-                    f"没有找到可分析的{spec.source_name}",
-                    status=422,
-                    retryable=False,
-                )
             yield progress("prepare", "文档与提示词准备完成", 30)
             async for item in _model_value(
                 context,
@@ -303,15 +297,19 @@ async def stream_configured_analysis(
             ),
             stage=f"{context.operation}_structured",
             label="正在整理结构化选项",
-            max_tokens=INTERMEDIATE_MAX_TOKENS,
         ):
             if item["event"] == "_workflow_value":
                 structured_content = item["data"]["value"]
             else:
                 yield item
-        structured_value = parse_structured_result(
+        parsed_structure = parse_structured_result(
             structured_content, spec.structure_model
-        ).model_dump()
+        )
+        structured_value = (
+            encode_unit_menu(parsed_structure).model_dump()
+            if context.operation == "unit_menu"
+            else parsed_structure.model_dump()
+        )
         yield progress("structured", "测试对象提取完成", 88)
 
     if spec.result_text_key:
@@ -349,9 +347,13 @@ async def stream_nonfunctional_info(
             "兼容性、响应时间、容量、数据完整性、灾难恢复、合规性和监控"
         )
         yield progress("retrieval", "正在向量检索非功能性需求", 28)
-        documents = await asyncio.to_thread(
-            lambda: nfunctional_retriever(source_documents).invoke(query)
+        retriever = await get_project_retriever(
+            context.pid,
+            "requirements",
+            require_source_revision(context),
+            source_documents,
         )
+        documents = await asyncio.to_thread(retriever.invoke, query)
         document_text = documentTools.docs_to_meaningful_strings(documents)
         if not document_text:
             raise WorkflowStreamError(
@@ -360,37 +362,20 @@ async def stream_nonfunctional_info(
                 status=422,
                 retryable=False,
             )
-        tokens = await asyncio.to_thread(
-            documentTools.num_tokens_from_string, document_text
-        )
-        if tokens > 14500:
-            async for item in _map_reduce_value(
-                context,
-                documents,
-                map_prompt=prompt.NONFUNCTIONAL_TEST_SUMMARY_MAP_PROMPT_STR,
-                reduce_prompt=prompt.NONFUNCTIONAL_SUMMARY_REDUCE_PROMPT_STR,
-                stage_prefix="nonfunctional_info",
-                label="分析非功能性需求",
-            ):
-                if item["event"] == "_workflow_value":
-                    text_result = item["data"]["value"]
-                else:
-                    yield item
-        else:
-            async for item in _model_value(
-                context,
-                prompt_with_content(
-                    prompt.NONFUNCTIONAL_TEST_SUMMARY_PROMPT_STR,
-                    document_text,
-                ),
-                stage="nonfunctional_info_generate",
-                label="正在分析非功能性需求",
-                output_event="answer_delta",
-            ):
-                if item["event"] == "_workflow_value":
-                    text_result = item["data"]["value"]
-                else:
-                    yield item
+        async for item in _model_value(
+            context,
+            prompt_with_content(
+                prompt.NONFUNCTIONAL_TEST_SUMMARY_PROMPT_STR,
+                document_text,
+            ),
+            stage="nonfunctional_info_generate",
+            label="正在分析非功能性需求",
+            output_event="answer_delta",
+        ):
+            if item["event"] == "_workflow_value":
+                text_result = item["data"]["value"]
+            else:
+                yield item
         context.pending_info[
             InfoType.PROJECT_NONFUNCTIONAL_SUMMARY.value
         ] = text_result
@@ -427,6 +412,15 @@ async def stream_unit_info(
     context: WorkflowContext,
 ) -> AsyncIterator[dict[str, Any]]:
     unit = require_string(context.payload, "unit")
+    unit_type_value = context.payload.get("unit_type", "")
+    if not isinstance(unit_type_value, str):
+        raise WorkflowStreamError(
+            "invalid_payload",
+            "请求字段 unit_type 必须是字符串",
+            status=422,
+            retryable=False,
+        )
+    target = parse_unit_reference(unit, unit_type_value)
     yield progress("documents", "正在读取业务开发设计文档", 18)
     source_documents = await asyncio.to_thread(
         documentTools.generate_design_testdocs_docs, context.pid
@@ -438,55 +432,44 @@ async def stream_unit_info(
             status=422,
             retryable=False,
         )
-    yield progress("retrieval", f"正在检索与 {unit} 相关的文档", 28)
-    documents = await asyncio.to_thread(
-        lambda: design_retriever(source_documents).invoke(unit)
+    yield progress("retrieval", f"正在检索与 {target.display_name} 相关的文档", 28)
+    retriever = await get_project_retriever(
+        context.pid,
+        "design",
+        require_source_revision(context),
+        source_documents,
     )
+    documents = await asyncio.to_thread(retriever.invoke, target.retrieval_query)
     document_text = documentTools.docs_to_string(documents)
     if not document_text:
         raise WorkflowStreamError(
             "retrieval_empty",
-            f"没有检索到与 {unit} 相关的文档",
+            f"没有检索到与 {target.prompt_label} 相关的文档",
             status=422,
             retryable=False,
         )
-    tokens = await asyncio.to_thread(
-        documentTools.num_tokens_from_string, document_text
-    )
     unit_info = ""
-    if tokens > 14500:
-        async for item in _map_reduce_value(
-            context,
-            documents,
-            map_prompt=UNIT_TEST_UNIT_INFO_MAP_TEMPLATE.format(unit=unit),
-            reduce_prompt=UNIT_TEST_UNIT_INFO_REDUCE_TEMPLATE.format(unit=unit),
-            stage_prefix="unit_info",
-            label=f"分析单元 {unit}",
-        ):
-            if item["event"] == "_workflow_value":
-                unit_info = item["data"]["value"]
-            else:
-                yield item
-    else:
-        async for item in _model_value(
-            context,
-            UNIT_TEST_UNIT_INFO_STUFF_TEMPLATE.format(
-                unit=unit, docs=document_text
-            ),
-            stage="unit_info_generate",
-            label=f"正在分析单元 {unit}",
-            output_event="answer_delta",
-        ):
-            if item["event"] == "_workflow_value":
-                unit_info = item["data"]["value"]
-            else:
-                yield item
+    async for item in _model_value(
+        context,
+        UNIT_TEST_UNIT_INFO_STUFF_TEMPLATE.format(
+            unit=target.prompt_label, docs=document_text
+        ),
+        stage="unit_info_generate",
+        label=f"正在分析单元 {target.display_name}",
+        output_event="answer_delta",
+    ):
+        if item["event"] == "_workflow_value":
+            unit_info = item["data"]["value"]
+        else:
+            yield item
     yield progress("structured", "正在判断适用的单元测试方法", 80)
     method_content = ""
     async for item in _model_value(
         context,
         structured_prompt(
-            UNIT_TEST_TYPE_JSON_TEMPLATE.format(unit=unit, content=unit_info),
+            UNIT_TEST_TYPE_JSON_TEMPLATE.format(
+                unit=target.prompt_label, content=unit_info
+            ),
             UnitTestMethod,
         ),
         stage="unit_info_method",
@@ -515,28 +498,29 @@ async def _integration_document_prompt(
     documents: list[Any] = []
     document_text = ""
     use_map = False
-    project_type = await asyncio.to_thread(
-        testProjectDao.get_project_type, context.pid
-    )
+    project_type = await asyncio.to_thread(testProjectDao.get_project_type, context.pid)
     if not project_type:
         raise WorkflowStreamError(
             "project_not_ready", "项目文档类型尚未分析", status=422, retryable=False
         )
     yield progress("documents", "正在读取业务开发设计文档", 18)
     if integration_type in (0, 1):
-        if project_type.overflow >= 3:
-            source_documents = await asyncio.to_thread(
-                documentTools.generate_design_testdocs_docs, context.pid
-            )
+        source_documents = await asyncio.to_thread(
+            documentTools.generate_design_testdocs_docs, context.pid
+        )
+        if source_documents:
+            document_text = documentTools.docs_to_string(source_documents)
+        source_tokens = await asyncio.to_thread(
+            documentTools.num_tokens_from_string, document_text
+        )
+        if strategy_for(
+            "integration_info", source_tokens, source_mode="exhaustive"
+        ) is LongTextStrategy.MAP_REDUCE:
             documents = await asyncio.to_thread(
                 testdoc_text_splitter_for_integration.split_documents,
                 source_documents,
             )
             use_map = True
-        else:
-            document_text = await asyncio.to_thread(
-                documentTools.generate_design_testdocs_str, context.pid
-            )
         if integration_type == 0:
             map_prompt = prompt.INTEGRATION_TEST_SYSTEM_INFO_MAP_PROMPT_STR
             reduce_prompt = prompt.INTEGRATION_TEST_SYSTEM_INFO_REDUCE_PROMPT_STR
@@ -550,33 +534,25 @@ async def _integration_document_prompt(
             documentTools.generate_design_testdocs_docs, context.pid
         )
         yield progress("retrieval", f"正在检索与 {unit_name} 相关的集成信息", 28)
-        documents = await asyncio.to_thread(
-            lambda: design_retriever(source_documents).invoke(unit_name)
+        retriever = await get_project_retriever(
+            context.pid,
+            "design",
+            require_source_revision(context),
+            source_documents,
         )
+        documents = await asyncio.to_thread(retriever.invoke, unit_name)
         document_text = documentTools.docs_to_string(documents)
-        tokens = await asyncio.to_thread(
-            documentTools.num_tokens_from_string, document_text
-        )
         if integration_type == 2:
             unit_type = "类(class)或模块"
         elif integration_type == 3:
             unit_type = "类(class)或函数"
         else:
             unit_type = "函数"
-        if tokens > 14500:
-            use_map = True
-            map_prompt = INTEGRATION_TEST_INFO_MAP_TEMPLATE.format(
-                integration_unit=unit_name, unit_type=unit_type
-            )
-            reduce_prompt = INTEGRATION_TEST_INFO_REDUCE_TEMPLATE.format(
-                integration_unit=unit_name, unit_type=unit_type
-            )
-        else:
-            stuff_prompt = INTEGRATION_TEST_INFO_STUFF_TEMPLATE.format(
-                integration_unit=unit_name,
-                unit_type=unit_type,
-                docs=document_text,
-            )
+        stuff_prompt = INTEGRATION_TEST_INFO_STUFF_TEMPLATE.format(
+            integration_unit=unit_name,
+            unit_type=unit_type,
+            docs=document_text,
+        )
     if not documents and not document_text:
         raise WorkflowStreamError(
             "documents_missing",
