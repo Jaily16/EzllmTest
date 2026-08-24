@@ -15,21 +15,22 @@
     :success-title="successTitle"
     @cancel="$emit('cancel')"
   />
-  <div v-if="answer && (!completed || error || cancelled)" class="streamed-answer">
-    <div class="answer-title">{{ answerTitle }}</div>
-    <el-input
-      :model-value="answer"
-      :autosize="{ minRows: 4, maxRows: 50 }"
-      type="textarea"
-      readonly
-    />
-  </div>
+  <ResultContainer
+    v-if="answer && (!completed || error || cancelled)"
+    class="streamed-answer"
+    :title="answerTitle"
+    description="这是当前连接已接收的流式正文；失败或取消时仍会保留在页面中。"
+  >
+    <div class="streamed-answer__text">{{ answer }}</div>
+  </ResultContainer>
 </template>
 
 <script lang="ts" setup>
 /* global defineProps, defineEmits */
 import LlmExecutionPanel from "@/components/LlmExecutionPanel.vue";
+import ResultContainer from "@/components/workspace/ResultContainer.vue";
 import type {
+  LlmExecutionMeta,
   LlmProgress,
   LlmReasoningSection,
   LlmStreamError,
@@ -44,7 +45,7 @@ defineProps<{
   saved: boolean;
   fromCache: boolean;
   progress: LlmProgress;
-  meta: { label: string; model: string };
+  meta: LlmExecutionMeta;
   reasoningSections: LlmReasoningSection[];
   usage: LlmTokenUsage;
   usageReceived: boolean;
@@ -59,12 +60,15 @@ defineEmits<{ (event: "cancel"): void }>();
 
 <style scoped>
 .streamed-answer {
-  width: 99%;
-  margin-top: 14px;
+  margin-top: var(--ez-space-4);
 }
-.answer-title {
-  margin-bottom: 8px;
-  color: #06b009;
-  font-family: "Ali";
+
+.streamed-answer__text {
+  max-width: var(--ez-reading-measure);
+  line-height: var(--ez-line-height-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  user-select: text;
 }
 </style>

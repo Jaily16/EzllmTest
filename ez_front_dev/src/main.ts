@@ -1,8 +1,9 @@
 import { createApp } from "vue"
-// full import element plus
-import ElementPlus from 'element-plus'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-import 'element-plus/dist/index.css'
+import { installElementPlus } from './plugins/elementPlus'
+import './styles/tokens.css'
+import './styles/element-plus-theme.css'
+import './styles/base.css'
+import './styles/accessibility.css'
 import App from './App.vue'
 import router from './router'
 import axios from 'axios'
@@ -24,9 +25,7 @@ app.config.globalProperties.$unit_menu_result = null
 // 集成测试的菜单
 app.config.globalProperties.$integration_menu_result = null
 
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-    app.component(key, component)
-}
-app.use(router).use(ElementPlus).mount("#app");
+installElementPlus(app)
+app.use(router).mount("#app");
 
 

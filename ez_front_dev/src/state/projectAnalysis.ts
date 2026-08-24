@@ -13,6 +13,12 @@ export interface TestMenuState {
   acceptance_test: boolean;
 }
 
+export interface ProjectAnalysisBundle {
+  summary: string;
+  plan: string;
+  menu: TestMenuState;
+}
+
 export type ProjectStage =
   | "setup_required"
   | "analysis_required"
@@ -38,6 +44,50 @@ interface ProjectAnalysisStatus {
   ready: boolean;
   menu: TestMenuState | null;
 }
+
+const TEST_MENU_KEYS: Array<keyof TestMenuState> = [
+  "test_plan",
+  "unit_test",
+  "integration_test",
+  "api_test",
+  "ui_test",
+  "db_test",
+  "functional_test",
+  "nonfunctional_test",
+  "acceptance_test",
+];
+
+const parseProjectAnalysisMenu = (value: unknown): TestMenuState => {
+  let candidate = value;
+  if (typeof candidate === "string") {
+    try {
+      candidate = JSON.parse(candidate);
+    } catch {
+      throw new Error("已保存的测试菜单格式无效，请重新生成测试计划");
+    }
+  }
+  if (!candidate || typeof candidate !== "object") {
+    throw new Error("未读取到有效的测试菜单，请重新生成测试计划");
+  }
+  const record = candidate as Record<string, unknown>;
+  if (TEST_MENU_KEYS.some((key) => typeof record[key] !== "boolean")) {
+    throw new Error("已保存的测试菜单字段不完整，请重新生成测试计划");
+  }
+  return Object.fromEntries(
+    TEST_MENU_KEYS.map((key) => [key, record[key]])
+  ) as unknown as TestMenuState;
+};
+
+const projectInfoValue = (
+  response: { data?: { data?: unknown; reason?: unknown } },
+  label: string
+): unknown => {
+  const value = response.data?.data;
+  if (value === false || value === null || value === undefined) {
+    throw new Error(String(response.data?.reason || `${label}读取失败`));
+  }
+  return value;
+};
 
 const WORKFLOW_STATUS_PATH = "/project/workflow/status/";
 const READY_STAGES: ProjectStage[] = [
@@ -150,6 +200,35 @@ export const loadProjectAnalysisStatus = async (
     menu_ready: status.menu !== null,
     ready,
     menu: status.menu,
+  };
+};
+
+export const fetchProjectAnalysisBundle = async (
+  baseUrl: string,
+  pid: string,
+  signal?: AbortSignal
+): Promise<ProjectAnalysisBundle> => {
+  const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+  if (!normalizedBaseUrl || !pid) {
+    throw new Error("无法获取后端地址或项目编号");
+  }
+  const [summaryResponse, planResponse, menuResponse] = await Promise.all([
+    axios.get(`${normalizedBaseUrl}/project/info/${pid}/1`, { signal }),
+    axios.get(`${normalizedBaseUrl}/project/info/${pid}/22`, { signal }),
+    axios.get(`${normalizedBaseUrl}/project/info/${pid}/23`, { signal }),
+  ]);
+  const summaryValue = projectInfoValue(summaryResponse, "业务摘要");
+  const planValue = projectInfoValue(planResponse, "测试计划");
+  const menuValue = projectInfoValue(menuResponse, "测试菜单");
+  const summary = typeof summaryValue === "string" ? summaryValue.trim() : "";
+  const plan = typeof planValue === "string" ? planValue.trim() : "";
+  if (!summary || !plan) {
+    throw new Error("已保存的业务摘要或测试计划为空，请重新生成");
+  }
+  return {
+    summary,
+    plan,
+    menu: parseProjectAnalysisMenu(menuValue),
   };
 };
 

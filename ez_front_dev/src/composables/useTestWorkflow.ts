@@ -1,9 +1,9 @@
-import { computed, ref } from "vue";
-import { ElMessageBox } from "element-plus";
+import { computed, reactive, ref } from "vue";
 import {
   loadProjectWorkflowStatus,
   type ProjectWorkflowStatus,
 } from "@/state/projectAnalysis";
+import { confirmResultReplacement } from "@/ui/confirmations";
 
 export type WorkflowStepState = "locked" | "ready" | "running" | "completed" | "stale" | "failed";
 
@@ -104,9 +104,11 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
     }))
   );
   const sourceRevision = ref<string | null>(null);
+  const hydrating = ref(true);
   const hydrationError = ref("");
-  const selections = new Map<string, Record<string, unknown>>();
+  const selections = reactive(new Map<string, Record<string, unknown>>());
   const previousSteps = new Map<string, TestWorkflowStep>();
+  const selectionBaselines = new Map<string, Map<string, WorkflowStepState>>();
   const storageKey = `ezllmtest:test-workflow:v1:${pid}:${definitions
     .map((definition) => definition.operation)
     .join(",")}`;
@@ -199,6 +201,7 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
   };
 
   const hydrateWorkflow = async (): Promise<void> => {
+    hydrating.value = true;
     hydrationError.value = "";
     const storedRevision = restoreSession();
     try {
@@ -207,13 +210,20 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
     } catch (caught) {
       hydrationError.value = caught instanceof Error ? caught.message : "工作流状态恢复失败";
       refreshLockedStates();
+    } finally {
+      hydrating.value = false;
     }
     persist();
   };
 
   const canRunStep = (operation: string): boolean => {
     const step = stepFor(operation);
-    return Boolean(step && step.state !== "locked" && step.state !== "running");
+    return Boolean(
+      step &&
+      step.state !== "locked" &&
+      step.state !== "running" &&
+      dependenciesReady(step)
+    );
   };
 
   const allowedNextActions = computed(() =>
@@ -262,6 +272,55 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
     });
   };
 
+  const markStepStale = (operation: string, includeDependents = true) => {
+    const step = stepFor(operation);
+    if (step && (step.result !== null || step.state === "completed" || step.state === "stale")) {
+      step.state = "stale";
+    }
+    if (includeDependents) markDependentsStale(operation);
+    refreshLockedStates();
+    persist();
+  };
+
+  const reconcileStepSelection = (
+    operation: string,
+    selection: Record<string, unknown>,
+    includeDependents = true
+  ) => {
+    const baseline = selectionBaselines.get(operation);
+    if (selectionMatches(operation, selection)) {
+      baseline?.forEach((state, affectedOperation) => {
+        const affectedStep = stepFor(affectedOperation);
+        if (affectedStep) affectedStep.state = state;
+      });
+      selectionBaselines.delete(operation);
+      refreshLockedStates();
+      persist();
+      return;
+    }
+
+    if (!baseline) {
+      const affectedOperations = new Set([operation]);
+      if (includeDependents) {
+        dependentOperations(operation).forEach((dependent) => affectedOperations.add(dependent));
+      }
+      const states = new Map<string, WorkflowStepState>();
+      affectedOperations.forEach((affectedOperation) => {
+        const affectedStep = stepFor(affectedOperation);
+        if (
+          affectedStep &&
+          (affectedStep.result !== null ||
+            affectedStep.state === "completed" ||
+            affectedStep.state === "stale")
+        ) {
+          states.set(affectedOperation, affectedStep.state);
+        }
+      });
+      if (states.size > 0) selectionBaselines.set(operation, states);
+    }
+    markStepStale(operation, includeDependents);
+  };
+
   const completeStep = (
     operation: string,
     result: unknown,
@@ -287,6 +346,7 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
     step.state = "completed";
     sourceRevision.value = metadata.sourceRevision ?? sourceRevision.value;
     selections.set(operation, normalized);
+    selectionBaselines.delete(operation);
     if (options.regenerate || selectionChanged || (previous?.state === "stale" && result !== null)) {
       markDependentsStale(operation);
     }
@@ -319,16 +379,7 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
     if (!step || (step.result === null && step.state !== "completed" && step.state !== "stale")) {
       return true;
     }
-    try {
-      await ElMessageBox.confirm(
-        `重新生成“${step.label}”将替换已保存的有效结果，是否继续？`,
-        "确认重新生成",
-        { confirmButtonText: "重新生成", cancelButtonText: "保留原结果", type: "warning" }
-      );
-      return true;
-    } catch {
-      return false;
-    }
+    return confirmResultReplacement(step.label);
   };
 
   const regenerateStep = async (
@@ -344,6 +395,7 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
     if (!step) return;
     step.result = null;
     selections.delete(operation);
+    selectionBaselines.delete(operation);
     step.state = dependenciesReady(step) ? "ready" : "locked";
     persist();
   };
@@ -354,10 +406,64 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
   const selectionFor = (operation: string): Record<string, unknown> =>
     selections.get(operation) ?? {};
 
+  const normalizeSelectionForStep = (
+    operation: string,
+    selection: Record<string, unknown>
+  ): Record<string, unknown> | null => {
+    const step = stepFor(operation);
+    if (!step) return null;
+    return normalizeSelections(
+      Object.fromEntries(
+        step.selectionFields
+          .filter((field) => Object.prototype.hasOwnProperty.call(selection, field))
+          .map((field) => [field, selection[field]])
+      )
+    );
+  };
+
+  const selectionsMatch = (
+    operation: string,
+    first: Record<string, unknown>,
+    second: Record<string, unknown>
+  ): boolean => {
+    const normalizedFirst = normalizeSelectionForStep(operation, first);
+    const normalizedSecond = normalizeSelectionForStep(operation, second);
+    return normalizedFirst !== null &&
+      normalizedSecond !== null &&
+      JSON.stringify(normalizedFirst) === JSON.stringify(normalizedSecond);
+  };
+
+  const selectionMatches = (
+    operation: string,
+    selection: Record<string, unknown>
+  ): boolean => {
+    const step = stepFor(operation);
+    if (!step) return false;
+    if (step.selectionFields.length === 0) return true;
+    const savedSelection = selections.get(operation);
+    if (!savedSelection) return false;
+    return selectionsMatch(operation, savedSelection, selection);
+  };
+
   const hasSavedResult = (operation: string): boolean => {
     const step = stepFor(operation);
     return Boolean(
       step && (step.result !== null || step.state === "completed" || step.state === "stale")
+    );
+  };
+
+  const hasVisibleResult = (operation: string): boolean =>
+    stepFor(operation)?.result !== null;
+
+  const hasVisibleResultFor = (
+    operation: string,
+    selection: Record<string, unknown>
+  ): boolean => hasVisibleResult(operation) && selectionMatches(operation, selection);
+
+  const needsResultRecovery = (operation: string): boolean => {
+    const step = stepFor(operation);
+    return Boolean(
+      step && step.persistResult && step.state === "completed" && step.result === null
     );
   };
 
@@ -371,6 +477,7 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
   return {
     steps,
     sourceRevision,
+    hydrating,
     hydrationError,
     allowedNextActions,
     hydrateWorkflow,
@@ -381,10 +488,17 @@ export const useTestWorkflow = ({ baseUrl, pid, steps: definitions }: UseTestWor
     regenerateStep,
     confirmReplacement,
     markDependentsStale,
+    markStepStale,
+    reconcileStepSelection,
     resetStep,
     resultFor,
     selectionFor,
+    selectionsMatch,
+    selectionMatches,
     hasSavedResult,
+    hasVisibleResult,
+    hasVisibleResultFor,
+    needsResultRecovery,
     staleWarning,
   };
 };

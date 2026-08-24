@@ -19,6 +19,7 @@ export const useLlmWorkflow = (
 ) => {
   const stream = useLlmStream(baseUrl);
   const activeOperation = ref("");
+  const activeSelection = ref<Record<string, unknown>>({});
   const answerTitle = ref("模型流式输出");
   const successTitle = ref("大模型执行已完成");
 
@@ -36,6 +37,7 @@ export const useLlmWorkflow = (
       return false;
     }
     activeOperation.value = operation;
+    activeSelection.value = payload;
     answerTitle.value = options.answerTitle;
     successTitle.value = options.successTitle;
     const succeeded = await stream.start("/project/llm/workflow/stream", {
@@ -85,6 +87,7 @@ export const useLlmWorkflow = (
   return {
     ...stream,
     activeOperation,
+    activeSelection,
     executionProps,
     runWorkflow,
   };

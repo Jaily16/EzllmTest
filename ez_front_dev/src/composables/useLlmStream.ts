@@ -29,6 +29,17 @@ export interface LlmStreamError {
   retryable: boolean;
 }
 
+export type LlmPersistence = "" | "artifact" | "session";
+
+export interface LlmExecutionMeta {
+  requestId: string;
+  label: string;
+  provider: string;
+  model: string;
+  operation: string;
+  persistence: LlmPersistence;
+}
+
 export interface LlmArtifactMetadata {
   artifactKey: string;
   sourceRevision: string;
@@ -106,7 +117,14 @@ export const useLlmStream = (baseUrl: string) => {
     total: null,
     percent: 0,
   });
-  const meta = reactive({ requestId: "", label: "", provider: "", model: "", operation: "" });
+  const meta = reactive<LlmExecutionMeta>({
+    requestId: "",
+    label: "",
+    provider: "",
+    model: "",
+    operation: "",
+    persistence: "",
+  });
 
   let controller: AbortController | null = null;
   let frameId: number | null = null;
@@ -170,6 +188,7 @@ export const useLlmStream = (baseUrl: string) => {
     meta.provider = "";
     meta.model = "";
     meta.operation = "";
+    meta.persistence = "";
     artifact.artifactKey = "";
     artifact.sourceRevision = "";
     artifact.promptVersion = "";
@@ -187,6 +206,11 @@ export const useLlmStream = (baseUrl: string) => {
         meta.provider = String(data.provider || "");
         meta.model = String(data.model || "");
         meta.operation = String(data.operation || "");
+        meta.persistence = data.persistence === "artifact"
+          ? "artifact"
+          : data.persistence === "session"
+            ? "session"
+            : "";
         artifact.artifactKey = String(data.artifact_key || "");
         artifact.sourceRevision = String(data.source_revision || "");
         artifact.promptVersion = String(data.prompt_version || "");

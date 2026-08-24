@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { nextTick } from 'vue'
+import { routeTitleFor } from '@/config/routePresentation'
 import {
   getWorkflowRedirectPath,
   isWorkflowRouteAllowed,
@@ -101,6 +103,13 @@ router.beforeEach((to) => {
     if (redirect !== to.path) return redirect
   }
   return true
+})
+
+router.afterEach(async (to) => {
+  document.title = `${routeTitleFor(to.path)} | EzllmTest`
+  await nextTick()
+  const main = document.querySelector<HTMLElement>('main')
+  main?.focus({ preventScroll: true })
 })
 
 export default router

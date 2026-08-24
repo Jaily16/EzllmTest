@@ -1,0 +1,92 @@
+:root {
+  color-scheme: light;
+
+  --ez-color-brand-50: #F1F7F3;
+  --ez-color-brand-100: #DCECE2;
+  --ez-color-brand-300: #9FC6AB;
+  --ez-color-brand-500: #2F7D4A;
+  --ez-color-brand-600: #25673D;
+  --ez-color-brand-700: #1E5232;
+
+  --ez-color-canvas: #F5F7F6;
+  --ez-color-surface: #FFFFFF;
+  --ez-color-surface-subtle: #F8FAF9;
+  --ez-color-text-primary: #17211B;
+  --ez-color-text-secondary: #4B5B51;
+  --ez-color-text-muted: #637369;
+  --ez-color-border: #D9E2DC;
+  --ez-color-border-strong: #B9C8BE;
+
+  --ez-color-info: #2563EB;
+  --ez-color-success: #237A45;
+  --ez-color-warning: #9A6700;
+  --ez-color-danger: #B42318;
+  --ez-color-locked: #5F6F65;
+  --ez-color-info-bg: #EFF6FF;
+  --ez-color-success-bg: #ECF7F0;
+  --ez-color-warning-bg: #FFF7E6;
+  --ez-color-danger-bg: #FFF1F0;
+  --ez-color-locked-bg: #F3F4F6;
+
+  --ez-font-body: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", "Helvetica Neue", Arial, sans-serif;
+  --ez-font-brand: "Quantify", var(--ez-font-body);
+  --ez-font-code: Consolas, "SFMono-Regular", "Liberation Mono", monospace;
+  --ez-font-size-12: 12px;
+  --ez-font-size-13: 13px;
+  --ez-font-size-14: 14px;
+  --ez-font-size-16: 16px;
+  --ez-font-size-20: 20px;
+  --ez-font-size-24: 24px;
+  --ez-font-size-32: 32px;
+  --ez-font-size-body: 15px;
+  --ez-line-height-body: 1.65;
+  --ez-line-height-tight: 1.35;
+
+  --ez-space-1: 4px;
+  --ez-space-2: 8px;
+  --ez-space-3: 12px;
+  --ez-space-4: 16px;
+  --ez-space-6: 24px;
+  --ez-space-8: 32px;
+  --ez-space-10: 40px;
+  --ez-space-12: 48px;
+
+  --ez-radius-small: 6px;
+  --ez-radius-medium: 10px;
+  --ez-radius-large: 14px;
+  --ez-radius-pill: 999px;
+  --ez-shadow-small: 0 1px 2px rgba(23, 33, 27, .06);
+  --ez-shadow-medium: 0 8px 24px rgba(23, 33, 27, .08);
+  --ez-shadow-large: 0 16px 40px rgba(23, 33, 27, .12);
+
+  --ez-content-compact: 720px;
+  --ez-content-default: 960px;
+  --ez-content-wide: 1200px;
+  --ez-control-height: 40px;
+  --ez-touch-target: 44px;
+  --ez-reading-measure: 72ch;
+  --ez-page-gutter: 16px;
+  --ez-page-gutter-tablet: 24px;
+  --ez-page-gutter-desktop: 32px;
+  --ez-page-gutter-wide: 40px;
+  --ez-page-gutter-ultrawide: 48px;
+
+  --ez-shell-header-height: 64px;
+  --ez-shell-sidebar-width: 272px;
+  --ez-shell-drawer-width: 320px;
+
+  --ez-z-base: 0;
+  --ez-z-raised: 10;
+  --ez-z-sticky: 100;
+  --ez-z-overlay: 2000;
+  --ez-focus-color: #2F7D4A;
+  --ez-focus-ring: 3px solid var(--ez-focus-color);
+  --ez-focus-offset: 2px;
+  --ez-skeleton-min-height-content: 168px;
+  --ez-skeleton-min-height-form: 224px;
+  --ez-skeleton-min-height-cards: 264px;
+  --ez-motion-fast: 120ms;
+  --ez-motion-normal: 180ms;
+  --ez-motion-slow: 240ms;
+  --ez-motion-easing: cubic-bezier(.2, 0, 0, 1);
+}
