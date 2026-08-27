@@ -2,7 +2,7 @@
 
 一个面向软件测试团队的本地 AI 测试工作台：从项目资料上传开始，经业务分析、测试计划和推荐菜单，继续生成单元、集成、API、UI、数据库、功能、非功能与验收测试成果。
 
-当前仓库已完成 Iteration 1–3。Iteration 3 重点统一了应用壳、设计系统、共享反馈、项目恢复、规划工作台、八类测试页、无障碍与响应式体验，并通过真实 `GLM-4.7`、`embedding-3` 和本地 MySQL 完成一条脱敏代表性旅程。
+当前仓库已完成 Iteration 1–4。Iteration 3 统一了应用壳、设计系统、项目恢复和八类测试页，并通过真实 `GLM-4.7`、`embedding-3` 与本地 MySQL 完成一条脱敏代表性旅程；Iteration 4 在不替换原有确定性 workflow 的前提下，新增了可规划、可审批、可恢复、可评测、可观测的 LangGraph 单 Agent 编排层，并完成无真实模型费用的离线集成验收。
 
 > 仓库为私有项目。私有可见性不是凭证保险箱：任何 API Key、数据库密码、真实项目 ID、客户资料和运行时产物都不得提交。
 
@@ -30,10 +30,14 @@
 - **清晰的保留边界**：五类 final 为 session-only；UI、数据库和验收 final 为 persisted artifact。
 - **可访问的响应式工作台**：覆盖 320px reflow、移动抽屉、键盘焦点、reduced-motion、状态 live region 和长文本安全换行。
 - **离线回归夹具**：Python 标准库 loopback fixture 可验证缓存、stale、取消、结构化错误、持久化失败和 onboarding，不连接真实模型或数据库。
+- **受控 Agent 编排**：LangGraph 单 Agent 只选择 22 个类型化工具中的受控能力；项目作用域由可信宿主注入，付费、持久化与 regenerate 动作必须人工审批。
+- **持久执行与恢复**：Redis 保存有 TTL 的 checkpoint、租约、幂等、取消和事件重放；MySQL 仍是项目、revision 与有效 artifact 的长期真源。
+- **工作台与 MCP**：独立 Agent API、worker 和 `/agent` 工作台展示结构化计划、审批、证据、预算、恢复与 trace；loopback MCP 默认只能执行三个只读工具。
+- **评测与可观测性**：固定 synthetic Eval/acceptance/benchmark 覆盖轨迹、安全、恢复、RAG、缓存和性能；OpenTelemetry、Prometheus、Tempo 与 Grafana 由本地 Docker Compose 提供。
 
 ## 关键界面
 
-以下截图来自虚构的“Aurora 任务协作平台”资料，使用真实 `GLM-4.7` 与 `embedding-3` 完成代表性旅程；reasoning 保持折叠，项目 ID 已遮盖。截图不包含请求 payload、凭证或真实业务文档。
+以下截图是 Iteration 3 的虚构“Aurora 任务协作平台”代表性旅程，使用真实 `GLM-4.7` 与 `embedding-3`；它们不是 Agent 真实模型验收证据。reasoning 保持折叠，项目 ID 已遮盖，截图不包含请求 payload、凭证或真实业务文档。
 
 ### 流式计划与保存结果
 
@@ -82,14 +86,18 @@ UI、数据库和验收 final 会持久化；页面可以仅隐藏当前显示�
 
 | 层次 | 技术 |
 | --- | --- |
-| Web | Vue 3、TypeScript、Vue Router、Element Plus 2.7 |
-| API | Python 3.11、FastAPI、Pydantic 2、Uvicorn |
-| 数据 | MySQL 8、SQLAlchemy 2、PyMySQL |
+| Web | Vue 3、TypeScript、Vue Router、Element Plus 2.7、Vite 8 |
+| API | Python 3.11、FastAPI、Pydantic 2、Uvicorn；legacy API 与独立 Agent API |
+| Agent | LangGraph 单 Agent、严格 JSON checkpoint、自定义 Redis saver、HITL |
+| 工具协议 | 19-workflow catalog、22 个类型化工具、loopback MCP 2 |
+| 数据 | MySQL 8、Redis 8、SQLAlchemy 2、PyMySQL |
 | LLM | LangChain Core、LangChain OpenAI、OpenAI-compatible providers |
 | 检索 | RAG、请求级内存向量索引、智谱 `embedding-3` |
 | 流式协议 | REST + Server-Sent Events（SSE） |
 | 文档 | pypdf、docx2txt、Markdown/纯文本读取 |
-| 质量门禁 | pytest、Vue CLI lint/build、credential scan、bundle checker |
+| 可观测性 | OpenTelemetry、Prometheus、Tempo、Grafana、脱敏 JSON 日志 |
+| 交付 | Docker Compose、GitHub Actions 离线门禁 |
+| 质量门禁 | pytest、Agent Eval/acceptance/benchmark、Vite lint/type-check/build、credential scan、bundle checker |
 
 聊天模型注册表：
 
@@ -107,17 +115,22 @@ RAG 当前统一使用智谱 `embedding-3`；即使聊天模型选择其他 prov
 ```mermaid
 flowchart LR
     Browser[浏览器] --> Vue[Vue 3 / TypeScript]
-    Vue -->|REST 状态与资料| API[FastAPI]
-    Vue -->|SSE 进度与结果| API
-    API --> Catalog[19-workflow catalog]
+    Vue -->|legacy REST / SSE| API[FastAPI :8130]
+    Vue -->|Agent REST / SSE| AgentAPI[Agent API :8131]
+    AgentAPI --> Redis[(Redis checkpoint / queue)]
+    Redis --> Worker[LangGraph worker]
+    Worker --> Catalog[22 typed tools / 19 workflows]
+    API --> Catalog
     Catalog --> RAG[RAG / revision-aware index]
     RAG --> Provider[Chat + embedding provider]
     API --> MySQL[(MySQL 8)]
+    Worker --> MySQL
     MySQL --> Artifact[revision-aware artifacts]
     Artifact --> API
+    AgentAPI -. trace/metrics .-> OTel[OTel Collector / Tempo / Prometheus / Grafana]
 ```
 
-模型输出的生命周期是：显式操作 → REST/SSE 请求 → 分阶段预算与结构校验 → 延迟保存 → workflow status 恢复。页面路由守卫只服从服务器返回的 lifecycle、allowed routes 和 stale 信息，不在前端猜测服务器 truth。
+legacy 模型输出的生命周期仍是：显式操作 → REST/SSE 请求 → 分阶段预算与结构校验 → 延迟保存 → workflow status 恢复。Agent 在其上增加观察 → 结构化计划 → 风险审批 → 工具执行 → 验证/恢复；工具在进程内调用应用服务层，不通过 HTTP 或 MCP 自调。页面路由守卫只服从服务器 lifecycle、allowed routes 和 stale 信息。
 
 ### 工作流与保留策略
 
@@ -148,12 +161,14 @@ EzllmTest/
 │     ├─ styles/                 # tokens、Element Plus bridge、基础与无障碍样式
 │     └─ views/                  # 入口、创建与持久化应用壳
 ├─ ez_back_dev/                  # FastAPI 后端
-│  ├─ app/                       # 配置、路由与应用入口
-│  ├─ service/                   # 19-workflow catalog 与业务服务
+│  ├─ app/                       # legacy/Agent API、worker、MCP、Eval 与验收入口
+│  ├─ service/                   # workflow catalog、Agent runtime、工具与 telemetry
 │  ├─ llm/                       # provider、预算、RAG 与结构化输出
 │  ├─ dao/                       # SQLAlchemy 数据访问
 │  └─ tests/                     # 后端及前端静态/SFC 契约
 ├─ scripts/                      # 凭证扫描、离线 fixture、bundle checker
+├─ ops/                          # Compose 与 Collector/Prometheus/Tempo/Grafana 配置
+├─ compose.yaml                  # digest-pinned 本地完整工程栈
 ├─ docs/                         # 迭代计划、开发日志、closeout 与 README 图片
 ├─ ezllmtest.sql                 # 七张空表的唯一数据库结构文件
 ├─ .env.example                  # 后端变量名示例，不含真实值
@@ -168,10 +183,11 @@ EzllmTest/
 - Conda 与 Python 3.11
 - Node.js 24、npm 11
 - MySQL 8.x
-- 至少一个聊天模型 API Key
-- 使用 RAG 时需要智谱 API Key
+- Agent 模式需要 Redis 8.x；推荐使用 Docker Desktop 与仓库 Compose 栈
+- 真实生成需要至少一个聊天模型 API Key；仅运行离线门禁不需要 provider Key
+- 真实 RAG 生成需要智谱 API Key
 
-默认地址：前端 `http://localhost:8080`，后端 `http://localhost:8130`。
+默认地址：前端 `http://localhost:8080`，legacy API `http://localhost:8130`，Agent API `http://localhost:8131`；完整 Compose 还提供 Grafana `3000` 与 Prometheus `9090`。
 
 ### 1. 克隆私有仓库
 
@@ -226,8 +242,15 @@ notepad .\.env
 | `MOONSHOT_CHAT_MODEL` | Moonshot 模型 ID |
 | `BACKEND_HOST` / `BACKEND_PORT` | FastAPI 监听地址与端口 |
 | `CORS_ORIGINS` | 允许访问后端的前端 origin |
+| `AGENT_REDIS_URL` / `AGENT_REDIS_PREFIX` | Agent checkpoint、命令、租约和事件使用的 Redis |
+| `AGENT_API_PORT` | 独立 Agent API 端口，默认 8131 |
+| `AGENT_WORKER_HEARTBEAT_TTL_SECONDS` | worker 可用性心跳 TTL |
+| `AGENT_TELEMETRY_ENABLED` | 普通本地默认关闭；Compose 显式启用 |
+| `AGENT_OTLP_ENDPOINT` | 仅允许 loopback 或 Compose 内部 Collector |
 | `LANGCHAIN_TRACING_V2` | LangChain tracing 开关，默认关闭 |
-| `VUE_APP_API_BASE_URL` | 前端调用的后端地址，仅放在前端 `.env` |
+| `VUE_APP_API_BASE_URL` | 前端调用 legacy API 的地址 |
+| `VUE_APP_AGENT_API_BASE_URL` | 前端调用 Agent API 的地址 |
+| `VUE_APP_GRAFANA_BASE_URL` | 可选 loopback Grafana Explore 地址 |
 
 Moonshot Key 必须与平台地区地址匹配。数据库密码应通过本机安全方式管理，不要复制到 issue、截图或聊天中。
 
@@ -268,14 +291,30 @@ Set-Location .\ez_back_dev
 python .\serve.py
 ```
 
-终端二：
+终端二（Agent API，需要本地 Redis）：
+
+```powershell
+conda activate ezllmtest
+Set-Location .\ez_back_dev
+python -m app.agentApi --port 8131
+```
+
+终端三（Agent worker）：
+
+```powershell
+conda activate ezllmtest
+Set-Location .\ez_back_dev
+python -m app.agentWorker --consumer local-worker
+```
+
+终端四：
 
 ```powershell
 Set-Location .\ez_front_dev
 npm run serve
 ```
 
-打开 `http://localhost:8080`。项目 ID 的格式为 `Ez` 加 19 位数字；它是恢复项目的入口，不应公开分享。API 文档位于 `http://localhost:8130/docs`，健康检查位于 `http://localhost:8130/health`。
+打开 `http://localhost:8080`。项目 ID 的格式为 `Ez` 加 19 位数字；它是恢复项目的入口，不应公开分享。legacy API 文档位于 `http://localhost:8130/docs`，Agent 健康检查位于 `http://localhost:8131/health`。完整十服务栈与安全停机方式见 [`docs/iteration-4-compose.md`](docs/iteration-4-compose.md)。
 
 ## 测试与质量门禁
 
@@ -293,12 +332,25 @@ Set-Location ..
 ```powershell
 Set-Location .\ez_front_dev
 npm run lint
+npm run type-check
 npm run build
 Set-Location ..
 python .\scripts\check_frontend_bundle.py .\ez_front_dev\dist
 ```
 
 发布门禁会构建到排除 `.env*` 的系统临时镜像，避免覆盖用户已有 `dist`。
+
+### Agent 离线门禁
+
+以下命令使用 deterministic fake planner/provider 和合成项目，不产生模型费用；完整套件需要 credential-free loopback Redis：
+
+```powershell
+Set-Location .\ez_back_dev
+python -m app.agentEval --suite all --format json
+python -m app.agentAcceptance --suite all --format json
+python -m app.agentBenchmark --suite all --telemetry compare --format json
+Set-Location ..
+```
 
 ### 凭证扫描
 
@@ -332,6 +384,7 @@ python .\scripts\smoke_llm.py --provider zhipu --confirm-cost --with-embedding
 - **数据库备份**：仓库 SQL 面向空库初始化，包含 `DROP TABLE IF EXISTS`。不要直接覆盖已有数据库；升级前必须备份并由数据库管理员审核 DDL。
 - **业务资料**：`ez_back_dev/static/projects/`、向量索引、上传源文档、截图中间文件、`dist` 与缓存均受 ignore/发布审计保护。
 - **reasoning**：界面 reasoning 仅当前会话展示且默认折叠，不持久化；公开材料不得复制模型内部推理、请求 payload 或 provider 异常详情。
+- **Agent reasoning**：legacy SSE 的 `reasoning_delta` 为受保护兼容字段；Agent checkpoint、API、SSE、MCP、日志和 trace 均不保存或展示 chain-of-thought。
 
 ## 迁移与兼容性
 
@@ -356,14 +409,18 @@ python .\scripts\smoke_llm.py --provider zhipu --confirm-cost --with-embedding
 - Iteration 3 设计系统：[`docs/iteration-3-design-system.md`](docs/iteration-3-design-system.md)
 - Iteration 3 测试工作区：[`docs/iteration-3-test-workspaces.md`](docs/iteration-3-test-workspaces.md)
 - 新对话提示词：[`docs/iteration-3-prompts.md`](docs/iteration-3-prompts.md)
+- Iteration 4 路线图（Aspect 1–8 已完成离线验收）：[`docs/iteration-4-overview.md`](docs/iteration-4-overview.md)
+- Iteration 4 新对话提示词：[`docs/iteration-4-prompts.md`](docs/iteration-4-prompts.md)
+- Iteration 4 完成报告：[`docs/iteration-4-closeout.md`](docs/iteration-4-closeout.md)
+- Iteration 4 开发日志：[`docs/iteration-4-development-log.md`](docs/iteration-4-development-log.md)
 
 ## 已知限制
 
-- Iteration 3 的真实旅程覆盖项目分析、单元、API 与 UI 共 8 个高层工作流；其他测试工作区由完整离线契约和 loopback 浏览器矩阵覆盖，尚未逐一执行真实付费模型。
+- Iteration 3 的真实旅程覆盖项目分析、单元、API 与 UI 共 8 个高层工作流；Iteration 4 Agent 使用 deterministic fake provider 完成集成门禁，真实模型 Agent 质量验收未执行，仍需单独费用授权。
 - RAG 索引是进程内缓存，容量、TTL、后端重启或多 worker 会触发各自重建。
-- `sessionStorage` 只保证当前浏览器标签会话的正文恢复；服务器 workflow status 仍可恢复步骤状态。
+- Agent thread/checkpoint 与 session-only evidence 默认保留 7 天；Redis 数据丢失会使旧 thread 不可恢复，但不影响 MySQL 中的有效 artifact。
 - 仓库没有新增 Playwright/Vitest E2E runner；浏览器验收证据通过现有浏览器能力与 pytest 静态/SFC 契约完成。
-- Vue CLI 生产构建仍可能报告默认 asset/entrypoint size 提示和 Node `fs.Stats` deprecation，但 bundle checker 的硬预算必须通过。
+- GitHub Actions 已定义但在本地 dirty worktree 中尚未通过远端 push 触发；托管状态为 `awaiting_explicit_push`。
 
 ## 常见问题
 

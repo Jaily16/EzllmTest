@@ -51,7 +51,7 @@ def test_foundation_styles_are_imported_in_locked_order():
 
 
 def test_document_language_viewport_and_app_scope_are_valid():
-    document = read("ez_front_dev/public/index.html")
+    document = read("ez_front_dev/index.html")
     app = read("ez_front_dev/src/App.vue")
 
     assert '<html lang="zh-CN">' in document

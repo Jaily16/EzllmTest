@@ -1,6 +1,8 @@
 import asyncio
 from types import SimpleNamespace
 
+import pytest
+
 from llm import streaming
 from llm.provider import provider_options
 from service.workflowBudget import profile_for
@@ -70,6 +72,31 @@ def test_stream_request_applies_stage_cap_and_disables_qwen_thinking(
     assert request["max_tokens"] <= 2_048
     assert request["extra_body"] == {"enable_thinking": False}
     assert request["messages"] == [{"role": "user", "content": "prompt"}]
+
+
+def test_stream_request_allows_only_the_frozen_json_response_format(monkeypatch):
+    monkeypatch.setattr(streaming, "get_settings", stream_settings)
+
+    request = streaming.build_stream_request(
+        "GLM-4.7",
+        "return json",
+        4_096,
+        request_options={
+            "max_tokens": 4_096,
+            "temperature": 0,
+            "extra_body": {"thinking": {"type": "disabled"}},
+            "response_format": {"type": "json_object"},
+        },
+    )
+
+    assert request["response_format"] == {"type": "json_object"}
+    with pytest.raises(ValueError, match="unsupported response_format"):
+        streaming.build_stream_request(
+            "GLM-4.7",
+            "return json",
+            4_096,
+            request_options={"response_format": {"type": "json_schema"}},
+        )
 
 
 def test_token_usage_is_classified_without_guessing():

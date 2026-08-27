@@ -32,6 +32,7 @@ class ProjectIndex:
     key: IndexKey
     vectorstore: InMemoryVectorStore | None
     document_count: int
+    documents: tuple[Document, ...] = ()
 
     def similarity_search_with_score(
         self, query: str, k: int
@@ -94,6 +95,7 @@ def _build_index(
         key=key,
         vectorstore=vectorstore,
         document_count=len(chunks),
+        documents=tuple(chunks),
     )
 
 
@@ -124,7 +126,9 @@ async def get_project_index(
     source_revision: str,
     documents: Sequence[Document],
     embeddings: Embeddings,
-) -> ProjectIndex:
+    *,
+    return_status: bool = False,
+) -> ProjectIndex | tuple[ProjectIndex, Literal["build", "reuse"]]:
     if not isinstance(pid, str) or not pid.strip():
         raise ValueError("pid is required")
     if corpus not in {"design", "requirements", "knowledge"}:
@@ -143,7 +147,7 @@ async def get_project_index(
     now = _clock()
     cached = _cached_index(key, now)
     if cached is not None:
-        return cached
+        return (cached, "reuse") if return_status else cached
 
     with _STATE_LOCK:
         request_generation = _PROJECT_GENERATIONS.get(pid, 0)
@@ -157,7 +161,7 @@ async def get_project_index(
             now = _clock()
             cached = _cached_index(key, now)
             if cached is not None:
-                return cached
+                return (cached, "reuse") if return_status else cached
             index = await asyncio.to_thread(
                 _build_index,
                 key,
@@ -171,7 +175,7 @@ async def get_project_index(
                     _INDEXES.move_to_end(key)
                     while len(_INDEXES) > INDEX_CAPACITY:
                         _INDEXES.popitem(last=False)
-            return index
+            return (index, "build") if return_status else index
     finally:
         with _STATE_LOCK:
             if _BUILD_LOCKS.get(key) is build_lock:

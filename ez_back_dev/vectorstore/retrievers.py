@@ -101,20 +101,41 @@ async def get_project_retriever(
     embedding_model=None,
     policy: RetrievalPolicy | None = None,
 ) -> BoundedRetriever:
+    from service.agentRetrieval import active_agent_retrieval
+
+    agent_session = active_agent_retrieval(pid)
     embeddings = embedding_model or get_lazy_embeddings()
-    index = await get_project_index(
+    index_result = await get_project_index(
         pid,
         corpus,
         source_revision,
         documents,
         embeddings,
+        return_status=agent_session is not None,
     )
+    if agent_session is not None:
+        index, index_status = index_result
+    else:
+        index = index_result
     selected_policy = policy or {
         "design": DESIGN_RETRIEVAL_POLICY,
         "requirements": REQUIREMENTS_RETRIEVAL_POLICY,
         "knowledge": KNOWLEDGE_RETRIEVAL_POLICY,
     }[corpus]
-    return BoundedRetriever(index, selected_policy)
+    if agent_session is None:
+        return BoundedRetriever(index, selected_policy)
+    from service.agentRetrieval import AgentEvidenceRetriever
+
+    return AgentEvidenceRetriever(
+        index,
+        selected_policy,
+        documents=index.documents,
+        corpus=corpus,
+        source_revision=source_revision,
+        index_status=index_status,
+        session=agent_session,
+        token_counter=num_tokens_from_string,
+    )
 
 
 class EmptyRetriever:

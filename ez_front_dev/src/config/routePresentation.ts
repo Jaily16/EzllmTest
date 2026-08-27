@@ -16,6 +16,7 @@ export const ROUTE_PRESENTATION: Record<string, RoutePresentation> = {
   "/functional": { title: "系统功能性测试" },
   "/nfunctional": { title: "系统非功能性测试" },
   "/acceptance": { title: "验收测试" },
+  "/agent": { title: "Agent 编排" },
 };
 
 export const routeTitleFor = (path: string): string =>

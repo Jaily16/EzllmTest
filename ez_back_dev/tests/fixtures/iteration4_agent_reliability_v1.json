@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "dataset_id": "iteration4-agent-reliability-v1",
+  "dataset_version": "1.0.0",
+  "seed": 20260827,
+  "provider": "deterministic_fake",
+  "description": "Loopback Redis reliability invariants for leases, idempotency, cancellation, recovery, replay, and cache reuse.",
+  "tasks": [
+    {"id":"reliability-duplicate-command","suite":"reliability","kind":"reliability","scenario":"duplicate_command","category":"approval_replay","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-duplicate-approval","suite":"reliability","kind":"reliability","scenario":"duplicate_approval","category":"approval_replay","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-crash-before-tool","suite":"reliability","kind":"reliability","scenario":"crash_before_tool","category":"crash_recovery","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-persisted-crash","suite":"reliability","kind":"reliability","scenario":"persisted_crash_after_save","category":"crash_recovery","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true,"artifact_preserved":true}},
+    {"id":"reliability-session-unknown","suite":"reliability","kind":"reliability","scenario":"session_outcome_unknown","category":"crash_recovery","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true,"error_code":"outcome_unknown"}},
+    {"id":"reliability-evidence-rebuild","suite":"reliability","kind":"reliability","scenario":"evidence_rebuild","category":"evidence_rebuild","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-lease-expiry","suite":"reliability","kind":"reliability","scenario":"lease_expiry","category":"lease_fencing","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-stale-fence","suite":"reliability","kind":"reliability","scenario":"stale_worker_fence","category":"lease_fencing","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-worker-restart","suite":"reliability","kind":"reliability","scenario":"worker_restart","category":"lease_fencing","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-cancel-queued","suite":"reliability","kind":"reliability","scenario":"cancel_queued","category":"cancel","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-cancel-approval","suite":"reliability","kind":"reliability","scenario":"cancel_awaiting","category":"cancel","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-cancel-next","suite":"reliability","kind":"reliability","scenario":"cancel_next_side_effect","category":"cancel","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-stale-revision","suite":"reliability","kind":"reliability","scenario":"stale_revision","category":"stale","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-redis-transient","suite":"reliability","kind":"reliability","scenario":"redis_transient","category":"redis_loss","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-redis-loss","suite":"reliability","kind":"reliability","scenario":"redis_loss","category":"redis_loss","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true,"artifact_preserved":true}},
+    {"id":"reliability-active-slot","suite":"reliability","kind":"reliability","scenario":"active_slot_race","category":"active_slot","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-replay-gap","suite":"reliability","kind":"reliability","scenario":"replay_gap","category":"replay","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true}},
+    {"id":"reliability-warm-cache","suite":"reliability","kind":"reliability","scenario":"warm_exact_cache","category":"cache","expected":{"approval":"approved","terminal_status":"completed","trajectory":["fault_injected","reconciled","completed"],"recovery_success":true,"cache_hit":true}}
+  ]
+}

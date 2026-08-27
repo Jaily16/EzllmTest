@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-08-27",
+  "parent": {
+    "fixture": "iteration4_aspect2_manifest_v1.json",
+    "requirements_sha256": "D0203C1049B50F09FE00FAC5F42EDD962202E61B00EB885DD817914E74B7B380"
+  },
+  "approved_direct_dependencies": [
+    "langgraph==1.2.11",
+    "langgraph-checkpoint==4.2.0",
+    "redis==6.4.0"
+  ],
+  "excluded_dependencies": [
+    "langgraph-checkpoint-redis",
+    "redisvl"
+  ],
+  "checkpoint_security": {
+    "content_type": "ezllm-safe-json-v1",
+    "dynamic_imports": false,
+    "pickle": false,
+    "msgpack": false,
+    "implementation": "in_repo_public_base_checkpoint_saver"
+  },
+  "redis_test_image": {
+    "tag": "redis:8.2.8-alpine",
+    "digest": "sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103",
+    "binding": "127.0.0.1",
+    "host_port": 16379,
+    "persistent_volume": false
+  },
+  "configuration_files": {
+    ".env.example": "F69E336329C23C2901ADDD8C1FA75749885DC4F34507A5B2BEA9431492D2A25B"
+  },
+  "package_manifests": {
+    "ez_back_dev/requirements.txt": "54EB1002BA00AEE7F11546990EEF78EFB0A4AC52ED5F850AC1A119203E8969AD",
+    "ez_front_dev/package.json": "769EC529E786375A8DCDB5FCE27C1A4A44D5DDEDC3B9946E2850DEA8477BD5C3",
+    "ez_front_dev/package-lock.json": "C93CDE311DB8675A62A781E20F613DD291D049743CF30A684EE3B94EA074DEAA"
+  }
+}

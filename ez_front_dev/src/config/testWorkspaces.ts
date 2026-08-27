@@ -1,5 +1,12 @@
-/* global require */
 import type { TestMenuState } from "@/state/projectAnalysis";
+import acceptanceTesting from "@/assets/static/image/test-types-v2/acceptance-testing.png";
+import apiTesting from "@/assets/static/image/test-types-v2/api-testing.png";
+import databaseTesting from "@/assets/static/image/test-types-v2/database-testing.png";
+import functionalTesting from "@/assets/static/image/test-types-v2/functional-testing.png";
+import integrationTesting from "@/assets/static/image/test-types-v2/integration-testing.png";
+import nonfunctionalTesting from "@/assets/static/image/test-types-v2/nonfunctional-testing.png";
+import uiTesting from "@/assets/static/image/test-types-v2/ui-testing.png";
+import unitTesting from "@/assets/static/image/test-types-v2/unit-testing.png";
 
 export type TestWorkspaceKey = Exclude<keyof TestMenuState, "test_plan">;
 
@@ -36,7 +43,7 @@ export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
     route: "/unit",
     terminalOperation: "unit_case",
     nextStep: "先识别可测试模块、类与函数，再生成当前会话结果。",
-    illustration: require("@/assets/static/image/test-types-v2/unit-testing.png"),
+    illustration: unitTesting,
   },
   {
     key: "integration_test",
@@ -45,7 +52,7 @@ export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
     route: "/integration",
     terminalOperation: "integration_case",
     nextStep: "先分析模块协作关系，再选择集成策略与目标。",
-    illustration: require("@/assets/static/image/test-types-v2/integration-testing.png"),
+    illustration: integrationTesting,
   },
   {
     key: "api_test",
@@ -54,7 +61,7 @@ export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
     route: "/api",
     terminalOperation: "api_case",
     nextStep: "先识别接口与约束，再生成当前会话结果。",
-    illustration: require("@/assets/static/image/test-types-v2/api-testing.png"),
+    illustration: apiTesting,
   },
   {
     key: "ui_test",
@@ -63,7 +70,7 @@ export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
     route: "/ui",
     terminalOperation: "ui_case",
     nextStep: "先分析页面与交互，再生成并保存测试结果。",
-    illustration: require("@/assets/static/image/test-types-v2/ui-testing.png"),
+    illustration: uiTesting,
   },
   {
     key: "db_test",
@@ -72,7 +79,7 @@ export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
     route: "/database",
     terminalOperation: "db_case",
     nextStep: "先分析数据结构与约束，再生成并保存测试结果。",
-    illustration: require("@/assets/static/image/test-types-v2/database-testing.png"),
+    illustration: databaseTesting,
   },
   {
     key: "functional_test",
@@ -81,7 +88,7 @@ export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
     route: "/functional",
     terminalOperation: "functional_case",
     nextStep: "先识别业务用例，再生成当前会话结果。",
-    illustration: require("@/assets/static/image/test-types-v2/functional-testing.png"),
+    illustration: functionalTesting,
   },
   {
     key: "nonfunctional_test",
@@ -90,7 +97,7 @@ export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
     route: "/nfunctional",
     terminalOperation: "nonfunctional_case",
     nextStep: "先提取质量属性与约束，再生成当前会话结果。",
-    illustration: require("@/assets/static/image/test-types-v2/nonfunctional-testing.png"),
+    illustration: nonfunctionalTesting,
   },
   {
     key: "acceptance_test",
@@ -99,6 +106,6 @@ export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
     route: "/acceptance",
     terminalOperation: "acceptance_case",
     nextStep: "先核对验收目标，再生成并保存测试结果。",
-    illustration: require("@/assets/static/image/test-types-v2/acceptance-testing.png"),
+    illustration: acceptanceTesting,
   },
 ] as const;

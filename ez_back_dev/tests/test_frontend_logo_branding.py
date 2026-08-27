@@ -111,14 +111,14 @@ def test_production_uses_v2_logo_and_retains_rollback_assets():
     onboarding = read(
         "ez_front_dev/src/components/onboarding/OnboardingShell.vue"
     )
-    index = read("ez_front_dev/public/index.html")
+    index = read("ez_front_dev/index.html")
 
     assert "ezlogo-workbench-v2.png" in main_view
     assert "ezlogo-workbench-v2.png" in onboarding
     assert 'width="38"' in main_view and 'height="38"' in main_view
     assert 'width="52"' in onboarding and 'height="52"' in onboarding
     assert 'rel="icon"' in index
-    assert 'href="<%= BASE_URL %>favicon.png"' in index
+    assert 'href="/favicon.png"' in index
 
     production_sources = [
         path

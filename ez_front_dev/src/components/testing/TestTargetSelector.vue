@@ -51,6 +51,8 @@
 /* global defineProps, defineEmits, withDefaults */
 import { computed, ref } from "vue";
 import TestFieldGroup from "@/components/testing/TestFieldGroup.vue";
+import "element-plus/es/components/option/style/css";
+import "element-plus/es/components/select/style/css";
 
 export interface TestTargetOption {
   value: string;

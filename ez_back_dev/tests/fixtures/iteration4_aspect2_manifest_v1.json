@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-08-27",
+  "parent": {
+    "fixture": "iteration3_contract_baseline_v1.json",
+    "requirements_sha256": "131F71733433D2806083756DFB2B5E315B66A678E304EBA6EB3E82FF0F4C7FEF"
+  },
+  "approved_direct_dependency": "mcp==2.1.1",
+  "package_manifests": {
+    "ez_back_dev/requirements.txt": "D0203C1049B50F09FE00FAC5F42EDD962202E61B00EB885DD817914E74B7B380",
+    "ez_front_dev/package.json": "769EC529E786375A8DCDB5FCE27C1A4A44D5DDEDC3B9946E2850DEA8477BD5C3",
+    "ez_front_dev/package-lock.json": "C93CDE311DB8675A62A781E20F613DD291D049743CF30A684EE3B94EA074DEAA"
+  }
+}
