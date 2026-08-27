@@ -99,14 +99,15 @@ def load_eval_dataset(path: Path) -> EvalDataset:
         parent = FIXTURE_ROOT / dataset.parent.fixture
         if not parent.is_file():
             raise ValueError("eval parent fixture is unavailable")
-        digest = hashlib.sha256(parent.read_bytes()).hexdigest().upper()
+        digest = _sha256(parent)
         if digest != dataset.parent.sha256:
             raise ValueError("eval parent fixture hash does not match")
     return dataset
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest().upper()
+    payload = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest().upper()
 
 
 def _environment(topology: str) -> EvalEnvironment:

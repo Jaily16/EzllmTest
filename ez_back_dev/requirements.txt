@@ -30,7 +30,8 @@ langchain-openai==1.5.2
 langchain-text-splitters==1.1.2
 openai==3.3.0
 
-# Local document loading and token counting
+# Local document loading, retrieval math and token counting
+numpy==1.26.4
 pypdf==6.16.1
 docx2txt==0.9
 tiktoken==0.14.0

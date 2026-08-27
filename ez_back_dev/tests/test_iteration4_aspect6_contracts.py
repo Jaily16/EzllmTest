@@ -9,6 +9,11 @@ ROOT = Path(__file__).parents[2]
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
+def _sha256(path: Path) -> str:
+    payload = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest().upper()
+
+
 def test_aspect6_manifest_chains_history_without_dependency_changes():
     manifest = json.loads(
         (FIXTURES / "iteration4_aspect6_manifest_v1.json").read_text(
@@ -17,9 +22,7 @@ def test_aspect6_manifest_chains_history_without_dependency_changes():
     )
     assert manifest["parent"]["fixture"] == "iteration4_aspect5_manifest_v1.json"
     parent = FIXTURES / manifest["parent"]["fixture"]
-    assert hashlib.sha256(parent.read_bytes()).hexdigest().upper() == manifest["parent"][
-        "fixture_sha256"
-    ]
+    assert _sha256(parent) == manifest["parent"]["fixture_sha256"]
     assert manifest["approved_dependency_changes"] == []
     assert manifest["eval"]["real_provider_calls"] == 0
     assert manifest["eval"]["real_embedding_calls"] == 0
@@ -31,9 +34,7 @@ def test_aspect6_manifest_chains_history_without_dependency_changes():
         "gate_fixture",
     ):
         fixture = FIXTURES / manifest["eval"][name]
-        assert hashlib.sha256(fixture.read_bytes()).hexdigest().upper() == manifest[
-            "eval"
-        ][f"{name}_sha256"]
+        assert _sha256(fixture) == manifest["eval"][f"{name}_sha256"]
 
 
 def test_aspect6_gate_is_reviewed_deterministic_evidence():

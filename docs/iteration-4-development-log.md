@@ -1236,3 +1236,13 @@ instruction.
 - tracked-only、无 `.env*` 的系统临时前端副本执行离线 `npm ci`（233 packages）、lint、type-check、Vite build 和 bundle checker均通过；source map=0，largest initial JS=293,597 bytes，initial CSS=115,218 bytes，initial total=527,792 bytes，build=1,474,835 bytes。验证目录已精确删除。
 - `docker compose --env-file ops/compose/.env.example -f compose.yaml config --quiet` 通过。发布门禁没有再次执行真实模型或 embedding；真实费用范围仍仅为前述已授权质量/E2E 调用，provider 未返回货币金额。
 - 托管 CI 只在推送 main 后触发，最终状态以 README badge 和 GitHub Actions 页面为准，避免在仓库内写入会过期的静态状态。
+
+### 首次托管 CI 与跨平台修复
+
+- 首次 main push 触发 GitHub Actions run `33097408874`。依赖安装与 credential scan 通过，Backend tests 为 `650 passed, 8 failed`；后续步骤按 fail-fast 未运行。
+- 失败分成两组：4 项历史/release SHA 契约直接哈希 Windows 工作区的 CRLF/混合换行，在 Ubuntu LF checkout 产生假漂移；4 项 RAG 测试调用 LangChain `InMemoryVectorStore` 的余弦相似度，但 requirements 未显式声明 NumPy，本地共享环境中的传递安装掩盖了干净 CI 缺依赖。
+- 修复没有改写 Aspect 1–8 历史 fixture：旧 manifest 测试改为验证其已记录的历史值；当前 release manifest 使用 `sha256_canonical_lf_v1`，Eval/Acceptance/benchmark 的版本化文本哈希也统一规范化到 LF，并增加 LF/CRLF 等价回归。
+- `requirements.txt` 精确新增 `numpy==1.26.4`，这是现有 RAG 余弦检索路径的直接运行时依赖，不改变检索策略、Token 预算或公共协议。release manifest 更新当前 canonical package/protected-source 哈希并记录该依赖修复。
+- 修复聚焦门禁先后为 `34 passed` 和 `53 passed`；带独立 Redis 8.2.8 的完整 pytest 为 `659 passed in 27.59s`。
+- Eval=`104/104`、Acceptance=`18/18`，安全计数与 warm-cache 模型/embedding 调用均为 0。复验 benchmark 的 legacy p95 ratio=`0.947102356927876`、OTel p95 ratio=`1.0256611149561863`，两个相对门禁及 warm-cache 门禁通过；真实 provider/embedding 调用为 0。
+- `pip check`、tracked-only `npm ci`、lint、type-check、Vite build、bundle checker、0 source map 与 Compose config 再次通过。临时前端目录和精确 Redis 容器已删除；第二次托管运行结果继续以 main badge/Actions 页面动态记录。

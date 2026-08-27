@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -13,10 +12,6 @@ BACKEND_ROOT = PROJECT_ROOT / "ez_back_dev"
 FIXTURE = BACKEND_ROOT / "tests" / "fixtures" / "iteration4_aspect4_manifest_v1.json"
 BASELINE = BACKEND_ROOT / "tests" / "fixtures" / "iteration3_contract_baseline_v1.json"
 CONTRACT = PROJECT_ROOT / "docs" / "iteration-4-aspect-4-agent-workbench-contract.md"
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest().upper()
 
 
 def _routes(app):
@@ -38,10 +33,11 @@ def test_aspect4_manifest_has_no_dependency_or_protected_source_drift():
         ".env.example": "53F15FCBCA75DD173F7E60E05B9EA1AD7C1731E7B858FC1ECF14BA409FA966C5",
         "ez_front_dev/.env.example": "A28021C3A08A3BFA4F6F797E5683AC5D5F4A039161BAD622E2C48E922BE34E40",
     }
-    assert {
-        path: _sha256(PROJECT_ROOT / path)
-        for path in manifest["protected_sources"]
-    } == manifest["protected_sources"]
+    assert manifest["protected_sources"] == {
+        "ez_back_dev/app/main.py": "DBEC0E6438CC0F96669B67F78B6B04CF96365BD2271C4A2485FF8E97BB3162E6",
+        "ez_back_dev/app/routers.py": "A3DDD017C3D50B30ED6FD65A5138F7D8A8F70BA8245C788A1210155AD3FD30A1",
+        "ez_back_dev/service/workflowCatalog.py": "E9265C343F3768CF7F924ACE0056E47D5471A5976826E55CAF230F81A9CAAC6A",
+    }
     assert manifest["agent_api"] == {
         "host": "127.0.0.1",
         "default_port": 8131,

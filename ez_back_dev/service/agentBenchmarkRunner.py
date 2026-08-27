@@ -31,7 +31,8 @@ _ROOT = Path(__file__).parents[2]
 
 
 def _hash(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest().upper()
+    payload = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest().upper()
 
 
 def _environment() -> dict[str, str]:

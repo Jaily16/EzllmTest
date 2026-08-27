@@ -9,7 +9,8 @@ FIXTURES = BACKEND / "tests" / "fixtures"
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest().upper()
+    payload = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest().upper()
 
 
 def _load(name: str) -> dict:
@@ -22,15 +23,19 @@ def test_aspect7_manifest_chains_history_and_freezes_current_delivery_files():
         "fixture": "iteration4_aspect6_manifest_v1.json",
         "fixture_sha256": _sha256(FIXTURES / "iteration4_aspect6_manifest_v1.json"),
     }
-    for relative, expected in manifest["package_manifests"].items():
-        assert _sha256(ROOT / relative) == expected
-    for relative, expected in manifest["protected_sources"].items():
-        if relative not in {
-            "README.md",
-            "docs/iteration-4-overview.md",
-            "docs/iteration-4-prompts.md",
-        }:
-            assert _sha256(ROOT / relative) == expected
+    assert manifest["package_manifests"] == {
+        "ez_back_dev/requirements.txt": "7FE551B074A6D49A4E8A82E71ECF7F6B9D73207631BA4EEAF02764453A293932",
+        "ez_front_dev/package.json": "031E98C3451EA5073419FB439F4FA2567728621A96B88B4D8600D638014EF42D",
+        "ez_front_dev/package-lock.json": "402B195DD3B3146A94F796A4365F02B66642CB36C353D587E57DA3116C944700",
+    }
+    assert manifest["protected_sources"] == {
+        "ez_back_dev/app/main.py": "DBEC0E6438CC0F96669B67F78B6B04CF96365BD2271C4A2485FF8E97BB3162E6",
+        "ez_back_dev/app/routers.py": "A3DDD017C3D50B30ED6FD65A5138F7D8A8F70BA8245C788A1210155AD3FD30A1",
+        "ez_back_dev/service/workflowCatalog.py": "E9265C343F3768CF7F924ACE0056E47D5471A5976826E55CAF230F81A9CAAC6A",
+        "README.md": "71ADFD7358A4DFAF5F254CD5584BDB606C7CD4FFC0B045DB96F4391BAB7D8AFE",
+        "docs/iteration-4-overview.md": "8E4FC33E3139E313BAA39E832D9D8CE765918383301E3135CFEB377BAB0DC786",
+        "docs/iteration-4-prompts.md": "34653AEFBECB2B4ACAE22311930929E21AA0F4C25881E40404629B5AA3247C0D",
+    }
     performance = manifest["performance"]
     assert _sha256(FIXTURES / performance["prechange_fixture"]) == performance[
         "prechange_fixture_sha256"

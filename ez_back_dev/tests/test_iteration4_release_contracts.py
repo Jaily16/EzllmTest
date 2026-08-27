@@ -1,4 +1,5 @@
 import hashlib
+import importlib.metadata
 import json
 from pathlib import Path
 
@@ -8,7 +9,8 @@ FIXTURES = ROOT / "ez_back_dev" / "tests" / "fixtures"
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest().upper()
+    payload = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(payload).hexdigest().upper()
 
 
 def _load(name: str) -> dict:
@@ -17,6 +19,8 @@ def _load(name: str) -> dict:
 
 def test_release_manifest_layers_on_immutable_aspect8_evidence():
     manifest = _load("iteration4_release_manifest_v1.json")
+    assert manifest["hash_policy"] == "sha256_canonical_lf_v1"
+    assert manifest["release_dependency_fix"] == ["numpy==1.26.4"]
     assert manifest["parent"] == {
         "fixture": "iteration4_aspect8_manifest_v1.json",
         "fixture_sha256": _sha256(FIXTURES / "iteration4_aspect8_manifest_v1.json"),
@@ -29,6 +33,17 @@ def test_release_manifest_layers_on_immutable_aspect8_evidence():
         assert _sha256(ROOT / item["path"]) == item["sha256"]
     delivery = manifest["delivery"]
     assert _sha256(ROOT / delivery["workflow"]) == delivery["workflow_sha256"]
+
+
+def test_release_hash_policy_is_cross_platform_and_numpy_is_explicit(tmp_path):
+    sample = tmp_path / "sample.txt"
+    sample.write_bytes(b"alpha\nbeta\n")
+    linux_hash = _sha256(sample)
+    sample.write_bytes(b"alpha\r\nbeta\r\n")
+    assert _sha256(sample) == linux_hash
+    requirements = (ROOT / "ez_back_dev/requirements.txt").read_text(encoding="utf-8")
+    assert "numpy==1.26.4" in requirements.splitlines()
+    assert importlib.metadata.version("numpy") == "1.26.4"
 
 
 def test_release_manifest_records_real_acceptance_without_overclaiming_cost():
