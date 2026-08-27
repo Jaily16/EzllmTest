@@ -1,8 +1,10 @@
 # EzllmTest
 
+[![Iteration 4 offline gates](https://github.com/Jaily16/EzllmTest/actions/workflows/iteration4-offline.yml/badge.svg?branch=main)](https://github.com/Jaily16/EzllmTest/actions/workflows/iteration4-offline.yml)
+
 一个面向软件测试团队的本地 AI 测试工作台：从项目资料上传开始，经业务分析、测试计划和推荐菜单，继续生成单元、集成、API、UI、数据库、功能、非功能与验收测试成果。
 
-当前仓库已完成 Iteration 1–4。Iteration 3 统一了应用壳、设计系统、项目恢复和八类测试页，并通过真实 `GLM-4.7`、`embedding-3` 与本地 MySQL 完成一条脱敏代表性旅程；Iteration 4 在不替换原有确定性 workflow 的前提下，新增了可规划、可审批、可恢复、可评测、可观测的 LangGraph 单 Agent 编排层，并完成无真实模型费用的离线集成验收。
+当前仓库已完成 Iteration 1–4。Iteration 3 统一了应用壳、设计系统、项目恢复和八类测试页，并通过真实 `GLM-4.7`、`embedding-3` 与本地 MySQL 完成一条脱敏代表性旅程；Iteration 4 在不替换原有确定性 workflow 的前提下，新增了可规划、可审批、可恢复、可评测、可观测的 LangGraph 单 Agent 编排层，并通过完整离线验收与隔离的真实模型合成项目 E2E。
 
 > 仓库为私有项目。私有可见性不是凭证保险箱：任何 API Key、数据库密码、真实项目 ID、客户资料和运行时产物都不得提交。
 
@@ -34,6 +36,7 @@
 - **持久执行与恢复**：Redis 保存有 TTL 的 checkpoint、租约、幂等、取消和事件重放；MySQL 仍是项目、revision 与有效 artifact 的长期真源。
 - **工作台与 MCP**：独立 Agent API、worker 和 `/agent` 工作台展示结构化计划、审批、证据、预算、恢复与 trace；loopback MCP 默认只能执行三个只读工具。
 - **评测与可观测性**：固定 synthetic Eval/acceptance/benchmark 覆盖轨迹、安全、恢复、RAG、缓存和性能；OpenTelemetry、Prometheus、Tempo 与 Grafana 由本地 Docker Compose 提供。
+- **真实模型合成验收**：修复后的 planner 结构化输出为 `6/6`，真实 RAG 为 `3/3`；隔离的 `ui_info → ui_case` 旅程经过两次人工审批后完成，并实际使用 chat、embedding、RAG 与 artifact 服务。
 
 ## 关键界面
 
@@ -311,7 +314,7 @@ python -m app.agentWorker --consumer local-worker
 
 ```powershell
 Set-Location .\ez_front_dev
-npm run serve
+npm run serve -- --port 8080 --strictPort
 ```
 
 打开 `http://localhost:8080`。项目 ID 的格式为 `Ez` 加 19 位数字；它是恢复项目的入口，不应公开分享。legacy API 文档位于 `http://localhost:8130/docs`，Agent 健康检查位于 `http://localhost:8131/health`。完整十服务栈与安全停机方式见 [`docs/iteration-4-compose.md`](docs/iteration-4-compose.md)。
@@ -409,18 +412,20 @@ python .\scripts\smoke_llm.py --provider zhipu --confirm-cost --with-embedding
 - Iteration 3 设计系统：[`docs/iteration-3-design-system.md`](docs/iteration-3-design-system.md)
 - Iteration 3 测试工作区：[`docs/iteration-3-test-workspaces.md`](docs/iteration-3-test-workspaces.md)
 - 新对话提示词：[`docs/iteration-3-prompts.md`](docs/iteration-3-prompts.md)
-- Iteration 4 路线图（Aspect 1–8 已完成离线验收）：[`docs/iteration-4-overview.md`](docs/iteration-4-overview.md)
+- Iteration 4 路线图（Aspect 1–8 已完成验收）：[`docs/iteration-4-overview.md`](docs/iteration-4-overview.md)
 - Iteration 4 新对话提示词：[`docs/iteration-4-prompts.md`](docs/iteration-4-prompts.md)
 - Iteration 4 完成报告：[`docs/iteration-4-closeout.md`](docs/iteration-4-closeout.md)
+- Iteration 4 真实模型验收：[`docs/iteration-4-live-model-acceptance.md`](docs/iteration-4-live-model-acceptance.md)
 - Iteration 4 开发日志：[`docs/iteration-4-development-log.md`](docs/iteration-4-development-log.md)
 
 ## 已知限制
 
-- Iteration 3 的真实旅程覆盖项目分析、单元、API 与 UI 共 8 个高层工作流；Iteration 4 Agent 使用 deterministic fake provider 完成集成门禁，真实模型 Agent 质量验收未执行，仍需单独费用授权。
+- Iteration 4 的真实模型证据只覆盖版本化合成目标、合成文档和隔离的 `ui_info → ui_case` 旅程；尚未验证真实客户项目、生产负载或用户 MySQL，不应外推为生产质量结论。
 - RAG 索引是进程内缓存，容量、TTL、后端重启或多 worker 会触发各自重建。
 - Agent thread/checkpoint 与 session-only evidence 默认保留 7 天；Redis 数据丢失会使旧 thread 不可恢复，但不影响 MySQL 中的有效 artifact。
 - 仓库没有新增 Playwright/Vitest E2E runner；浏览器验收证据通过现有浏览器能力与 pytest 静态/SFC 契约完成。
-- GitHub Actions 已定义但在本地 dirty worktree 中尚未通过远端 push 触发；托管状态为 `awaiting_explicit_push`。
+- GitHub Actions `Iteration 4 offline gates` 在 `main` 上执行离线门禁；托管状态以 README 顶部 badge 和 Actions 页面为准，不在文档中保存易过期的静态结论。
+- 本次收口不创建 Tag 或 GitHub Release；版本交付目标是 `origin/main`。
 
 ## 常见问题
 

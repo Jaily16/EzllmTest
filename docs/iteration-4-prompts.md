@@ -1,6 +1,6 @@
 # EzllmTest Iteration 4 新对话提示词
 
-> **归档状态：Iteration 4 已完成离线验收。** 下文是保留的历史执行提示，不应再次按“尚未启动”状态运行。实际交付、门禁数字、限制和未发布状态见 [`docs/iteration-4-closeout.md`](iteration-4-closeout.md)。
+> **归档状态：Iteration 4 已完成离线验收与隔离真实模型 Agent 合成 E2E。** 下文是保留的历史执行提示，不应再次按“尚未启动”状态运行。实际交付、门禁数字、真实费用边界和生产未验证限制见 [`docs/iteration-4-closeout.md`](iteration-4-closeout.md)。
 
 Iteration 4 开工时按以下顺序使用这些提示词：第一条只允许只读接手；阅读并确认接手报告后，再发送第二条，只规划 Aspect 1。
 

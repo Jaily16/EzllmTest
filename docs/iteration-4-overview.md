@@ -1,6 +1,6 @@
 # EzllmTest Iteration 4：可控、可恢复、可评测的测试编排 Agent
 
-> **状态：Aspect 1–8 已完成离线验收。** 本文保留实施前的方面级路线图、标签和决策背景作为历史记录；已交付能力、真实门禁数字与限制以 [`docs/iteration-4-closeout.md`](iteration-4-closeout.md) 为准。提交、推送、tag、Release 与真实模型 Agent 质量验收仍需单独授权。
+> **状态：Aspect 1–8 的离线验收与隔离真实模型 Agent 合成 E2E 均已完成。** 本文保留实施前的方面级路线图、标签和决策背景作为历史记录；已交付能力、真实门禁数字与限制以 [`docs/iteration-4-closeout.md`](iteration-4-closeout.md) 为准。交付目标为 `main`，本次不创建 Tag 或 Release；托管 CI 状态以仓库 badge/Actions 页面为准。
 
 本文第 3–4 节的 `Verified`、`Approved`、`Proposed` 和 `Missing` 标签描述的是 Iteration 4 开工时的基线，不应被理解为当前交付状态。
 

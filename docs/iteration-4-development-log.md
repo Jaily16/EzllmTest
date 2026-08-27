@@ -1222,3 +1222,17 @@ instruction.
 - 最终安全计数：approval bypass、duplicate side effects、real project reads、user database calls、public/checkpoint document leakage、stored reasoning、credential exposure 均为 0。临时 SQLite/文档目录为 0，验收容器已删除，端口 6399 已释放，用户既有 Redis 未触碰。
 - 为透明记录实际付费边界，缺陷定位和最终门禁共运行四个隔离 E2E run，累计 `14` chat + `6` embedding；未调用其余聊天 provider。provider 未返回货币费用，不推测货币金额。
 - 实施期间未 stage、commit、fetch、pull 或 push；Aspect 8 历史 fixture 未修改。
+
+## 2026-08-28 — Iteration 4 最终文档、发布门禁与 Main 交付
+
+- 用户授权创建 `codex/iteration4-closeout`、分两笔提交、合并并推送 `origin/main`，但不创建远端 feature branch、Tag 或 GitHub Release。起点 HEAD、本地 `origin/main` 与远端 main 均为 `3c49e864a523a4af4c0f3efd4f845e8ce7b1caed`。
+- 首笔实现提交为 `f73ecbd723731096d4386f4806654dd2e11fb9a7`（`feat: complete iteration 4 agent orchestration platform`）。提交前审计 182 个 staged 路径，真实 `.env`、数据库、Redis dump、日志、trace、coverage、截图、`dist`、source map、缓存和 `node_modules` 均未进入暂存区；credential scan 与 `git diff --cached --check` 通过。
+- 最终文档把证据明确分为离线门禁、真实 planner/RAG 合成质量门禁和隔离 `ui_info → ui_case` 真实 Agent E2E；README 启动命令固定为 `npm run serve -- --port 8080 --strictPort`，GitHub Actions 状态改由 main badge 动态展示。
+- 新增 `iteration4_release_manifest_v1.json`，以未修改的 Aspect 8 manifest 为父层，冻结 package/protected-source/final-document/live-acceptance 哈希，并记录 main 交付目标、无 Tag/Release 和未知货币费用边界。Aspect 1–8 历史 fixture 未回写。
+- 使用项目 Python 3.11.15 和独立 Redis 8.2.8 容器（精确 digest、`127.0.0.1:6399`、tmpfs、RDB/AOF 关闭）运行完整 pytest：`658 passed in 27.86s`，无 skip。
+- `agentEval --suite all` 通过 `104/104`，47/47 安全攻击按预期阻断；approval bypass、duplicate side effect、project isolation、预算突破、任意能力和敏感泄漏均为 0。
+- `agentAcceptance --suite all` 通过 `18/18`，task success、trajectory validity 和 recovery 为 100%；warm exact-cache 新增模型/embedding 调用为 `0/0`，用户 MySQL 与用户项目读取为 0。
+- `agentBenchmark --suite all --telemetry compare` 退出码 0：legacy p95 ratio=`1.0276695194994545`（门限 1.15），OTel p95 ratio=`1.0258291744311046`（门限 1.05），warm-cache 零模型/embedding 门禁通过。全部为 deterministic fake 边缘，真实 provider/embedding/MySQL 调用为 0。
+- tracked-only、无 `.env*` 的系统临时前端副本执行离线 `npm ci`（233 packages）、lint、type-check、Vite build 和 bundle checker均通过；source map=0，largest initial JS=293,597 bytes，initial CSS=115,218 bytes，initial total=527,792 bytes，build=1,474,835 bytes。验证目录已精确删除。
+- `docker compose --env-file ops/compose/.env.example -f compose.yaml config --quiet` 通过。发布门禁没有再次执行真实模型或 embedding；真实费用范围仍仅为前述已授权质量/E2E 调用，provider 未返回货币金额。
+- 托管 CI 只在推送 main 后触发，最终状态以 README badge 和 GitHub Actions 页面为准，避免在仓库内写入会过期的静态状态。

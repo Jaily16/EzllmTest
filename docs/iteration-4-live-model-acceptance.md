@@ -110,3 +110,10 @@ Aspect 8 的版本化 gate 仍是其完成当时的离线历史证据，不回�
 为透明记录实际费用边界，本次 E2E 调试共执行四个隔离 run：首个 run 在 `ui_info` 后暴露状态推进缺陷，后两个完整 run 暴露/定位 Windows 清理问题，最终 run 完整通过。根据实际完成节点与预算 ledger，累计为 `14` 次 chat 和 `6` 次 embedding；没有调用另外三个聊天 provider。所有 run 均使用合成数据和临时存储。
 
 该结果把先前“只验证 planner 与 RAG、未调用业务工具”的边界提升为完整的真实模型 Agent 合成项目旅程，但仍不代表真实客户项目、用户 MySQL 或生产负载验收。Aspect 8 离线 fixture 与历史 gate 继续保持不变。
+
+## 最终收口与 Git 交付边界
+
+- 最终发布证据分三层记录：Aspect 6/8 的 deterministic 离线门禁、修复后 planner `6/6` 与 RAG `3/3` 的真实质量门禁，以及 `ui_info → ui_case` 的隔离真实模型合成 E2E。三者不能互相替代，也不外推到真实客户项目或生产负载。
+- 收口后的完整 pytest、Eval、Acceptance、benchmark、Vite 和安全检查不再调用真实 provider；真实费用边界仍以本文已记录的调用次数和 Token 为准。
+- Git 交付范围只包含仓库源代码、测试、fixture、运行手册和脱敏验收事实；真实 `.env`、临时 SQLite、合成上传目录、Redis 数据、模型正文、trace、日志、截图和构建产物均不进入版本历史。
+- 交付目标是合并并推送 `origin/main`，托管 CI 状态由 GitHub Actions badge 动态展示。本次不创建 Tag 或 GitHub Release。
