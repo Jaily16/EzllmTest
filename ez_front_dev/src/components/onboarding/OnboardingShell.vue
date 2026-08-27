@@ -4,7 +4,7 @@
       <header class="onboarding-shell__brand">
         <img
           class="onboarding-shell__logo"
-          :src="require('@/assets/static/image/ezlogo-workbench-v2.png')"
+          :src="workbenchLogo"
           width="52"
           height="52"
           alt=""
@@ -39,7 +39,8 @@
 </template>
 
 <script lang="ts" setup>
-/* global defineProps, withDefaults */
+import workbenchLogo from "@/assets/static/image/ezlogo-workbench-v2.png";
+
 withDefaults(defineProps<{
   title: string;
   description?: string;

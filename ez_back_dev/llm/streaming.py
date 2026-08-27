@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Literal
 
 from openai import APIConnectionError, APITimeoutError, AsyncOpenAI, RateLimitError
 
 from app.config import get_settings
+from service.agentBudgetLedger import reserve_model_budget
+from service.agentTelemetry import (
+    agent_span,
+    agent_trace_is_active,
+    get_agent_telemetry,
+)
 from llm.provider import (
     LLMError,
     LLMEmptyResponseError,
@@ -153,6 +160,11 @@ def build_stream_request(
         for key in ("temperature", "extra_body", "reasoning_effort"):
             if key in request_options:
                 request[key] = request_options[key]
+        if "response_format" in request_options:
+            response_format = request_options["response_format"]
+            if response_format != {"type": "json_object"}:
+                raise ValueError("unsupported response_format")
+            request["response_format"] = {"type": "json_object"}
     elif spec.provider == "zhipu":
         request["temperature"] = 0.5
         request["extra_body"] = {"thinking": {"type": "enabled"}}
@@ -183,7 +195,7 @@ def _create_stream_client(
     )
 
 
-async def stream_chat_completion(
+async def _stream_chat_completion_impl(
     name: str,
     prompt: str,
     max_tokens: int,
@@ -198,6 +210,9 @@ async def stream_chat_completion(
         max_tokens,
         request_options=request_options,
     )
+    # The guard is absent on all legacy call paths.  Under Agent execution it
+    # reserves the conservative per-call output allowance before any provider I/O.
+    reserve_model_budget(prompt, max_output_tokens=int(request["max_tokens"]))
 
     try:
         async with _create_stream_client(spec, minimum_timeout_seconds) as client:
@@ -231,6 +246,67 @@ async def stream_chat_completion(
         if _status_code(exc) == 429:
             raise LLMRateLimitError(f"{name} request was rate limited") from exc
         raise LLMProviderError(f"{name} provider request failed") from exc
+
+
+async def stream_chat_completion(
+    name: str,
+    prompt: str,
+    max_tokens: int,
+    minimum_timeout_seconds: float = 0.0,
+    *,
+    request_options: dict[str, Any] | None = None,
+) -> AsyncIterator[ModelStreamEvent]:
+    """Instrument only Agent-scoped calls and never attach message content."""
+
+    started = time.perf_counter()
+    active = agent_trace_is_active()
+    status = "error"
+    usage: TokenUsage | None = None
+    spec = get_model_spec(name)
+    try:
+        with agent_span(
+            "gen_ai.chat",
+            {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.provider.name": spec.provider,
+                "gen_ai.request.model": name,
+                "gen_ai.output.type": "stream",
+            },
+        ):
+            async for event in _stream_chat_completion_impl(
+                name,
+                prompt,
+                max_tokens,
+                minimum_timeout_seconds,
+                request_options=request_options,
+            ):
+                if event.kind == "usage" and event.usage is not None:
+                    usage = event.usage
+                yield event
+        status = "success"
+    finally:
+        if active:
+            telemetry = get_agent_telemetry()
+            telemetry.counter(
+                "ezllm.agent.model.calls",
+                labels={"model": name, "status": status},
+            )
+            telemetry.histogram(
+                "ezllm.agent.model.duration",
+                (time.perf_counter() - started) * 1_000,
+                {"model": name, "status": status},
+            )
+            if usage is not None:
+                telemetry.counter(
+                    "ezllm.agent.model.input_tokens",
+                    usage.input_tokens or 0,
+                    {"model": name},
+                )
+                telemetry.counter(
+                    "ezllm.agent.model.output_tokens",
+                    usage.output_tokens or 0,
+                    {"model": name},
+                )
 
 
 def ensure_non_empty_response(name: str, content: str) -> str:

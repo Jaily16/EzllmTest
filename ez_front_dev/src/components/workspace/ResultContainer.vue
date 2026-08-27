@@ -27,14 +27,17 @@ const props = withDefaults(defineProps<{
   description?: string;
   status?: ResultStatus;
   retention?: ResultRetention;
+  retentionText?: string;
 }>(), {
   description: "",
   status: "default",
   retention: undefined,
+  retentionText: "",
 });
 
 const retentionLabel = computed(() =>
-  props.retention === "session-only" ? "仅当前页面保留" : "已保存"
+  props.retentionText ||
+  (props.retention === "session-only" ? "仅当前页面保留" : "已保存")
 );
 </script>
 

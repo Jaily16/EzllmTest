@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-08-27",
+  "parent": {
+    "fixture": "iteration4_aspect5_manifest_v1.json",
+    "fixture_sha256": "D742CFDF2DC80FE2D8AB76BC9C3A3F024AFE82B3F1EA165638F2AA6F5FA2F079"
+  },
+  "approved_dependency_changes": [],
+  "package_manifests": {
+    "ez_back_dev/requirements.txt": "54EB1002BA00AEE7F11546990EEF78EFB0A4AC52ED5F850AC1A119203E8969AD",
+    "ez_front_dev/package.json": "769EC529E786375A8DCDB5FCE27C1A4A44D5DDEDC3B9946E2850DEA8477BD5C3",
+    "ez_front_dev/package-lock.json": "C93CDE311DB8675A62A781E20F613DD291D049743CF30A684EE3B94EA074DEAA"
+  },
+  "protected_sources": {
+    "ez_back_dev/app/main.py": "DBEC0E6438CC0F96669B67F78B6B04CF96365BD2271C4A2485FF8E97BB3162E6",
+    "ez_back_dev/app/routers.py": "A3DDD017C3D50B30ED6FD65A5138F7D8A8F70BA8245C788A1210155AD3FD30A1",
+    "ez_back_dev/service/workflowCatalog.py": "E9265C343F3768CF7F924ACE0056E47D5471A5976826E55CAF230F81A9CAAC6A",
+    "README.md": "71ADFD7358A4DFAF5F254CD5584BDB606C7CD4FFC0B045DB96F4391BAB7D8AFE",
+    "docs/iteration-4-overview.md": "8E4FC33E3139E313BAA39E832D9D8CE765918383301E3135CFEB377BAB0DC786",
+    "docs/iteration-4-prompts.md": "34653AEFBECB2B4ACAE22311930929E21AA0F4C25881E40404629B5AA3247C0D"
+  },
+  "eval": {
+    "protocol_version": "iteration4-aspect6-v1",
+    "seed": 20260827,
+    "provider": "deterministic_fake",
+    "core_fixture": "iteration4_agent_eval_v2.json",
+    "core_fixture_sha256": "F50695B77557C9975B2A8C60373E5F5491A8C33896850719F81161AFC4A88835",
+    "security_fixture": "iteration4_agent_security_v1.json",
+    "security_fixture_sha256": "DF9A8CE415560C5A8D45F4E421C268A428F4AA14D2F228583E26489A8A2B6D70",
+    "reliability_fixture": "iteration4_agent_reliability_v1.json",
+    "reliability_fixture_sha256": "310112256D233A3829C3C9B9A74ADEB726955A91DC500E5B200468396593963D",
+    "gate_fixture": "iteration4_aspect6_gate_v1.json",
+    "gate_fixture_sha256": "C1689CC844140D3647D88D82752481E409AE2FF48D8E37DB374D626DF4C05CE2",
+    "real_provider_calls": 0,
+    "real_embedding_calls": 0,
+    "real_mysql_calls": 0,
+    "real_project_reads": 0,
+    "external_network_calls": 0
+  }
+}

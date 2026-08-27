@@ -1,0 +1,126 @@
+name: Iteration 4 offline gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: iteration4-offline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_DOTENV_DISABLED: "1"
+  ZHIPU_API_KEY: ""
+  DASHSCOPE_API_KEY: ""
+  DEEPSEEK_API_KEY: ""
+  MOONSHOT_API_KEY: ""
+  EZLLM_TEST_REDIS_URL: redis://127.0.0.1:6379/0
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  npm_config_audit: "false"
+  npm_config_fund: "false"
+
+jobs:
+  offline-gates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      redis:
+        image: redis:8.2.8-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.11.15
+
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24.18.0
+          package-manager-cache: false
+
+      - name: Install backend dependencies
+        run: python -m pip install -r ez_back_dev/requirements.txt
+
+      - name: Credential scan
+        run: python scripts/scan_credentials.py
+
+      - name: Backend tests
+        working-directory: ez_back_dev
+        run: python -m pytest tests -q
+
+      - name: Deterministic Agent Eval
+        working-directory: ez_back_dev
+        run: python -m app.agentEval --suite all --format json
+
+      - name: Integrated Agent acceptance
+        working-directory: ez_back_dev
+        run: python -m app.agentAcceptance --suite all --format json
+
+      - name: Agent correctness and telemetry benchmark
+        working-directory: ez_back_dev
+        run: python -m app.agentBenchmark --suite all --telemetry compare --format json
+
+      - name: Install frontend dependencies
+        working-directory: ez_front_dev
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Frontend lint
+        working-directory: ez_front_dev
+        run: npm run lint -- --no-fix
+
+      - name: Frontend type check
+        working-directory: ez_front_dev
+        run: npm run type-check
+
+      - name: Frontend build
+        working-directory: ez_front_dev
+        run: npm run build
+
+      - name: Frontend bundle gate
+        run: python scripts/check_frontend_bundle.py ez_front_dev/dist
+
+      - name: Compose configuration
+        run: docker compose --env-file ops/compose/.env.example config --quiet
+
+      - name: Compose build and smoke
+        run: |
+          docker compose --env-file ops/compose/.env.example -p ezllm-aspect8-ci up --build -d --wait
+          curl --fail --silent http://127.0.0.1:8131/health > /dev/null
+          curl --fail --silent http://127.0.0.1:9090/-/ready > /dev/null
+          curl --fail --silent http://127.0.0.1:3000/api/health > /dev/null
+          curl --fail --silent --get --data-urlencode 'query=up{job="ezllm-otel-collector"}' http://127.0.0.1:9090/api/v1/query | python -c 'import json,sys; d=json.load(sys.stdin); assert d["data"]["result"][0]["value"][1] == "1"'
+          curl --fail --silent --user admin:replace_with_local_grafana_password http://127.0.0.1:3000/api/datasources | python -c 'import json,sys; d=json.load(sys.stdin); assert {x["uid"] for x in d} == {"prometheus", "tempo"}'
+          curl --fail --silent --user admin:replace_with_local_grafana_password http://127.0.0.1:3000/api/search?query=EzLLM%20Agent%20Overview | python -c 'import json,sys; d=json.load(sys.stdin); assert any(x["uid"] == "ezllm-agent-overview" for x in d)'
+          for attempt in 1 2 3 4 5 6; do
+            if docker compose --env-file ops/compose/.env.example -p ezllm-aspect8-ci exec -T agent-api python -c "import json, urllib.request; data=json.load(urllib.request.urlopen('http://tempo:3200/api/search?service.name=ezllm-agent-api&limit=10', timeout=3)); assert data.get('traces')"; then
+              break
+            fi
+            if [ "$attempt" = 6 ]; then exit 1; fi
+            sleep 2
+          done
+          docker compose --env-file ops/compose/.env.example -p ezllm-aspect8-ci exec -T \
+            -e EZLLM_TEST_REDIS_URL=redis://redis:6379/0 \
+            -e ASPECT8_ACCEPTANCE_TOPOLOGY=isolated_compose \
+            agent-api python -m app.agentAcceptance --suite all --format json
+
+      - name: Clean validation stack
+        if: always()
+        run: docker compose --env-file ops/compose/.env.example -p ezllm-aspect8-ci down -v

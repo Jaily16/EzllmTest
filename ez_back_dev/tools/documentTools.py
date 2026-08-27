@@ -10,13 +10,23 @@ document_prompt = PromptTemplate.from_template("{page_content}")
 
 # 定义一个工具类，将Document类连接成为字符串
 def docs_to_string(docs: [Document]):
-    return "".join(format_document(doc, document_prompt) for doc in docs)
+    return "".join(
+        (
+            f"[{doc.metadata['_ezllm_citation_id']}] "
+            if doc.metadata.get("_ezllm_citation_id")
+            else ""
+        )
+        + format_document(doc, document_prompt)
+        for doc in docs
+    )
 
 
 def docs_to_meaningful_strings(docs: [Document]):
     result = ""
     for index, doc in enumerate(docs):
-        result += "第" + str(index + 1) + "个文档内容如下:\n" + doc.page_content + "\n"
+        citation = doc.metadata.get("_ezllm_citation_id")
+        label = f"[{citation}] " if citation else ""
+        result += label + "第" + str(index + 1) + "个文档内容如下:\n" + doc.page_content + "\n"
     return result
 
 

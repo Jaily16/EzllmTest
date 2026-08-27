@@ -1,0 +1,14 @@
+.git
+.github
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+**/__pycache__
+**/.pytest_cache
+.pytest_cache
+ez_front_dev/.pytest_cache
+**/node_modules
+**/dist
+ez_back_dev/static/projects

@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-08-27",
+  "acceptance": {
+    "dataset": "iteration4-agent-acceptance-v1",
+    "case_count": 18,
+    "passed": 18,
+    "task_success": 1,
+    "trajectory_validity": 1,
+    "recovery_success": 1,
+    "local_topology": "loopback_redis",
+    "compose_topology": "isolated_compose"
+  },
+  "eval": {
+    "case_count": 104,
+    "passed": 104,
+    "security_attack_block_rate": 1,
+    "tool_selection_accuracy": 1,
+    "structured_output_validity": 1
+  },
+  "security": {
+    "approval_bypass_count": 0,
+    "duplicate_side_effect_count": 0,
+    "project_isolation_violation_count": 0,
+    "budget_overrun_count": 0,
+    "unsafe_capability_execution_count": 0,
+    "sensitive_data_leak_count": 0
+  },
+  "cache": {
+    "warm_exact_cache_new_model_calls": 0,
+    "warm_exact_cache_new_embedding_calls": 0
+  },
+  "benchmark": {
+    "legacy_p95_ratio": 1.083736659134018,
+    "legacy_p95_limit": 1.15,
+    "otel_p95_ratio": 1.014521458310483,
+    "otel_p95_limit": 1.05,
+    "warm_exact_cache_gate": "pass"
+  },
+  "browser": {
+    "viewports": [
+      "360x800",
+      "768x1024",
+      "1024x768",
+      "1440x900",
+      "1920x1080"
+    ],
+    "horizontal_overflow_count": 0,
+    "approval_focus_entry": "pass",
+    "approval_focus_return": "pass",
+    "escape_close": "pass",
+    "minimum_control_target_px": 44,
+    "persisted_evidence": "pass",
+    "session_only_evidence": "pass",
+    "recovery_interaction": "pass"
+  },
+  "compose": {
+    "project": "ezllm-aspect8-verify-20260827",
+    "service_count": 10,
+    "healthy_services": 10,
+    "non_loopback_host_status": 421,
+    "tempo_span_layers_observed": 9,
+    "tempo_forbidden_attribute_hits": 0,
+    "application_log_sensitive_pattern_hits": 0,
+    "prometheus_low_cardinality_labels": "pass",
+    "grafana_datasources": [
+      "Prometheus",
+      "Tempo"
+    ],
+    "grafana_dashboard": "ezllm-agent-overview",
+    "cleanup": "containers_networks_and_validation_volumes_removed"
+  },
+  "cost": {
+    "real_provider_calls": 0,
+    "real_embedding_calls": 0,
+    "user_mysql_calls": 0,
+    "user_project_reads": 0,
+    "model_currency_cost": 0
+  },
+  "release": {
+    "hosted_ci": "awaiting_explicit_push",
+    "real_model_agent_quality": "not_authorized_not_run",
+    "published": false,
+    "git_operations": []
+  }
+}

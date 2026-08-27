@@ -7,7 +7,7 @@
 <script lang="ts" setup>
 /* global defineProps */
 defineProps<{
-  ariaLabel: string;
+  ariaLabel?: string;
 }>();
 </script>
 

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "dataset": "iteration4_rag_eval_v1.json",
+  "seed": 20260827,
+  "active_strategy": "dense_v1",
+  "policy_version": "iteration4-aspect5-v1",
+  "candidate_status": {
+    "dense_v1": "baseline",
+    "hybrid_rrf_v1": "correctness_measured_no_ndcg_gain_timing_not_comparable",
+    "hybrid_rerank_v1": "correctness_measured_no_ndcg_gain_timing_not_comparable"
+  },
+  "decision_reason": "quality_gain_not_met",
+  "wall_clock_gate": "N/A",
+  "wall_clock_na_reason": "Aspect 5 validation environment is not a controlled long-lived performance host; no relative latency pass is claimed.",
+  "model_provider_calls": 0,
+  "real_embedding_calls": 0
+}

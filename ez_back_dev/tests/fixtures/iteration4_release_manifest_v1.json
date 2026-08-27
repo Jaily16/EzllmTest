@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-08-28",
+  "parent": {
+    "fixture": "iteration4_aspect8_manifest_v1.json",
+    "fixture_sha256": "9E6FD8CE86DE7FF758C172DE84ED667CA53CC375279098453C47EDC1F13C5E2F"
+  },
+  "implementation": {
+    "branch": "codex/iteration4-closeout",
+    "commit": "f73ecbd723731096d4386f4806654dd2e11fb9a7"
+  },
+  "package_manifests": {
+    "ez_back_dev/requirements.txt": "7FE551B074A6D49A4E8A82E71ECF7F6B9D73207631BA4EEAF02764453A293932",
+    "ez_front_dev/package.json": "031E98C3451EA5073419FB439F4FA2567728621A96B88B4D8600D638014EF42D",
+    "ez_front_dev/package-lock.json": "402B195DD3B3146A94F796A4365F02B66642CB36C353D587E57DA3116C944700"
+  },
+  "protected_sources": {
+    "ez_back_dev/app/main.py": "DBEC0E6438CC0F96669B67F78B6B04CF96365BD2271C4A2485FF8E97BB3162E6",
+    "ez_back_dev/app/routers.py": "A3DDD017C3D50B30ED6FD65A5138F7D8A8F70BA8245C788A1210155AD3FD30A1",
+    "ez_back_dev/service/workflowCatalog.py": "E9265C343F3768CF7F924ACE0056E47D5471A5976826E55CAF230F81A9CAAC6A"
+  },
+  "final_documents": {
+    "README.md": "8A75D6A45CCEB72CF238BD40542606FAC26ACB41C1FB8DACC7189BAFA2DC1269",
+    "docs/iteration-4-closeout.md": "309D5CC938F06A13761AAEB365C5EEF9C1C96958FAFB168F4D317642354D8EA7",
+    "docs/iteration-4-overview.md": "22A68F865B42EFED7DD799600FA2FB817590888F4627082D70249A10CE0F1363",
+    "docs/iteration-4-prompts.md": "8726B09057E7A4D0D3FF38246C037953D75033CE330735B8A7960A63C2B56867",
+    "docs/iteration-4-live-model-acceptance.md": "E085676E0594BBEF5045B6852934CEBA024B2E3FD68C3ACB6F9E0984C24778AF"
+  },
+  "real_model_acceptance": {
+    "report": "docs/iteration-4-live-model-acceptance.md",
+    "quality_script": {
+      "path": "ez_back_dev/scripts/agent_live_quality.py",
+      "sha256": "4C23317641460F233FB3795EB6921C6554E346A4DA1A03D5C863DE1E7DEACF40"
+    },
+    "e2e_script": {
+      "path": "ez_back_dev/scripts/agent_live_e2e.py",
+      "sha256": "5BA37096C9D7065B828A4C6AD51E2A644307602322BFDDF6F15BD4E4F3C3A117"
+    },
+    "planner": {
+      "passed": 6,
+      "total": 6
+    },
+    "rag": {
+      "passed": 3,
+      "total": 3,
+      "real_embedding": true
+    },
+    "e2e": {
+      "trajectory": [
+        "ui_info",
+        "ui_case"
+      ],
+      "terminal_status": "completed",
+      "approval_count": 2,
+      "model_calls": 4,
+      "embedding_calls": 2,
+      "tool_calls": 2
+    },
+    "isolation": {
+      "real_project_reads": 0,
+      "user_mysql_calls": 0,
+      "approval_bypass_count": 0,
+      "duplicate_side_effect_count": 0,
+      "sensitive_data_leak_count": 0
+    },
+    "model_currency_cost": null,
+    "currency_cost_reason": "provider_did_not_return_currency_cost"
+  },
+  "delivery": {
+    "target_branch": "main",
+    "target_remote": "origin",
+    "workflow": ".github/workflows/iteration4-offline.yml",
+    "workflow_sha256": "7F7CC9AA9C657F55786184D2C7072B72039A780A36877FB52DDB05B8D138F994",
+    "badge": "https://github.com/Jaily16/EzllmTest/actions/workflows/iteration4-offline.yml/badge.svg?branch=main",
+    "hosted_ci_status": "dynamic_after_push",
+    "feature_branch_push": false,
+    "tag_created": false,
+    "github_release_created": false
+  }
+}

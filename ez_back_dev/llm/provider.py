@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
+import time
 from typing import Any
 
 from langchain_core.embeddings import Embeddings
@@ -10,6 +11,16 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from openai import APIConnectionError, APITimeoutError, RateLimitError
 
 from app.config import get_settings
+from service.agentBudgetLedger import (
+    current_agent_budget,
+    reserve_embedding_budget,
+    reserve_model_budget,
+)
+from service.agentTelemetry import (
+    agent_span,
+    agent_trace_is_active,
+    get_agent_telemetry,
+)
 
 
 @dataclass(frozen=True)
@@ -222,13 +233,28 @@ def _status_code(error: Exception) -> int | None:
 def invoke_chat_model(
     name: str, value: Any, minimum_timeout_seconds: float = 0.0
 ):
+    # A no-op for every legacy REST/SSE call.  Aspect 3 installs the guard only
+    # while a leased Agent step is executing.
+    reserve_model_budget(value)
+    started = time.perf_counter()
+    active = agent_trace_is_active()
     try:
-        client = (
-            get_chat_client(name, minimum_timeout_seconds)
-            if minimum_timeout_seconds > 0
-            else get_chat_client(name)
-        )
-        result = client.invoke(value)
+        with agent_span(
+            "gen_ai.chat",
+            {
+                "gen_ai.operation.name": "chat",
+                "gen_ai.request.model": name,
+            },
+        ):
+            client = (
+                get_chat_client(name, minimum_timeout_seconds)
+                if minimum_timeout_seconds > 0
+                else get_chat_client(name)
+            )
+            guard = current_agent_budget()
+            if guard is not None and isinstance(client, ChatOpenAI):
+                client = client.bind(max_tokens=guard.model_max_output_tokens)
+            result = client.invoke(value)
     except LLMError:
         raise
     except (APITimeoutError, APIConnectionError, TimeoutError, ConnectionError) as exc:
@@ -240,6 +266,17 @@ def invoke_chat_model(
             raise LLMRateLimitError(f"{name} request was rate limited") from exc
         raise LLMProviderError(f"{name} provider request failed") from exc
 
+    if active:
+        telemetry = get_agent_telemetry()
+        telemetry.counter(
+            "ezllm.agent.model.calls",
+            labels={"model": name, "status": "success"},
+        )
+        telemetry.histogram(
+            "ezllm.agent.model.duration",
+            (time.perf_counter() - started) * 1_000,
+            {"model": name, "status": "success"},
+        )
     content = getattr(result, "content", None)
     if content is None or (isinstance(content, str) and not content.strip()):
         raise LLMEmptyResponseError(f"{name} returned an empty response")
@@ -283,10 +320,46 @@ class LazyZhipuEmbeddings(Embeddings):
         return get_settings().zhipu_embedding_model
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        return get_embeddings().embed_documents(texts)
+        reserve_embedding_budget(texts)
+        started = time.perf_counter()
+        active = agent_trace_is_active()
+        with agent_span(
+            "gen_ai.embeddings",
+            {"gen_ai.operation.name": "embeddings"},
+        ):
+            result = get_embeddings().embed_documents(texts)
+        if active:
+            telemetry = get_agent_telemetry()
+            telemetry.counter(
+                "ezllm.agent.embedding.calls", labels={"status": "success"}
+            )
+            telemetry.histogram(
+                "ezllm.agent.embedding.duration",
+                (time.perf_counter() - started) * 1_000,
+                {"status": "success"},
+            )
+        return result
 
     def embed_query(self, text: str) -> list[float]:
-        return get_embeddings().embed_query(text)
+        reserve_embedding_budget([text])
+        started = time.perf_counter()
+        active = agent_trace_is_active()
+        with agent_span(
+            "gen_ai.embeddings",
+            {"gen_ai.operation.name": "embeddings"},
+        ):
+            result = get_embeddings().embed_query(text)
+        if active:
+            telemetry = get_agent_telemetry()
+            telemetry.counter(
+                "ezllm.agent.embedding.calls", labels={"status": "success"}
+            )
+            telemetry.histogram(
+                "ezllm.agent.embedding.duration",
+                (time.perf_counter() - started) * 1_000,
+                {"status": "success"},
+            )
+        return result
 
 
 @lru_cache(maxsize=1)

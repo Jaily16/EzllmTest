@@ -9,7 +9,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 
 FIXTURE_HOST = "127.0.0.1"
@@ -26,6 +26,7 @@ PLAN_FAILURE_PID = "Ez3000000000000000005"
 ANALYSIS_STALE_PID = "Ez3000000000000000006"
 WORKSPACE_READY_PID = "Ez3000000000000000007"
 PERSISTENCE_FAILURE_PID = "Ez3000000000000000008"
+AGENT_FIXTURE_PID = WORKSPACE_READY_PID
 RECOVERY_PID = "Ez4000000000000000001"
 FIXTURE_IDS = {
     ANALYSIS_REQUIRED_PID,
@@ -45,6 +46,375 @@ SESSION_ONLY_OPERATIONS = {
     "functional_case",
     "nonfunctional_case",
 }
+
+
+class AgentFixtureState:
+    """Process-local Agent API state; it never calls a provider or database."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.model_calls = 0
+        self.embedding_calls = 0
+        self.tool_calls = 0
+        self._next_run = 1
+        self.active_thread_id: str | None = "fixture-thread-active"
+        self._runs = {
+            "fixture-thread-active": self._run(
+                "fixture-run-active", "fixture-thread-active", "awaiting_approval"
+            ),
+            "fixture-thread-session": self._run(
+                "fixture-run-session", "fixture-thread-session", "completed",
+                session=True,
+            ),
+            "fixture-thread-failed": self._run(
+                "fixture-run-failed", "fixture-thread-failed", "failed"
+            ),
+        }
+        self._events = {
+            "fixture-thread-active": [
+                self._event(1, "queued", "created"),
+                self._event(2, "planning", "planning"),
+                self._event(3, "approval_required", "awaiting_approval"),
+            ],
+            "fixture-thread-session": [
+                self._event(1, "queued", "created"),
+                self._event(2, "completed", "completed"),
+            ],
+            "fixture-thread-failed": [
+                self._event(1, "queued", "created"),
+                self._event(
+                    2,
+                    "failed",
+                    "failed",
+                    safe_message="离线夹具：可恢复的 worker 中断。",
+                ),
+            ],
+        }
+
+    @staticmethod
+    def _event(sequence: int, kind: str, status: str, **extra):
+        return {
+            "schema_version": 1,
+            "sequence": sequence,
+            "kind": kind,
+            "occurred_at": f"2026-08-27T10:00:{sequence:02d}+00:00",
+            "status": status,
+            **extra,
+        }
+
+    @staticmethod
+    def _usage(tool_calls: int = 0):
+        return {
+            "steps": tool_calls,
+            "elapsed_ms": tool_calls * 320,
+            "input_tokens": tool_calls * 10,
+            "output_tokens": tool_calls * 20,
+            "model_calls": tool_calls,
+            "embedding_calls": 0,
+            "tool_calls": tool_calls,
+            "estimated_cost_units": tool_calls * 30,
+        }
+
+    @classmethod
+    def _budget(cls, tool_calls: int = 0):
+        limits = {
+            "max_steps": 3,
+            "max_elapsed_ms": 1200000,
+            "max_input_tokens": 768000,
+            "max_output_tokens": 147456,
+            "max_model_calls": 12,
+            "max_embedding_calls": 6,
+            "max_tool_calls": 3,
+            "max_estimated_cost_units": 915456,
+        }
+        usage = cls._usage(tool_calls)
+        return {
+            "preset": "focused",
+            "limits": limits,
+            "usage": usage,
+            "remaining": {
+                key: max(0, value - usage.get(key.replace("max_", ""), 0))
+                for key, value in limits.items()
+            },
+            "cost_unit": "synthetic_test_unit",
+        }
+
+    @classmethod
+    def _run(
+        cls,
+        run_id: str,
+        thread_id: str,
+        status: str,
+        *,
+        session: bool = False,
+    ):
+        awaiting = status == "awaiting_approval"
+        completed = status == "completed"
+        failed = status == "failed"
+        operation = "unit_case" if session else "ui_case"
+        retention = "session" if session else "artifact"
+        evidence = []
+        if completed:
+            evidence = [
+                {
+                    "schema_version": 1,
+                    "step_id": "step-1",
+                    "operation": operation,
+                    "retention": retention,
+                    "status": "success",
+                    "saved": not session,
+                    "from_cache": False,
+                    "source_revision": "fixture-revision-2",
+                    "artifact_key": None if session else "ui_case",
+                    "workspace_route": "/unit" if session else "/ui",
+                    "session_result": (
+                        {"cases": [{"name": "离线线程临时用例"}]}
+                        if session
+                        else None
+                    ),
+                    "usage": cls._usage(1),
+                    "error_code": None,
+                    "safe_message": None,
+                    "retrieval_evidence": {
+                        "policy_version": "iteration4-aspect5-v1",
+                        "strategy": "dense_v1",
+                        "context_tokens": 42,
+                        "index_builds": 1,
+                        "index_reuses": 0,
+                        "queries": [
+                            {
+                                "strategy": "dense_v1",
+                                "policy_version": "iteration4-aspect5-v1",
+                                "corpus": "knowledge",
+                                "source_revision": "fixture-revision-2",
+                                "query_hash": "b" * 64,
+                                "index_status": "build",
+                                "context_tokens": 42,
+                                "citations": [
+                                    {
+                                        "citation_id": "C1",
+                                        "corpus": "knowledge",
+                                        "source_label": "fixture-knowledge.md",
+                                        "page": 2,
+                                        "rank": 1,
+                                        "score": 0.912345,
+                                        "score_kind": "dense",
+                                        "chunk_hash": "c" * 64,
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                }
+            ]
+        return {
+            "schema_version": 1,
+            "run_id": run_id,
+            "thread_id": thread_id,
+            "goal": "验证离线 Agent 工作台的审批与恢复体验",
+            "status": status,
+            "source_revision": "fixture-revision-2",
+            "created_at": "2026-08-27T10:00:00+00:00",
+            "deadline_at": "2026-08-27T10:20:00+00:00",
+            "expires_at": "2026-09-03T10:00:00+00:00",
+            "model_label": "GLM-4.7",
+            "budget": cls._budget(1 if completed else 0),
+            "plan_version": 1,
+            "current_step_index": 0,
+            "plan": [
+                {
+                    "step_id": "step-1",
+                    "operation": operation,
+                    "arguments": {},
+                    "risks": ["paid", "persistent"] if not session else ["paid"],
+                    "model_label": "GLM-4.7",
+                    "retention": retention,
+                    "current": not completed,
+                    "context_bindings": [
+                        {
+                            "payload_field": "info",
+                            "source_operation": "ui_info" if not session else "unit_info",
+                            "artifact_key": "ui_info" if not session else "unit_info",
+                            "source_revision": "fixture-revision-2",
+                            "result_path": [] if not session else ["unit_info"],
+                            "content_sha256": "d" * 64,
+                        }
+                    ],
+                }
+            ],
+            "approval": (
+                {
+                    "plan_hash": "a" * 64,
+                    "plan_version": 1,
+                    "step_id": "step-1",
+                    "operation": operation,
+                    "risks": ["paid", "persistent"] if not session else ["paid"],
+                    "expires_at": "2026-08-28T10:00:00+00:00",
+                    "expired": False,
+                }
+                if awaiting
+                else None
+            ),
+            "evidence": evidence,
+            "last_error": (
+                {
+                    "code": "fixture_worker_interrupted",
+                    "category": "transient",
+                    "retryable": True,
+                    "safe_message": "离线夹具：worker 中断，可安全恢复。",
+                }
+                if failed
+                else None
+            ),
+            "last_event_sequence": 3 if awaiting else 2,
+            "worker_available": thread_id != "fixture-thread-failed",
+            "active": awaiting,
+            "can_approve": awaiting,
+            "can_edit": awaiting,
+            "can_cancel": awaiting,
+            "can_recover": failed,
+            "trace_id": "0123456789abcdef0123456789abcdef" if completed else None,
+            "trace_status": "instrumented" if completed else "not_instrumented",
+            "retrieval": {
+                "strategy": "dense_v1",
+                "policy_version": "iteration4-aspect5-v1",
+                "citation_mode": "metadata_only",
+                "rerank_enabled": False,
+                "agent_only": True,
+            },
+        }
+
+    @staticmethod
+    def capabilities():
+        return {
+            "schema_version": 1,
+            "graph_version": "iteration4-aspect3-v1",
+            "scope_version": "iteration4-aspect4-v1",
+            "models": ["GLM-4.7", "通义千问", "DeepSeek", "Moonshot Kimi"],
+            "budget_presets": [
+                {"name": "focused", "budget": AgentFixtureState._budget()["limits"], "cost_unit": "synthetic_test_unit"},
+                {"name": "standard", "budget": {**AgentFixtureState._budget()["limits"], "max_steps": 8, "max_tool_calls": 8}, "cost_unit": "synthetic_test_unit"},
+            ],
+            "risks": ["read_only", "paid", "persistent", "regenerate"],
+            "single_agent": True,
+            "chain_of_thought": False,
+            "trace_status": "not_instrumented",
+        }
+
+    def list_runs(self):
+        with self._lock:
+            runs = [
+                {
+                    key: run[key]
+                    for key in (
+                        "run_id", "thread_id", "goal", "status", "model_label", "created_at", "active"
+                    )
+                }
+                | {"budget_preset": run["budget"]["preset"]}
+                for run in self._runs.values()
+            ]
+            return {
+                "runs": runs,
+                "active_thread_id": self.active_thread_id,
+                "next_cursor": None,
+            }
+
+    def get_run(self, thread_id: str):
+        with self._lock:
+            value = self._runs.get(thread_id)
+            return json.loads(json.dumps(value, ensure_ascii=False)) if value else None
+
+    def create(self, goal: str):
+        with self._lock:
+            if self.active_thread_id:
+                return None
+            thread_id = f"fixture-thread-created-{self._next_run}"
+            run_id = f"fixture-run-created-{self._next_run}"
+            self._next_run += 1
+            run = self._run(run_id, thread_id, "awaiting_approval")
+            run["goal"] = goal
+            self._runs[thread_id] = run
+            self._events[thread_id] = [
+                self._event(1, "queued", "created"),
+                self._event(2, "planning", "planning"),
+                self._event(3, "approval_required", "awaiting_approval"),
+            ]
+            self.active_thread_id = thread_id
+            return {
+                "run_id": run_id,
+                "thread_id": thread_id,
+                "command_id": "fixture-command-create",
+            }
+
+    def events(self, thread_id: str, after_sequence: int):
+        with self._lock:
+            return [
+                dict(event)
+                for event in self._events.get(thread_id, [])
+                if event["sequence"] > after_sequence
+            ]
+
+    def decide(self, thread_id: str, decision: str, plan_hash: str):
+        with self._lock:
+            run = self._runs.get(thread_id)
+            if not run or not run["approval"] or plan_hash != "a" * 64:
+                return None
+            if decision == "approved":
+                completed = self._run(run["run_id"], thread_id, "completed")
+                self._runs[thread_id] = completed
+                self.model_calls += 1
+                self.tool_calls += 1
+                self._events[thread_id].extend(
+                    [
+                        self._event(4, "approval_submitted", "awaiting_approval"),
+                        self._event(5, "executing", "executing"),
+                        self._event(6, "progress", "executing", percent=50, label="离线安全进度"),
+                        self._event(7, "tool_succeeded", "executing"),
+                        self._event(8, "completed", "completed"),
+                    ]
+                )
+            else:
+                run["status"] = "cancelled"
+                run["active"] = False
+                run["can_approve"] = run["can_edit"] = run["can_cancel"] = False
+                run["approval"] = None
+                self._events[thread_id].append(
+                    self._event(4, "cancelled", "cancelled")
+                )
+            self.active_thread_id = None
+            return {"command_id": "fixture-command-decision"}
+
+    def cancel(self, thread_id: str):
+        return self.decide(thread_id, "rejected", "a" * 64)
+
+    def edit(self, thread_id: str, goal: str, plan_hash: str):
+        with self._lock:
+            run = self._runs.get(thread_id)
+            if not run or not run["approval"] or plan_hash != "a" * 64:
+                return None
+            run["goal"] = goal
+            run["status"] = "planning"
+            run["approval"] = None
+            run["can_approve"] = False
+            run["can_edit"] = False
+            self._events[thread_id].append(
+                self._event(4, "replanning", "planning")
+            )
+            return {"command_id": "fixture-command-edit"}
+
+    def recover(self, thread_id: str):
+        with self._lock:
+            run = self._runs.get(thread_id)
+            if not run or not run.get("can_recover") or self.active_thread_id:
+                return None
+            run["status"] = "recovering"
+            run["active"] = True
+            run["can_recover"] = False
+            self.active_thread_id = thread_id
+            self._events[thread_id].append(
+                self._event(3, "recovering", "recovering")
+            )
+            return {"command_id": "fixture-command-recover"}
 
 TEST_ROUTES = [
     "/unit",
@@ -952,6 +1322,7 @@ class FrontendFixtureServer(ThreadingHTTPServer):
     onboarding_enabled = False
     onboarding_state: OnboardingFixtureState | None = None
     planning_state: PlanningFixtureState
+    agent_state: AgentFixtureState
 
 
 class FixtureRequestHandler(BaseHTTPRequestHandler):
@@ -963,7 +1334,9 @@ class FixtureRequestHandler(BaseHTTPRequestHandler):
 
     def _cors(self) -> None:
         self.send_header("Access-Control-Allow-Origin", self.server.allowed_origin)
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept")
+        self.send_header(
+            "Access-Control-Allow-Headers", "Content-Type, Accept, Last-Event-ID"
+        )
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 
     def _json(self, payload: dict[str, Any], status: int = 200) -> None:
@@ -1039,6 +1412,27 @@ class FixtureRequestHandler(BaseHTTPRequestHandler):
             self.close_connection = True
         return completed_delivered
 
+    def _agent_sse(self, events: list[dict[str, Any]]) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache, no-transform")
+        self.send_header("Connection", "close")
+        self._cors()
+        self.end_headers()
+        try:
+            for event in events:
+                block = (
+                    f"id: {event['sequence']}\n"
+                    "event: agent_event\n"
+                    f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                ).encode("utf-8")
+                self.wfile.write(block)
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            pass
+        finally:
+            self.close_connection = True
+
     def do_OPTIONS(self) -> None:
         self.send_response(204)
         self._cors()
@@ -1046,7 +1440,69 @@ class FixtureRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        parts = path.strip("/").split("/")
+        if path == "/agent/v1/capabilities":
+            self._json(
+                {
+                    "status": "success",
+                    "reason": "offline Agent capabilities",
+                    "data": self.server.agent_state.capabilities(),
+                }
+            )
+            return
+        if len(parts) >= 5 and parts[:3] == ["agent", "v1", "projects"] and parts[4] == "runs":
+            pid = unquote(parts[3])
+            if pid != AGENT_FIXTURE_PID:
+                self._json(
+                    {
+                        "status": "agent_project_not_found",
+                        "reason": "离线 Agent 夹具未配置该项目",
+                        "data": None,
+                    },
+                    404,
+                )
+                return
+            if len(parts) == 5:
+                self._json(
+                    {
+                        "status": "success",
+                        "reason": "offline Agent runs",
+                        "data": self.server.agent_state.list_runs(),
+                    }
+                )
+                return
+            thread_id = unquote(parts[5])
+            run = self.server.agent_state.get_run(thread_id)
+            if run is None:
+                self._json(
+                    {
+                        "status": "agent_thread_not_found_or_expired",
+                        "reason": "离线 Agent thread 已失效",
+                        "data": None,
+                    },
+                    404,
+                )
+                return
+            if len(parts) == 6:
+                self._json(
+                    {"status": "success", "reason": "offline Agent run", "data": run}
+                )
+                return
+            if len(parts) == 7 and parts[6] == "events":
+                values = parse_qs(parsed.query).get("after_sequence", ["0"])
+                try:
+                    after_sequence = max(
+                        0,
+                        int(self.headers.get("Last-Event-ID") or values[-1]),
+                    )
+                except ValueError:
+                    after_sequence = 0
+                self._agent_sse(
+                    self.server.agent_state.events(thread_id, after_sequence)
+                )
+                return
         if path == "/health":
             self._json({"status": 200, "reason": "offline fixture", "data": True})
             return
@@ -1120,6 +1576,56 @@ class FixtureRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+        parts = path.strip("/").split("/")
+        if len(parts) >= 5 and parts[:3] == ["agent", "v1", "projects"] and parts[4] == "runs":
+            pid = unquote(parts[3])
+            body = self._read_json()
+            if pid != AGENT_FIXTURE_PID:
+                self._json(
+                    {"status": "agent_project_not_found", "reason": "离线 Agent 夹具未配置该项目", "data": None},
+                    404,
+                )
+                return
+            if len(parts) == 5:
+                created = self.server.agent_state.create(str(body.get("goal") or "").strip())
+                if created is None:
+                    self._json(
+                        {"status": "agent_run_conflict", "reason": "当前项目已有活跃运行", "data": None},
+                        409,
+                    )
+                    return
+                self._json({"status": "success", "reason": "offline Agent run queued", "data": created}, 201)
+                return
+            thread_id = unquote(parts[5])
+            action = parts[6] if len(parts) == 7 else ""
+            if action == "approval":
+                result = self.server.agent_state.decide(
+                    thread_id,
+                    str(body.get("decision") or ""),
+                    str(body.get("expected_plan_hash") or ""),
+                )
+            elif action == "edit":
+                result = self.server.agent_state.edit(
+                    thread_id,
+                    str(body.get("goal") or ""),
+                    str(body.get("expected_plan_hash") or ""),
+                )
+            elif action == "cancel":
+                result = self.server.agent_state.cancel(thread_id)
+                if result is not None:
+                    result = self.server.agent_state.get_run(thread_id)
+            elif action == "recover":
+                result = self.server.agent_state.recover(thread_id)
+            else:
+                result = None
+            if result is None:
+                self._json(
+                    {"status": "agent_control_conflict", "reason": "离线 Agent 控制请求已失效", "data": None},
+                    409,
+                )
+                return
+            self._json({"status": "success", "reason": "offline Agent control accepted", "data": result})
+            return
         state = self._onboarding_state()
         if path.startswith("/project/add/"):
             if state is None:
@@ -1254,6 +1760,7 @@ def main() -> None:
         else None
     )
     server.planning_state = PlanningFixtureState()
+    server.agent_state = AgentFixtureState()
     print(f"Offline frontend fixture listening on http://{FIXTURE_HOST}:{args.port}")
     try:
         server.serve_forever()

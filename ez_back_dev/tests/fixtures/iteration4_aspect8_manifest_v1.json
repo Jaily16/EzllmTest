@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-08-27",
+  "parent": {
+    "fixture": "iteration4_aspect7_manifest_v1.json",
+    "fixture_sha256": "F5B52936F33059AB6D9E18B4961A6ECD4A3D8FC2CC474A62BF231C55B6133589"
+  },
+  "package_manifests": {
+    "ez_back_dev/requirements.txt": "7FE551B074A6D49A4E8A82E71ECF7F6B9D73207631BA4EEAF02764453A293932",
+    "ez_front_dev/package.json": "031E98C3451EA5073419FB439F4FA2567728621A96B88B4D8600D638014EF42D",
+    "ez_front_dev/package-lock.json": "402B195DD3B3146A94F796A4365F02B66642CB36C353D587E57DA3116C944700"
+  },
+  "protected_sources": {
+    "ez_back_dev/app/main.py": "DBEC0E6438CC0F96669B67F78B6B04CF96365BD2271C4A2485FF8E97BB3162E6",
+    "ez_back_dev/app/routers.py": "A3DDD017C3D50B30ED6FD65A5138F7D8A8F70BA8245C788A1210155AD3FD30A1",
+    "ez_back_dev/service/workflowCatalog.py": "E9265C343F3768CF7F924ACE0056E47D5471A5976826E55CAF230F81A9CAAC6A"
+  },
+  "intentional_document_updates": {
+    "README.md": {
+      "parent_sha256": "71ADFD7358A4DFAF5F254CD5584BDB606C7CD4FFC0B045DB96F4391BAB7D8AFE",
+      "aspect8_sha256": "2FF73C5013AF94886D4787484A641778B42AC479E992B78A0B1F48E92320A6FC"
+    },
+    "docs/iteration-4-overview.md": {
+      "parent_sha256": "8E4FC33E3139E313BAA39E832D9D8CE765918383301E3135CFEB377BAB0DC786",
+      "aspect8_sha256": "DCFBDBD99F70642B28BD5CBE7CBEDD7394EC8C69B46D19408F0AAC2C6DB490DB"
+    },
+    "docs/iteration-4-prompts.md": {
+      "parent_sha256": "34653AEFBECB2B4ACAE22311930929E21AA0F4C25881E40404629B5AA3247C0D",
+      "aspect8_sha256": "5EB3FF9093BD9845DD5617BB40FDD3719935E0BA4EDE4B3559246838F59BCFC2"
+    }
+  },
+  "acceptance": {
+    "dataset": "ez_back_dev/tests/fixtures/iteration4_agent_acceptance_v1.json",
+    "dataset_sha256": "44D8CAD27AA17365A6AA85300A2A7261275438AE162D3DA316371B0EFF4E1674",
+    "gate": "ez_back_dev/tests/fixtures/iteration4_aspect8_gate_v1.json",
+    "gate_sha256": "A766D16120520225C2E8A551E9DE51F1C3DFD8D8EDAA8C337CFF61B04A56C839"
+  },
+  "closeout": {
+    "path": "docs/iteration-4-closeout.md",
+    "sha256": "62F8D2E7C498C2B3C97EA0424F407D833A8821D094A932EF67B0E59A42B39A2A"
+  },
+  "delivery": {
+    "github_actions": ".github/workflows/iteration4-offline.yml",
+    "github_actions_sha256": "7F7CC9AA9C657F55786184D2C7072B72039A780A36877FB52DDB05B8D138F994",
+    "hosted_ci_status": "awaiting_explicit_push",
+    "published": false
+  },
+  "images": {
+    "mysql:8.4": "sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb",
+    "redis:8.2.8-alpine": "sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103",
+    "otel/opentelemetry-collector-contrib:0.159.0": "sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc",
+    "prom/prometheus:v3.12.0": "sha256:69f5241418838263316593f7274a304b095c40bcf22e57272865da91bd60a8ac",
+    "grafana/tempo:2.10.7": "sha256:032b3acb51ed02c4b801473d54bb63e9e9f13738d215126d9843c30283794f4b",
+    "grafana/grafana:13.1.3": "sha256:ab5cb380e3ff3172d6c8bd2e7cfd31cce977d2881b260e1f5bc089bf0b759b43"
+  },
+  "cost": {
+    "real_provider_calls": 0,
+    "real_embedding_calls": 0,
+    "user_mysql_calls": 0,
+    "user_project_reads": 0,
+    "model_currency_cost": 0
+  },
+  "git_operations": []
+}

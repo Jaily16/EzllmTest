@@ -70,7 +70,7 @@ def test_mobile_drawer_has_keyboard_focus_and_cleanup_contracts():
     assert 'aria-controls="workspace-navigation"' in source
     assert ':aria-expanded="mobileNavigationOpen"' in source
     assert ':aria-hidden="!isDesktop && !mobileNavigationOpen"' in source
-    assert ':inert="!isDesktop && !mobileNavigationOpen ? \'\' : undefined"' in source
+    assert ':inert="!isDesktop && !mobileNavigationOpen ? true : undefined"' in source
     assert 'ref="navigationToggleRef"' in source
     assert 'ref="navigationCloseRef"' in source
     assert 'ref="navigationPanelRef"' in source

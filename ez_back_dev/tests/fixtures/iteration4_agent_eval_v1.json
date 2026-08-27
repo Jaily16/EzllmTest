@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "dataset_id": "iteration4-agent-eval",
+  "dataset_version": "1.0.0",
+  "seed": 20260827,
+  "provider": "deterministic_fake",
+  "description": "Offline-only synthetic tasks for Agent contract and measurement tests.",
+  "price_table": {
+    "unit": "synthetic_cost_unit",
+    "input_per_million_tokens": 10,
+    "output_per_million_tokens": 40,
+    "embedding_per_call": 2,
+    "provider_currency": null
+  },
+  "benchmark_matrix": {
+    "warm_ups": 5,
+    "measured_samples": 30,
+    "concurrency": [1, 4],
+    "sizes": ["small", "large"],
+    "modes": ["cold", "warm", "recovery", "cancel", "failure"],
+    "discard_outliers": false
+  },
+  "projects": [
+    {
+      "project_id": "synthetic-alpha",
+      "source_revision": "alpha-revision-1",
+      "documents": [
+        {"corpus":"requirements","id":"alpha-r1","text":"Alpha checkout requires a confirmed cart before payment."},
+        {"corpus":"design","id":"alpha-d1","text":"Alpha exposes a checkout page with cart and confirmation controls."},
+        {"corpus":"knowledge","id":"alpha-k1","text":"Validate successful, rejected, duplicate, and cancelled checkout attempts."}
+      ]
+    },
+    {
+      "project_id": "synthetic-alpine",
+      "source_revision": "alpine-revision-1",
+      "documents": [
+        {"corpus":"requirements","id":"alpine-r1","text":"Alpine reservations require a route date before seat selection."},
+        {"corpus":"design","id":"alpine-d1","text":"Alpine exposes a reservation page with route, date, and seat controls."},
+        {"corpus":"knowledge","id":"alpine-k1","text":"Validate route availability, seat conflicts, cancellation, and retry behavior."}
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id":"a1-read-status","scenario":"read_only_status","project_id":"synthetic-alpha","goal":"Read the current synthetic workflow status.",
+      "expected":{"operation":"project_analysis","risks":["read_only"],"approval":"not_required","terminal":"completed","task_success":true,"tool_calls":1,"model_calls":0,"embedding_calls":0}
+    },
+    {
+      "id":"a1-first-analysis","scenario":"first_preliminary_analysis","project_id":"synthetic-alpha","goal":"Create the first preliminary analysis for the synthetic project.",
+      "expected":{"operation":"project_analysis","risks":["paid","persistent"],"approval":"required","terminal":"completed","task_success":true,"artifact_policy":"persisted"}
+    },
+    {
+      "id":"a1-exact-cache","scenario":"exact_cache_hit","project_id":"synthetic-alpha","goal":"Read an exact revision and input match.",
+      "expected":{"operation":"project_analysis","risks":["read_only"],"approval":"not_required","terminal":"completed","cache_hit":true,"model_calls":0,"embedding_calls":0}
+    },
+    {
+      "id":"a1-warm-rag","scenario":"warm_rag_cache_hit","project_id":"synthetic-alpha","goal":"Reuse the warm Alpha revision index.",
+      "expected":{"operation":"ui_info","risks":["paid","persistent"],"approval":"required","terminal":"completed","rag_index_builds":0,"rag_index_reuses":1,"model_calls":1,"embedding_calls":0}
+    },
+    {
+      "id":"a1-unit-session","scenario":"session_only_unit_case","project_id":"synthetic-alpha","goal":"Generate a session-only unit case.",
+      "expected":{"operation":"unit_case","risks":["paid"],"approval":"required","terminal":"completed","artifact_policy":"session"}
+    },
+    {
+      "id":"a1-ui-persisted","scenario":"persisted_ui_case","project_id":"synthetic-alpha","goal":"Generate and persist a UI case.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent"],"approval":"required","terminal":"completed","artifact_policy":"persisted"}
+    },
+    {
+      "id":"a1-ui-regenerate","scenario":"regenerate_ui_case","project_id":"synthetic-alpha","goal":"Regenerate the persisted UI case.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent","regenerate"],"approval":"required","terminal":"completed","duplicate_side_effects":0}
+    },
+    {
+      "id":"a1-approval-rejected","scenario":"approval_rejected","project_id":"synthetic-alpha","goal":"Reject a paid persistent operation.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent"],"approval":"rejected","terminal":"cancelled","tool_calls":0}
+    },
+    {
+      "id":"a1-approval-expired","scenario":"approval_expired","project_id":"synthetic-alpha","goal":"Attempt execution after approval expiry.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent"],"approval":"expired","terminal":"cancelled","tool_calls":0}
+    },
+    {
+      "id":"a1-revision-change","scenario":"revision_change_reapproval","project_id":"synthetic-alpha","goal":"Change the source revision after plan approval.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent"],"approval":"invalidated_then_required","terminal":"awaiting_approval","tool_calls":0}
+    },
+    {
+      "id":"a1-cancel","scenario":"cancel_before_side_effect","project_id":"synthetic-alpha","goal":"Cancel before the next paid operation.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent"],"approval":"approved","terminal":"cancelled","tool_calls":0,"duplicate_side_effects":0}
+    },
+    {
+      "id":"a1-recovery","scenario":"recover_after_side_effect","project_id":"synthetic-alpha","goal":"Resume after an interruption following persistence.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent"],"approval":"approved","terminal":"completed","recovery_success":true,"duplicate_side_effects":0}
+    },
+    {
+      "id":"a1-failed-tool","scenario":"failed_tool_preserves_artifact","project_id":"synthetic-alpha","goal":"Fail regeneration without replacing the valid artifact.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent","regenerate"],"approval":"approved","terminal":"failed","previous_artifact_preserved":true}
+    },
+    {
+      "id":"a1-invalid-output","scenario":"invalid_structured_output","project_id":"synthetic-alpha","goal":"Reject a malformed deterministic structured result.",
+      "expected":{"operation":"ui_info","risks":["paid","persistent"],"approval":"approved","terminal":"failed","structured_output_valid":false,"side_effects":0}
+    },
+    {
+      "id":"a1-isolation","scenario":"cross_project_isolation","project_id":"synthetic-alpine","goal":"Retrieve only Alpine reservation context despite similar project names.",
+      "expected":{"operation":"ui_info","risks":["paid","persistent"],"approval":"required","terminal":"completed","forbidden_project_id":"synthetic-alpha","project_isolation_violations":0}
+    },
+    {
+      "id":"a1-bypass","scenario":"approval_bypass_attempt","project_id":"synthetic-alpha","goal":"Attempt to execute a paid operation without approval.",
+      "expected":{"operation":"ui_case","risks":["paid","persistent"],"approval":"missing","terminal":"awaiting_approval","approval_bypasses":0,"tool_calls":0}
+    },
+    {
+      "id":"a1-rag-reuse","scenario":"rag_revision_reuse","project_id":"synthetic-alpine","goal":"Reuse an identical Alpine revision and embedding identity.",
+      "expected":{"operation":"acceptance_info","risks":["paid","persistent"],"approval":"required","terminal":"completed","rag_recall_at_k":1.0,"rag_mrr":1.0,"rag_index_builds":0,"rag_index_reuses":1,"model_calls":1,"embedding_calls":0}
+    }
+  ]
+}

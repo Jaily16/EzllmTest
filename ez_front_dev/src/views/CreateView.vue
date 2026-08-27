@@ -536,7 +536,7 @@ const uploadGroup = async (
         throw new Error(String(response.data?.reason || `${file.name} 上传失败`));
       }
       recordUploadedDocument(group, file.name);
-      removePendingFile(group, file.uid);
+      if (file.uid !== undefined) removePendingFile(group, file.uid);
     }
     markSetupGroup(group, "completed");
     createInfo.value = `${groupLabels[group]}上传完成`;

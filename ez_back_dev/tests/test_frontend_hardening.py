@@ -251,12 +251,12 @@ def test_optimized_logo_and_build_configuration_are_bounded():
 
     main_view = read("ez_front_dev/src/views/MainView.vue")
     onboarding = read("ez_front_dev/src/components/onboarding/OnboardingShell.vue")
-    config = read("ez_front_dev/vue.config.js")
+    config = read("ez_front_dev/vite.config.ts")
     assert "ezlogo-workbench-v2.png" in main_view
     assert "ezlogo-workbench-v2.png" in onboarding
     assert 'width="38"' in main_view and 'height="38"' in main_view
     assert 'width="52"' in onboarding and 'height="52"' in onboarding
-    assert "productionSourceMap: false" in config
+    assert "sourcemap: false" in config
     assert "__VUE_PROD_HYDRATION_MISMATCH_DETAILS__" in config
 
 

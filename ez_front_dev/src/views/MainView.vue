@@ -17,7 +17,7 @@
         </button>
         <img
           class="brand-logo"
-          :src="require('@/assets/static/image/ezlogo-workbench-v2.png')"
+          :src="workbenchLogo"
           width="38"
           height="38"
           alt=""
@@ -56,7 +56,7 @@
         class="workspace-aside"
         :class="{ 'is-open': mobileNavigationOpen }"
         :aria-hidden="!isDesktop && !mobileNavigationOpen"
-        :inert="!isDesktop && !mobileNavigationOpen ? '' : undefined"
+        :inert="!isDesktop && !mobileNavigationOpen ? true : undefined"
         @keydown="handleNavigationKeydown"
       >
         <div class="drawer-header">
@@ -205,6 +205,20 @@
               </el-menu-item-group>
             </el-sub-menu>
 
+            <el-menu-item-group title="Agent 编排">
+              <el-menu-item
+                index="/agent"
+                :disabled="!agentRouteReady"
+                :aria-current="route.path === '/agent' ? 'page' : undefined"
+              >
+                <el-icon><DataAnalysis /></el-icon>
+                <span>Agent 编排</span>
+                <el-tag class="nav-state" size="small" :type="agentRouteReady ? 'primary' : 'info'">
+                  {{ agentRouteReady ? "可进入" : "资料未完成" }}
+                </el-tag>
+              </el-menu-item>
+            </el-menu-item-group>
+
             <el-menu-item-group title="平台说明">
               <el-menu-item index="guide" disabled>
                 <el-icon><Reading /></el-icon>
@@ -247,6 +261,7 @@ import { ElMessage } from "@/plugins/elementPlus";
 import axios from "axios";
 import { useRoute, useRouter } from "vue-router";
 import { ROUTE_PRESENTATION } from "@/config/routePresentation";
+import workbenchLogo from "@/assets/static/image/ezlogo-workbench-v2.png";
 import {
   analysisMenu,
   completedOperations,
@@ -299,6 +314,9 @@ const currentRouteTitle = computed(
 );
 const hasEnabledTestRoute = computed(() =>
   testRoutes.some((path) => isWorkflowRouteAllowed(path))
+);
+const agentRouteReady = computed(
+  () => workflowStatusLoaded.value && projectWorkflowStatus.value?.stage !== "setup_required"
 );
 const workflowStageLabel = computed(() => {
   if (!workflowStatusLoaded.value) return "状态加载中";
@@ -477,7 +495,10 @@ const initializeProject = async () => {
     if (instance) {
       instance.appContext.config.globalProperties.$test_menu = analysisMenu.value;
     }
-    if (!isWorkflowRouteAllowed(route.path)) {
+    if (route.path === "/agent" && !agentRouteReady.value) {
+      ElMessage({ message: "请先完成项目资料配置", type: "warning" });
+      await router.replace("/create");
+    } else if (route.path !== "/agent" && !isWorkflowRouteAllowed(route.path)) {
       ElMessage({ message: workflowStatus.message, type: "warning" });
       const redirect = getWorkflowRedirectPath();
       if (redirect !== route.path) await router.replace(redirect);
