@@ -84,7 +84,7 @@ jobs:
         run: >-
           python -m ruff check
           scripts/check_style_contract.py
-          ez_back_dev/tests/test_iteration5_style_contracts.py
+          ez_back_dev/tests/contract/iteration5/test_iteration5_style_contracts.py
           ez_back_dev/app/agentEval.py
           ez_back_dev/app/agentAcceptance.py
           ez_back_dev/app/agentBenchmark.py
@@ -110,7 +110,7 @@ jobs:
         run: >-
           python -m ruff format --check
           scripts/check_style_contract.py
-          ez_back_dev/tests/test_iteration5_style_contracts.py
+          ez_back_dev/tests/contract/iteration5/test_iteration5_style_contracts.py
           ez_back_dev/app/agentEval.py
           ez_back_dev/app/agentAcceptance.py
           ez_back_dev/app/agentBenchmark.py
