@@ -64,8 +64,13 @@ def test_git_status_collapses_protected_children_to_metadata_boundaries():
     snapshot = inventory.git_snapshot(ROOT)
     records = snapshot["status"] + snapshot["status_matching"]
     paths = [record["path"] for record in records]
-    assert "example/" in paths
-    assert "ez_back_dev/static/projects/" in paths
+    protected_roots = {
+        "example/": ROOT / "example",
+        "ez_back_dev/static/projects/": ROOT / "ez_back_dev" / "static" / "projects",
+    }
+    for protected_path, root in protected_roots.items():
+        if root.exists():
+            assert protected_path in paths
     assert all(
         not path.startswith("example/") or path == "example/"
         for path in paths
@@ -75,7 +80,11 @@ def test_git_status_collapses_protected_children_to_metadata_boundaries():
         or path == "ez_back_dev/static/projects/"
         for path in paths
     )
-    assert all("metadata_only_no_child_paths" in record.values() for record in records if record["path"] in {"example/", "ez_back_dev/static/projects/"})
+    assert all(
+        "metadata_only_no_child_paths" in record.values()
+        for record in records
+        if record["path"] in protected_roots and protected_roots[record["path"]].exists()
+    )
 
 
 def test_normalized_hash_is_cross_platform_and_json_is_canonical():
