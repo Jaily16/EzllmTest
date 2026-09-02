@@ -62,14 +62,15 @@ jobs:
       - name: Check modular runtime contract
         run: python -B scripts/check_modular_runtime.py --check --format text
 
-      - name: Check container delivery contract
-        run: python -B scripts/check_container_delivery.py --check --format text
-
       - name: Check Iteration 5 closeout contract
         run: python -B scripts/check_iteration5_closeout.py --check --format text
 
       - name: Install backend dependencies
         run: python -m pip install --disable-pip-version-check --no-input --require-hashes -r ez_back_dev/requirements.txt
+
+      - name: Check container delivery contract
+        run: python -B scripts/check_container_delivery.py --check --format text
+
       - name: Check backend dependency consistency
         run: python -m pip check
 

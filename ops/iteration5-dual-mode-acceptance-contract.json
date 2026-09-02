@@ -189,11 +189,11 @@
         "reason": "Reviewed current hardened frontend image evidence; raw and LF-normalized hashes are intentionally distinct and the normalized value is portable across clean checkouts."
       },
       ".github/workflows/iteration4-offline.yml": {
-        "raw_sha256": "D32FFDB4800956C07DD71D479CA5B55B4B60E2BA402678E323B4DA1C9D0E0FDF",
-        "normalized_sha256": "D32FFDB4800956C07DD71D479CA5B55B4B60E2BA402678E323B4DA1C9D0E0FDF",
-        "frontend_sha256": "D32FFDB4800956C07DD71D479CA5B55B4B60E2BA402678E323B4DA1C9D0E0FDF",
-        "modular_sha256": "D32FFDB4800956C07DD71D479CA5B55B4B60E2BA402678E323B4DA1C9D0E0FDF",
-        "backend_sha256": "D32FFDB4800956C07DD71D479CA5B55B4B60E2BA402678E323B4DA1C9D0E0FDF",
+        "raw_sha256": "AECBFABBAB54B6060E864DDD2F86E9E0F8EC013C0586A308DA7396D714D0E3EE",
+        "normalized_sha256": "AECBFABBAB54B6060E864DDD2F86E9E0F8EC013C0586A308DA7396D714D0E3EE",
+        "frontend_sha256": "AECBFABBAB54B6060E864DDD2F86E9E0F8EC013C0586A308DA7396D714D0E3EE",
+        "modular_sha256": "AECBFABBAB54B6060E864DDD2F86E9E0F8EC013C0586A308DA7396D714D0E3EE",
+        "backend_sha256": "AECBFABBAB54B6060E864DDD2F86E9E0F8EC013C0586A308DA7396D714D0E3EE",
         "manual_review": true,
         "reason": "Reviewed current CI gate additions while retaining existing permissions, action pins and cleanup scope."
       },
