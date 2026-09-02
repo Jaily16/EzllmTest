@@ -592,6 +592,15 @@
         "backend_sha256": "E4FCB93CD0ABBCCFA7B3F8370E9CC4117A7E7F25AFD4146201954DE06C16709D",
         "manual_review": true,
         "reason": "The protected SQL content is unchanged; this overlay records its canonical LF hash so the same evidence passes on Windows and clean Linux checkouts."
+      },
+      "ops/frontend/nginx.conf": {
+        "raw_sha256": "FA891D7DB712293B850F5CBD032013E8D7CDF0D2C731C98F9254A0BBE893E59C",
+        "normalized_sha256": "8BB8195CBB1A9C18B9C2910986E574A607EB7F9EEFFCE3BFDDCA69E75E750C71",
+        "frontend_sha256": "8BB8195CBB1A9C18B9C2910986E574A607EB7F9EEFFCE3BFDDCA69E75E750C71",
+        "modular_sha256": "8BB8195CBB1A9C18B9C2910986E574A607EB7F9EEFFCE3BFDDCA69E75E750C71",
+        "backend_sha256": "8BB8195CBB1A9C18B9C2910986E574A607EB7F9EEFFCE3BFDDCA69E75E750C71",
+        "manual_review": true,
+        "reason": "The protected nginx runtime configuration is unchanged; this overlay records its Windows raw and canonical LF hashes for clean-checkout evidence."
       }
     },
     "reason": "Only later Aspect 8 compatibility, checker, report and closeout updates may be listed with manually reviewed post hashes."
