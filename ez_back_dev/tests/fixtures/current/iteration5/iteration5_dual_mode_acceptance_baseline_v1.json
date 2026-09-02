@@ -4,7 +4,7 @@
   "manual_reviewed": true,
   "auto_accept_current_values": false,
   "parent_contract": "ops/iteration5-dual-mode-acceptance-contract.json",
-  "parent_contract_sha256": "E8B29B2ABFF29041A0D8A30945B6E4AB364F6FE5B48C6E551A6FF2469B06F5D6",
+  "parent_contract_sha256": "19E1819CE5AC67504F98166FFE459C68E593919F33E2F50FAADED0B528CFE9AA",
   "git": {
     "branch": "main",
     "head": "8812be4fa73ab6274ec642fd5099be060aafb5d6",

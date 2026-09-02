@@ -659,3 +659,24 @@ volume、provider 或 embedding，也没有产生付费调用。后续只允许�
 - 修复后的 checker、contract、baseline、migration 和本日志会作为下一提交重新触发 CI；
   在新 run 通过前不宣称 CI 通过、不创建 tag/Release。Docker full-stack/parity 仍为
   `Blocked`，不重启、不 build/up/down/pull，不发布镜像。
+
+## Draft PR CI 复验收口（2026-09-02）
+
+本节只追加源码预发布分支上的真实复验结果，不改写历史 evidence、Aspect 1–7 fixture、SQL、prompt 或
+用户资产。
+
+| Commit / run | 结果 | 处理或限制 |
+| --- | --- | --- |
+| `991d801` / `33626681465` | Backend tests 失败 | clean checkout 的受保护目录元数据断言与 Windows/LF `.env.example` 尺寸断言失败；无业务回归 |
+| `9149829` / `33626977160` | Closeout checker 失败 | active baseline contract test 的人工 overlay hash 未同步 |
+| `526dc7c` / `33627239455` | Backend tests 失败 | `TestProject.py` 历史混合换行尺寸未覆盖；其余 758 个测试通过 |
+| `8c04759` / `33627691876` | 非 Docker gates 通过；Docker smoke 失败 | 后端测试、Eval、Acceptance、Benchmark、前端质量门禁、静态 checker、Compose config 和凭据门禁均通过；Compose 构建完成且容器健康，但既有 Tempo trace 查询与容器内 Acceptance 探针未通过，故 Docker full-stack/parity 继续 `Blocked` |
+
+最终本地隔离 Python 3.11 全量结果为 `727 passed, 32 skipped`；7 个只读 checker 均通过。此次修复仅更新
+clean-checkout 测试兼容性和人工审查 evidence hash 链，不修改产品逻辑、公共 wire contract、版本真源或历史
+fixture。未执行 Docker 镜像发布、registry 登录/推送、tag 或 GitHub Release；产品版本仍为 `0.1.0`，预发布仍
+只能标记为 `Source Preview`，Iteration 5 仍为 `Aspect 8 已执行但未完成（Blocked）`。
+
+没有读取真实 `.env`、上传项目、用户 MySQL/Redis/观测数据、普通 volume 或用户文件；没有产生 provider、
+embedding 或付费调用。用户未跟踪文件 `docs/development/iteration-5/iteration-5-residual-remediation-prompt.md`
+继续保留为用户资产，不进入提交。
