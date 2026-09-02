@@ -665,13 +665,17 @@ def _check_aspect8_cumulative_overlay(root: Path, report: dict[str, Any]) -> dic
                 valid = False
                 continue
             expected = {
-                "raw_sha256": current_raw,
                 "normalized_sha256": current_normalized,
                 "frontend_sha256": current_normalized,
                 "modular_sha256": current_normalized,
                 "backend_sha256": current_normalized,
             }
-            if any(evidence[field].lower() != expected[field] for field in required_hashes):
+            raw_ok = evidence["raw_sha256"].lower() in {
+                current_raw,
+                current_normalized,
+            }
+            normalized_ok = all(evidence[field].lower() == expected[field] for field in expected)
+            if not raw_ok or not normalized_ok:
                 valid = False
                 continue
             accepted[relative] = current_normalized

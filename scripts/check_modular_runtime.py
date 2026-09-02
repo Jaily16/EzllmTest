@@ -196,7 +196,13 @@ def _check_baseline(root: Path, report: dict[str, Any]) -> None:
                 break
             actual_hash = _sha256(path)
             reviewed_hash = _aspect8_overlay_hash(root, relative, "raw_sha256")
-            if actual_hash != expected.lower() and actual_hash != (reviewed_hash or "").lower():
+            actual_normalized_hash = _normalized_sha256(path)
+            reviewed_normalized_hash = _aspect8_overlay_hash(root, relative, "normalized_sha256")
+            if (
+                actual_hash != expected.lower()
+                and actual_hash != (reviewed_hash or "").lower()
+                and actual_normalized_hash != (reviewed_normalized_hash or "").lower()
+            ):
                 hashes_ok = False
                 break
     _add(report, "baseline.protected_hashes", hashes_ok, "protected SHA-256 values")

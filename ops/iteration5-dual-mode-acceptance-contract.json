@@ -186,7 +186,7 @@
         "modular_sha256": "429253CFCCF433C4DB1C734ABB1FD6DDAF9CCC309CB7D69E21825CE081AB8052",
         "backend_sha256": "429253CFCCF433C4DB1C734ABB1FD6DDAF9CCC309CB7D69E21825CE081AB8052",
         "manual_review": true,
-        "reason": "Reviewed current hardened frontend image evidence; raw and LF-normalized hashes are intentionally distinct."
+        "reason": "Reviewed current hardened frontend image evidence; raw and LF-normalized hashes are intentionally distinct and the normalized value is portable across clean checkouts."
       },
       ".github/workflows/iteration4-offline.yml": {
         "raw_sha256": "D32FFDB4800956C07DD71D479CA5B55B4B60E2BA402678E323B4DA1C9D0E0FDF",
@@ -234,13 +234,13 @@
         "reason": "Reviewed accumulated frontend usage documentation; CRLF raw evidence is retained."
       },
       "docs/development/iteration-5/development-log.md": {
-        "raw_sha256": "67F7F4366EF316B34CB392D13ED4A536A895EA391AD78E1AE39187A3E7CB04C5",
-        "normalized_sha256": "67F7F4366EF316B34CB392D13ED4A536A895EA391AD78E1AE39187A3E7CB04C5",
-        "frontend_sha256": "67F7F4366EF316B34CB392D13ED4A536A895EA391AD78E1AE39187A3E7CB04C5",
-        "modular_sha256": "67F7F4366EF316B34CB392D13ED4A536A895EA391AD78E1AE39187A3E7CB04C5",
-        "backend_sha256": "67F7F4366EF316B34CB392D13ED4A536A895EA391AD78E1AE39187A3E7CB04C5",
+        "raw_sha256": "BC125A57A44B8B9A9219EA12FCE14489A19D7D27431CB06E8C7892CF171A2D44",
+        "normalized_sha256": "BC125A57A44B8B9A9219EA12FCE14489A19D7D27431CB06E8C7892CF171A2D44",
+        "frontend_sha256": "BC125A57A44B8B9A9219EA12FCE14489A19D7D27431CB06E8C7892CF171A2D44",
+        "modular_sha256": "BC125A57A44B8B9A9219EA12FCE14489A19D7D27431CB06E8C7892CF171A2D44",
+        "backend_sha256": "BC125A57A44B8B9A9219EA12FCE14489A19D7D27431CB06E8C7892CF171A2D44",
         "manual_review": true,
-        "reason": "Reviewed the cumulative development log after the latest isolated quality and topology rerun."
+        "reason": "Reviewed the cumulative development log after the first clean-checkout CI failure and its narrow hash-compatibility fix."
       },
       "docs/development/iteration-5/overview.md": {
         "raw_sha256": "B9B454F0F93D1E104425B2AC89360B10C6B8A6618719C55079641CDF480B96F5",
@@ -342,13 +342,13 @@
         "reason": "Reviewed the frontend structure checker as cumulative gate infrastructure."
       },
       "scripts/check_modular_runtime.py": {
-        "raw_sha256": "C357C4E6A63A2A9947B63BE4E5E95642FA560DC7E840B2925A94B6B3F0C7F101",
-        "normalized_sha256": "C357C4E6A63A2A9947B63BE4E5E95642FA560DC7E840B2925A94B6B3F0C7F101",
-        "frontend_sha256": "C357C4E6A63A2A9947B63BE4E5E95642FA560DC7E840B2925A94B6B3F0C7F101",
-        "modular_sha256": "C357C4E6A63A2A9947B63BE4E5E95642FA560DC7E840B2925A94B6B3F0C7F101",
-        "backend_sha256": "C357C4E6A63A2A9947B63BE4E5E95642FA560DC7E840B2925A94B6B3F0C7F101",
+        "raw_sha256": "866CE43ACD80C6FE6CBBD8A019030702DB88FF71169905B12A049DD1CBB2759A",
+        "normalized_sha256": "866CE43ACD80C6FE6CBBD8A019030702DB88FF71169905B12A049DD1CBB2759A",
+        "frontend_sha256": "866CE43ACD80C6FE6CBBD8A019030702DB88FF71169905B12A049DD1CBB2759A",
+        "modular_sha256": "866CE43ACD80C6FE6CBBD8A019030702DB88FF71169905B12A049DD1CBB2759A",
+        "backend_sha256": "866CE43ACD80C6FE6CBBD8A019030702DB88FF71169905B12A049DD1CBB2759A",
         "manual_review": true,
-        "reason": "Reviewed the modular runtime checker as cumulative gate infrastructure."
+        "reason": "Reviewed the modular runtime checker after adding exact raw/normalized cross-platform evidence matching."
       },
       "ops/modular-runtime-contract.json": {
         "raw_sha256": "B0F0EBB563D0DB2935FE0818DEA23C083AB4CEA7E1F75D6E1D29E73297F928FE",
@@ -477,11 +477,11 @@
         "reason": "Reviewed the existing backend boundary checker as cumulative gate infrastructure."
       },
       "scripts/check_container_delivery.py": {
-        "raw_sha256": "2526F40911828F93003B190C8F8E455F50E80F9149281BCA916C63AB491F8420",
-        "normalized_sha256": "2526F40911828F93003B190C8F8E455F50E80F9149281BCA916C63AB491F8420",
-        "frontend_sha256": "2526F40911828F93003B190C8F8E455F50E80F9149281BCA916C63AB491F8420",
-        "modular_sha256": "2526F40911828F93003B190C8F8E455F50E80F9149281BCA916C63AB491F8420",
-        "backend_sha256": "2526F40911828F93003B190C8F8E455F50E80F9149281BCA916C63AB491F8420",
+        "raw_sha256": "395D8A383045F559A19EBAF47114084FB5B4DE701C199744B6CD2423F9B3CF44",
+        "normalized_sha256": "395D8A383045F559A19EBAF47114084FB5B4DE701C199744B6CD2423F9B3CF44",
+        "frontend_sha256": "395D8A383045F559A19EBAF47114084FB5B4DE701C199744B6CD2423F9B3CF44",
+        "modular_sha256": "395D8A383045F559A19EBAF47114084FB5B4DE701C199744B6CD2423F9B3CF44",
+        "backend_sha256": "395D8A383045F559A19EBAF47114084FB5B4DE701C199744B6CD2423F9B3CF44",
         "manual_review": true,
         "reason": "Reviewed the narrow Aspect 8 compatibility extension for prior container hash evidence."
       },
@@ -583,6 +583,15 @@
         "backend_sha256": "CC5815344FC2FE983DA0F474C08A25D49861F55C9D94B3603976D5058EBF6868",
         "manual_review": true,
         "reason": "Reviewed Prettier-only workflow composable normalization; SSE, cancellation and recovery bindings are unchanged."
+      },
+      "ezllmtest.sql": {
+        "raw_sha256": "BD74DD1D16117D03F4BA4BFDA491BF89E4F981BD2B58F1A34B486292A912BC4F",
+        "normalized_sha256": "E4FCB93CD0ABBCCFA7B3F8370E9CC4117A7E7F25AFD4146201954DE06C16709D",
+        "frontend_sha256": "E4FCB93CD0ABBCCFA7B3F8370E9CC4117A7E7F25AFD4146201954DE06C16709D",
+        "modular_sha256": "E4FCB93CD0ABBCCFA7B3F8370E9CC4117A7E7F25AFD4146201954DE06C16709D",
+        "backend_sha256": "E4FCB93CD0ABBCCFA7B3F8370E9CC4117A7E7F25AFD4146201954DE06C16709D",
+        "manual_review": true,
+        "reason": "The protected SQL content is unchanged; this overlay records its canonical LF hash so the same evidence passes on Windows and clean Linux checkouts."
       }
     },
     "reason": "Only later Aspect 8 compatibility, checker, report and closeout updates may be listed with manually reviewed post hashes."

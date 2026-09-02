@@ -451,8 +451,16 @@ def _check_cumulative_overlay(root: Path, contract: dict[str, Any], report: dict
             )
             ok = ok and fields_ok and path.is_file()
             if path.is_file() and fields_ok:
-                ok = ok and hashlib.sha256(path.read_bytes()).hexdigest().upper() == evidence["raw_sha256"].upper()
-                ok = ok and normalized_sha256(path) == evidence["normalized_sha256"].upper()
+                actual_raw = hashlib.sha256(path.read_bytes()).hexdigest().upper()
+                actual_normalized = normalized_sha256(path)
+                reviewed_raw = evidence["raw_sha256"].upper()
+                reviewed_normalized = evidence["normalized_sha256"].upper()
+                # A reviewed raw hash may reflect either a Windows CRLF checkout
+                # or the canonical LF blob used by Linux CI.  The normalized
+                # hash remains the invariant, and raw evidence must be one of
+                # those two exact representations.
+                ok = ok and actual_normalized == reviewed_normalized
+                ok = ok and actual_raw in {reviewed_raw, reviewed_normalized}
     _add(report, "cumulative_overlay.reviewed", ok and checked > 0, f"reviewed later paths={checked}")
 
 

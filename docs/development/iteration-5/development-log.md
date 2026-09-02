@@ -641,3 +641,21 @@ Aspect 1–8 证据、历史 fixture、SQL、prompt 或 Blocked 结论。
 `removed_paths=[]`；没有读取真实 `.env`、上传项目、用户数据库、Redis、观测数据、普通
 volume、provider 或 embedding，也没有产生付费调用。后续只允许在显式 allowlist 上创建源码
 预发布分支和 Draft PR；不自动合并、不直接推送 `main`，不创建 Docker 镜像 release asset。
+
+## Draft PR 首轮 CI 复验（2026-09-02）
+
+- 源码预发布分支 `codex/iteration5-source-preview` 的首个提交为
+  `351ed3ae58ae5a16322b82b984063ef7bb3cf749`，Draft PR 为
+  `Jaily16/EzllmTest#1`。
+- GitHub Actions run `33623365652` 在 clean Linux checkout 的
+  `Check modular runtime contract` 失败；后续门禁按 workflow 依赖被正确停止，未执行
+  Docker full-stack smoke。
+- 失败原因已确认是历史 baseline 使用 Windows raw hash，而 clean checkout 使用 LF：
+  `ezllmtest.sql` 的受保护内容 hash 与 canonical LF hash 不同，前端 Dockerfile 的人工
+  overlay 也同时记录了 raw 与 normalized 两种 hash。没有发现业务、公共契约、依赖或敏感值漂移。
+- 修复仅限 Aspect 8 active evidence：checker 对人工记录的 raw/normalized hash 做严格双重
+ 匹配，overlay 增加 SQL canonical LF hash；不修改 SQL 内容，不更新历史 Aspect 1–7 fixture，
+  不放宽路径、敏感目录或自动接受规则。
+- 修复后的 checker、contract、baseline、migration 和本日志会作为下一提交重新触发 CI；
+  在新 run 通过前不宣称 CI 通过、不创建 tag/Release。Docker full-stack/parity 仍为
+  `Blocked`，不重启、不 build/up/down/pull，不发布镜像。
