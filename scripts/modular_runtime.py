@@ -377,6 +377,10 @@ def _posix_identity(pid: int) -> dict[str, str] | None:
     fields = stat.split()
     if len(fields) <= 21:
         return None
+    if fields[2] == "Z":
+        # A terminated child remains visible as a zombie until its parent
+        # reaps it; treat that state as exited for safe ownership polling.
+        return None
     return {"creation_time": fields[21], "command_line": command_line.strip()}
 
 

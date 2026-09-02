@@ -62,6 +62,28 @@ def _normalized_sha256(path: Path) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _normalized_size(path: Path) -> int:
+    payload = path.read_bytes()
+    if path.suffix.lower() == ".json":
+        if payload.startswith(b"\xef\xbb\xbf"):
+            payload = payload[3:]
+        payload = (
+            json.dumps(
+                json.loads(payload.decode("utf-8")),
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+            + b"\n"
+        )
+    else:
+        if payload.startswith(b"\xef\xbb\xbf"):
+            payload = payload[3:]
+        text = payload.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+        payload = (text.rstrip("\n") + "\n").encode("utf-8")
+    return len(payload)
+
+
 def _aspect3_style_changed_paths() -> set[str]:
     migration = _load(
         "ez_back_dev/tests/fixtures/iteration5_style_migration_v1.json"
@@ -146,7 +168,9 @@ def test_key_manifest_entry_hashes_are_explicit_not_runtime_generated():
         path = _repo_path(relative)
         assert path.is_file(), relative
         assert entry["sha256"] == _normalized_sha256(path), relative
-        assert entry["size_bytes"] == path.stat().st_size, relative
+        # The baseline was captured on Windows; accept its raw size or the
+        # exact canonical-LF size used by a clean Linux checkout.
+        assert entry["size_bytes"] in {path.stat().st_size, _normalized_size(path)}, relative
 
 
 def test_version_migration_fixture_records_manual_post_change_hashes():
