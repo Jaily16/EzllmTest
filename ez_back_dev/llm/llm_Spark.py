@@ -1,9 +1,6 @@
-"""Compatibility wrapper for the removed Spark provider."""
+"""Compatibility façade for the consolidated legacy model wrappers."""
 
-from llm.provider import get_lazy_chat_model
+from infrastructure.llm.legacy_models import SparkModel, get_lazy_chat_model
 
-
-class SparkModel:
-    def get_model(self):
-        return get_lazy_chat_model()
+__all__ = ["SparkModel", "get_lazy_chat_model"]
 

@@ -1,15 +1,9 @@
-"""Compatibility wrapper for legacy imports.
+"""Compatibility façade for the consolidated legacy model wrappers."""
 
-The local reproduction no longer calls OpenAI. Both methods delegate to the
-configured Zhipu-compatible provider.
-"""
+from infrastructure.llm.legacy_models import (
+    ChatGPTModel,
+    get_lazy_chat_model,
+    get_lazy_embeddings,
+)
 
-from llm.provider import get_lazy_chat_model, get_lazy_embeddings
-
-
-class ChatGPTModel:
-    def get_model(self):
-        return get_lazy_chat_model()
-
-    def get_embeddings(self):
-        return get_lazy_embeddings()
+__all__ = ["ChatGPTModel", "get_lazy_chat_model", "get_lazy_embeddings"]

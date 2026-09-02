@@ -1,0 +1,2 @@
+# Aspect 3 quality tooling only; runtime images install requirements.txt instead.
+ruff==0.16.5

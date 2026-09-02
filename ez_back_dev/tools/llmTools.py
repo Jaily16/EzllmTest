@@ -1,5 +1,6 @@
-from llm.provider import get_chat_model
+"""Compatibility façade for canonical LLM selection helpers."""
 
+import sys as _sys
+from importlib import import_module as _import_module
 
-def choose_llm_by_name(name: str, minimum_timeout_seconds: float = 0.0):
-    return get_chat_model(name, minimum_timeout_seconds)
+_sys.modules[__name__] = _import_module("infrastructure.llm.selection")

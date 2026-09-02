@@ -19,10 +19,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from service.agentContracts import ApprovalDecision, TrustedProjectScope
-from service.agentRuntimeContracts import AGENT_GRAPH_VERSION
-from service.agentRuntimeFactory import build_default_workbench_service
-from service.agentWorkbenchContracts import (
+from service.agent.contracts import ApprovalDecision, TrustedProjectScope
+from service.agent.runtime_contracts import AGENT_GRAPH_VERSION
+from service.agent.factory import build_default_workbench_service
+from service.agent.workbench_contracts import (
     AGENT_ACTOR_ID,
     AGENT_API_SCHEMA_VERSION,
     AGENT_SCOPE_VERSION,
@@ -31,8 +31,8 @@ from service.agentWorkbenchContracts import (
     AgentRunCreateRequest,
     public_capabilities,
 )
-from service.agentWorkbenchService import AgentRunConflict, AgentWorkbenchService
-from service.agentTelemetry import (
+from service.agent.workbench_service import AgentRunConflict, AgentWorkbenchService
+from infrastructure.observability.agent_telemetry import (
     agent_span,
     get_agent_telemetry,
     telemetry_public_status,
@@ -41,6 +41,7 @@ from service.agentTelemetry import (
 
 
 AGENT_API_HOST = "127.0.0.1"
+READINESS_SCHEMA_VERSION = "iteration5-readiness-v1"
 _TERMINAL = frozenset({"completed", "cancelled", "failed"})
 ProjectExists = Callable[[str], bool | Awaitable[bool]]
 
@@ -135,6 +136,7 @@ def _scope(pid: str) -> TrustedProjectScope:
     )
 
 
+# Agent SSE 以单调 sequence 支持断线恢复；payload 只包含允许展示的状态和脱敏错误。
 def _sse_event(sequence: int, payload: dict[str, Any]) -> bytes:
     content = json.dumps(
         payload,
@@ -148,6 +150,7 @@ def _sse_event(sequence: int, payload: dict[str, Any]) -> bytes:
     ).encode("utf-8")
 
 
+# Agent API 的审批、取消和恢复入口必须共享项目 scope 与 idempotency 校验。
 def create_agent_api_app(
     service: AgentWorkbenchService | None = None,
     *,
@@ -253,6 +256,34 @@ def create_agent_api_app(
                 "schema_version": AGENT_API_SCHEMA_VERSION,
                 "graph_version": AGENT_GRAPH_VERSION,
                 "telemetry": telemetry_public_status(),
+            },
+        )
+
+    @app.get("/ready")
+    async def readiness():
+        """Return only loopback-safe Redis and worker readiness state."""
+        redis_ok = False
+        try:
+            redis_ok = bool(await workbench.store.redis.ping())
+        except Exception:
+            redis_ok = False
+        worker_ok = False
+        if redis_ok:
+            try:
+                worker_ok = bool(await workbench.store.worker_available())
+            except Exception:
+                worker_ok = False
+        ready = redis_ok and worker_ok
+        return JSONResponse(
+            status_code=200 if ready else 503,
+            content={
+                "schema_version": READINESS_SCHEMA_VERSION,
+                "service": "agent-api",
+                "status": "ready" if ready else "not_ready",
+                "checks": {
+                    "redis": "ok" if redis_ok else "unavailable",
+                    "worker": "available" if worker_ok else "unavailable",
+                },
             },
         )
 

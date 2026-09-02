@@ -4,7 +4,7 @@
 
 一个面向软件测试团队的本地 AI 测试工作台：从项目资料上传开始，经业务分析、测试计划和推荐菜单，继续生成单元、集成、API、UI、数据库、功能、非功能与验收测试成果。
 
-当前仓库已完成 Iteration 1–4。Iteration 3 统一了应用壳、设计系统、项目恢复和八类测试页，并通过真实 `GLM-4.7`、`embedding-3` 与本地 MySQL 完成一条脱敏代表性旅程；Iteration 4 在不替换原有确定性 workflow 的前提下，新增了可规划、可审批、可恢复、可评测、可观测的 LangGraph 单 Agent 编排层，并通过完整离线验收与隔离的真实模型合成项目 E2E。
+当前仓库已完成 Iteration 1–4。Iteration 3 统一了应用壳、设计系统、项目恢复和八类测试页，并通过真实 `GLM-4.7`、`embedding-3` 与本地 MySQL 完成一条脱敏代表性旅程；Iteration 4 在不替换原有确定性 workflow 的前提下，新增了可规划、可审批、可恢复、可评测、可观测的 LangGraph 单 Agent 编排层，并通过完整离线验收与隔离的真实模型合成项目 E2E。Iteration 5 的 Aspect 1–7 已形成当前工程基线，Aspect 8 已执行但未完成（Blocked）；真实 gate 状态与未完成限制见 [`docs/development/iteration-5/closeout.md`](docs/development/iteration-5/closeout.md)。
 
 > 仓库为私有项目。私有可见性不是凭证保险箱：任何 API Key、数据库密码、真实项目 ID、客户资料和运行时产物都不得提交。
 
@@ -87,29 +87,29 @@ UI、数据库和验收 final 会持久化；页面可以仅隐藏当前显示�
 
 ## 技术栈
 
-| 层次 | 技术 |
-| --- | --- |
-| Web | Vue 3、TypeScript、Vue Router、Element Plus 2.7、Vite 8 |
-| API | Python 3.11、FastAPI、Pydantic 2、Uvicorn；legacy API 与独立 Agent API |
-| Agent | LangGraph 单 Agent、严格 JSON checkpoint、自定义 Redis saver、HITL |
-| 工具协议 | 19-workflow catalog、22 个类型化工具、loopback MCP 2 |
-| 数据 | MySQL 8、Redis 8、SQLAlchemy 2、PyMySQL |
-| LLM | LangChain Core、LangChain OpenAI、OpenAI-compatible providers |
-| 检索 | RAG、请求级内存向量索引、智谱 `embedding-3` |
-| 流式协议 | REST + Server-Sent Events（SSE） |
-| 文档 | pypdf、docx2txt、Markdown/纯文本读取 |
-| 可观测性 | OpenTelemetry、Prometheus、Tempo、Grafana、脱敏 JSON 日志 |
-| 交付 | Docker Compose、GitHub Actions 离线门禁 |
+| 层次     | 技术                                                                                                 |
+| -------- | ---------------------------------------------------------------------------------------------------- |
+| Web      | Vue、TypeScript、Vue Router、Element Plus、Vite                                                      |
+| API      | Python、FastAPI、Pydantic、Uvicorn；legacy API 与独立 Agent API                                      |
+| Agent    | LangGraph 单 Agent、严格 JSON checkpoint、自定义 Redis saver、HITL                                   |
+| 工具协议 | 19-workflow catalog、22 个类型化工具、loopback MCP 2                                                 |
+| 数据     | MySQL、Redis、SQLAlchemy、PyMySQL                                                                    |
+| LLM      | LangChain Core、LangChain OpenAI、OpenAI-compatible providers                                        |
+| 检索     | RAG、请求级内存向量索引、智谱 `embedding-3`                                                          |
+| 流式协议 | REST + Server-Sent Events（SSE）                                                                     |
+| 文档     | pypdf、docx2txt、Markdown/纯文本读取                                                                 |
+| 可观测性 | OpenTelemetry、Prometheus、Tempo、Grafana、脱敏 JSON 日志                                            |
+| 交付     | Docker Compose、GitHub Actions 离线门禁                                                              |
 | 质量门禁 | pytest、Agent Eval/acceptance/benchmark、Vite lint/type-check/build、credential scan、bundle checker |
 
 聊天模型注册表：
 
-| Provider 参数 | 前端显示 | 后端公共标签 | API Key 变量 |
-| --- | --- | --- | --- |
-| `zhipu` | `glm-4.7` | `GLM-4.7` | `ZHIPU_API_KEY` |
-| `alibaba` | `qwen3.5-plus` | `通义千问` | `DASHSCOPE_API_KEY` |
-| `deepseek` | `deepseek-v4-flash` | `DeepSeek` | `DEEPSEEK_API_KEY` |
-| `moonshot` | `kimi-k2.5` | `Moonshot Kimi` | `MOONSHOT_API_KEY` |
+| Provider 参数 | 前端显示            | 后端公共标签    | API Key 变量        |
+| ------------- | ------------------- | --------------- | ------------------- |
+| `zhipu`       | `glm-4.7`           | `GLM-4.7`       | `ZHIPU_API_KEY`     |
+| `alibaba`     | `qwen3.5-plus`      | `通义千问`      | `DASHSCOPE_API_KEY` |
+| `deepseek`    | `deepseek-v4-flash` | `DeepSeek`      | `DEEPSEEK_API_KEY`  |
+| `moonshot`    | `kimi-k2.5`         | `Moonshot Kimi` | `MOONSHOT_API_KEY`  |
 
 RAG 当前统一使用智谱 `embedding-3`；即使聊天模型选择其他 provider，也需要配置智谱 embedding。
 
@@ -137,17 +137,17 @@ legacy 模型输出的生命周期仍是：显式操作 → REST/SSE 请求 → 
 
 ### 工作流与保留策略
 
-| 工作区 | 阶段 | final 保留方式 |
-| --- | --- | --- |
-| 项目规划 | `project_analysis` | persisted artifact |
-| 单元 | `unit_menu → unit_info → unit_case` | `unit_case` session-only |
-| 集成 | `integration_menu → integration_info → integration_case` | `integration_case` session-only |
-| API | `api_info → api_case` | `api_case` session-only |
-| UI | `ui_info → ui_case` | `ui_case` persisted artifact |
-| 数据库 | `db_info → db_case` | `db_case` persisted artifact |
-| 功能 | `functional_info → functional_case` | `functional_case` session-only |
-| 非功能 | `nonfunctional_info → nonfunctional_case` | `nonfunctional_case` session-only |
-| 验收 | `acceptance_info → acceptance_case` | `acceptance_case` persisted artifact |
+| 工作区   | 阶段                                                     | final 保留方式                       |
+| -------- | -------------------------------------------------------- | ------------------------------------ |
+| 项目规划 | `project_analysis`                                       | persisted artifact                   |
+| 单元     | `unit_menu → unit_info → unit_case`                      | `unit_case` session-only             |
+| 集成     | `integration_menu → integration_info → integration_case` | `integration_case` session-only      |
+| API      | `api_info → api_case`                                    | `api_case` session-only              |
+| UI       | `ui_info → ui_case`                                      | `ui_case` persisted artifact         |
+| 数据库   | `db_info → db_case`                                      | `db_case` persisted artifact         |
+| 功能     | `functional_info → functional_case`                      | `functional_case` session-only       |
+| 非功能   | `nonfunctional_info → nonfunctional_case`                | `nonfunctional_case` session-only    |
+| 验收     | `acceptance_info → acceptance_case`                      | `acceptance_case` persisted artifact |
 
 所有 preliminary analysis 都持久化。五类 session-only final 只在当前页面会话保存正文；换标签会话后不会被当成服务器 artifact 恢复。
 
@@ -183,10 +183,8 @@ EzllmTest/
 ### 环境要求
 
 - Windows 10/11
-- Conda 与 Python 3.11
-- Node.js 24、npm 11
-- MySQL 8.x
-- Agent 模式需要 Redis 8.x；推荐使用 Docker Desktop 与仓库 Compose 栈
+- Conda、Python、Node.js 与 npm；精确兼容组合见 [`docs/versions.md`](docs/versions.md)
+- MySQL；Agent 模式需要 Redis，推荐使用 Docker Desktop 与仓库 Compose 栈
 - 真实生成需要至少一个聊天模型 API Key；仅运行离线门禁不需要 provider Key
 - 真实 RAG 生成需要智谱 API Key
 
@@ -209,11 +207,11 @@ Set-Location .\EzllmTest
 conda create --name ezllmtest python=3.11 -y
 conda activate ezllmtest
 python -m pip install --upgrade pip
-python -m pip install -r .\ez_back_dev\requirements.txt
+python -m pip install --require-hashes -r .\ez_back_dev\requirements-windows.txt
 python -m pip check
 ```
 
-当前后端使用 Pydantic 2、SQLAlchemy 2、`langchain-core==1.5.6`、`langchain-openai==1.5.2`、`langchain-text-splitters==1.1.2` 和 `openai==3.3.0`，不依赖旧的 Chroma/FAISS 包装器。
+Windows 本地使用 Windows 锁；Docker 与 CI 使用 Linux 锁。精确依赖、镜像、Actions 和升级/回滚策略统一见 [`docs/versions.md`](docs/versions.md)。
 
 ### 3. 创建本地配置
 
@@ -227,33 +225,33 @@ notepad .\.env
 
 ## 配置变量
 
-| 变量名 | 用途 |
-| --- | --- |
-| `DATABASE_URL` | MySQL SQLAlchemy 连接地址 |
-| `ZHIPU_API_KEY` | 智谱 chat 与 embedding 凭证 |
-| `ZHIPU_BASE_URL` | 智谱 OpenAI-compatible 地址 |
-| `ZHIPU_CHAT_MODEL` | 智谱聊天模型 ID |
-| `ZHIPU_EMBEDDING_MODEL` | 智谱 embedding 模型 ID |
-| `DASHSCOPE_API_KEY` | 阿里云百炼凭证 |
-| `DASHSCOPE_BASE_URL` | 百炼 OpenAI-compatible 地址 |
-| `DASHSCOPE_CHAT_MODEL` | 百炼聊天模型 ID |
-| `DEEPSEEK_API_KEY` | DeepSeek 凭证 |
-| `DEEPSEEK_BASE_URL` | DeepSeek API 地址 |
-| `DEEPSEEK_CHAT_MODEL` | DeepSeek 模型 ID |
-| `MOONSHOT_API_KEY` | Moonshot 凭证 |
-| `MOONSHOT_BASE_URL` | Moonshot API 地址 |
-| `MOONSHOT_CHAT_MODEL` | Moonshot 模型 ID |
-| `BACKEND_HOST` / `BACKEND_PORT` | FastAPI 监听地址与端口 |
-| `CORS_ORIGINS` | 允许访问后端的前端 origin |
+| 变量名                                   | 用途                                           |
+| ---------------------------------------- | ---------------------------------------------- |
+| `DATABASE_URL`                           | MySQL SQLAlchemy 连接地址                      |
+| `ZHIPU_API_KEY`                          | 智谱 chat 与 embedding 凭证                    |
+| `ZHIPU_BASE_URL`                         | 智谱 OpenAI-compatible 地址                    |
+| `ZHIPU_CHAT_MODEL`                       | 智谱聊天模型 ID                                |
+| `ZHIPU_EMBEDDING_MODEL`                  | 智谱 embedding 模型 ID                         |
+| `DASHSCOPE_API_KEY`                      | 阿里云百炼凭证                                 |
+| `DASHSCOPE_BASE_URL`                     | 百炼 OpenAI-compatible 地址                    |
+| `DASHSCOPE_CHAT_MODEL`                   | 百炼聊天模型 ID                                |
+| `DEEPSEEK_API_KEY`                       | DeepSeek 凭证                                  |
+| `DEEPSEEK_BASE_URL`                      | DeepSeek API 地址                              |
+| `DEEPSEEK_CHAT_MODEL`                    | DeepSeek 模型 ID                               |
+| `MOONSHOT_API_KEY`                       | Moonshot 凭证                                  |
+| `MOONSHOT_BASE_URL`                      | Moonshot API 地址                              |
+| `MOONSHOT_CHAT_MODEL`                    | Moonshot 模型 ID                               |
+| `BACKEND_HOST` / `BACKEND_PORT`          | FastAPI 监听地址与端口                         |
+| `CORS_ORIGINS`                           | 允许访问后端的前端 origin                      |
 | `AGENT_REDIS_URL` / `AGENT_REDIS_PREFIX` | Agent checkpoint、命令、租约和事件使用的 Redis |
-| `AGENT_API_PORT` | 独立 Agent API 端口，默认 8131 |
-| `AGENT_WORKER_HEARTBEAT_TTL_SECONDS` | worker 可用性心跳 TTL |
-| `AGENT_TELEMETRY_ENABLED` | 普通本地默认关闭；Compose 显式启用 |
-| `AGENT_OTLP_ENDPOINT` | 仅允许 loopback 或 Compose 内部 Collector |
-| `LANGCHAIN_TRACING_V2` | LangChain tracing 开关，默认关闭 |
-| `VUE_APP_API_BASE_URL` | 前端调用 legacy API 的地址 |
-| `VUE_APP_AGENT_API_BASE_URL` | 前端调用 Agent API 的地址 |
-| `VUE_APP_GRAFANA_BASE_URL` | 可选 loopback Grafana Explore 地址 |
+| `AGENT_API_PORT`                         | 独立 Agent API 端口，默认 8131                 |
+| `AGENT_WORKER_HEARTBEAT_TTL_SECONDS`     | worker 可用性心跳 TTL                          |
+| `AGENT_TELEMETRY_ENABLED`                | 普通本地默认关闭；Compose 显式启用             |
+| `AGENT_OTLP_ENDPOINT`                    | 仅允许 loopback 或 Compose 内部 Collector      |
+| `LANGCHAIN_TRACING_V2`                   | LangChain tracing 开关，默认关闭               |
+| `VUE_APP_API_BASE_URL`                   | 前端调用 legacy API 的地址                     |
+| `VUE_APP_AGENT_API_BASE_URL`             | 前端调用 Agent API 的地址                      |
+| `VUE_APP_GRAFANA_BASE_URL`               | 可选 loopback Grafana Explore 地址             |
 
 Moonshot Key 必须与平台地区地址匹配。数据库密码应通过本机安全方式管理，不要复制到 issue、截图或聊天中。
 
@@ -281,8 +279,6 @@ Set-Location .\ez_front_dev
 npm ci
 Set-Location ..
 ```
-
-Node 24 下 `@achrinza/node-ipc` 可能打印 `EBADENGINE`；只要 `npm ci` 最终成功即可继续。
 
 ### 6. 启动后端与前端
 
@@ -317,7 +313,33 @@ Set-Location .\ez_front_dev
 npm run serve -- --port 8080 --strictPort
 ```
 
-打开 `http://localhost:8080`。项目 ID 的格式为 `Ez` 加 19 位数字；它是恢复项目的入口，不应公开分享。legacy API 文档位于 `http://localhost:8130/docs`，Agent 健康检查位于 `http://localhost:8131/health`。完整十服务栈与安全停机方式见 [`docs/iteration-4-compose.md`](docs/iteration-4-compose.md)。
+打开 `http://localhost:8080`。项目 ID 的格式为 `Ez` 加 19 位数字；它是恢复项目的入口，不应公开分享。legacy API 文档位于 `http://localhost:8130/docs`，Agent 健康检查位于 `http://localhost:8131/health`。完整十服务栈与安全停机方式见 [`docs/history/iteration-4/iteration-4-compose.md`](docs/history/iteration-4/iteration-4-compose.md)。
+
+### 7. 分模块运行与安全停机
+
+不启动完整 Compose 时，推荐使用统一的显式配置入口。先确认 MySQL 和 Redis 已由外部环境提供；预检只执行数据库和 Redis 的只读探针：
+
+```powershell
+$repoRoot = (Get-Location).Path
+$envFile = '<absolute-env-file>'
+python -B scripts/modular_runtime.py preflight --repo-root $repoRoot --env-file $envFile
+python -B scripts/modular_runtime.py start --repo-root $repoRoot --env-file $envFile
+```
+
+Windows 包装入口和 portable 命令、readiness 响应、进程归属与安全停止协议见 [`docs/operations/modular-runtime.md`](docs/operations/modular-runtime.md)。runner 不自动寻找 `.env`，不初始化或覆盖数据库，不停止 MySQL、Redis、Compose 容器或 named volume。完整 Compose 入口保持不变。
+
+### 8. 容器交付与安全停机
+
+默认 `compose.yaml` 仍启动完整十服务栈；需要只启动核心服务或显式加入观测服务时，使用 profile overlay。所有命令都应显式传入绝对 env 文件路径；不要把真实 `.env`、数据库导出或项目文件放进镜像构建上下文。
+
+```powershell
+$envFile = '<absolute-env-file>'
+docker compose --env-file $envFile up --build -d --wait
+docker compose --env-file $envFile -f compose.yaml -f ops/compose/observability-profile.yaml up --build -d --wait
+docker compose --env-file $envFile -f compose.yaml -f ops/compose/observability-profile.yaml --profile observability up --build -d --wait
+```
+
+容器权限、`*_FILE` 的受限 allowlist、health/readiness、六个 named volume 的职责以及备份、升级和回滚边界见 [`docs/operations/container-delivery.md`](docs/operations/container-delivery.md)。普通停机使用 `docker compose down`，不使用 `-v`；不要对用户项目、数据库或 Redis 执行 prune、volume 删除或自动迁移。
 
 ## 测试与质量门禁
 
@@ -342,6 +364,19 @@ python .\scripts\check_frontend_bundle.py .\ez_front_dev\dist
 ```
 
 发布门禁会构建到排除 `.env*` 的系统临时镜像，避免覆盖用户已有 `dist`。
+
+### Aspect 3 工程规范
+
+```powershell
+Set-Location .\ez_front_dev
+npm run format:check
+npm run lint -- --no-fix
+npm run type-check
+Set-Location ..
+python .\scripts\check_style_contract.py --check --format text
+```
+
+Python 的 Ruff 版本、显式检查范围和中文说明尺度见 [`docs/development/iteration-5/style-guide.md`](docs/development/iteration-5/style-guide.md)。版本契约与 lock 真源见 [`docs/versions.md`](docs/versions.md)。
 
 ### Agent 离线门禁
 
@@ -400,23 +435,28 @@ python .\scripts\smoke_llm.py --provider zhipu --confirm-cost --with-embedding
 
 ## 迭代文档
 
-- Iteration 1 完成报告：[`docs/iteration-1-closeout.md`](docs/iteration-1-closeout.md)
-- Iteration 1 任务与过程：[`docs/iteration-1-tasks.md`](docs/iteration-1-tasks.md)、[`docs/iteration-development-log.md`](docs/iteration-development-log.md)
-- Iteration 2 任务：[`docs/iteration-2-tasks.md`](docs/iteration-2-tasks.md)
-- Iteration 2 完成报告：[`docs/iteration-2-closeout.md`](docs/iteration-2-closeout.md)
-- Iteration 2 Token 基线：[`docs/iteration-2-token-baseline.md`](docs/iteration-2-token-baseline.md)
-- Iteration 2 开发日志：[`docs/iteration-2-development-log.md`](docs/iteration-2-development-log.md)
-- Iteration 3 路线图：[`docs/iteration-3-overview.md`](docs/iteration-3-overview.md)
-- Iteration 3 完成报告：[`docs/iteration-3-closeout.md`](docs/iteration-3-closeout.md)
-- Iteration 3 开发日志：[`docs/iteration-3-development-log.md`](docs/iteration-3-development-log.md)
-- Iteration 3 设计系统：[`docs/iteration-3-design-system.md`](docs/iteration-3-design-system.md)
-- Iteration 3 测试工作区：[`docs/iteration-3-test-workspaces.md`](docs/iteration-3-test-workspaces.md)
-- 新对话提示词：[`docs/iteration-3-prompts.md`](docs/iteration-3-prompts.md)
-- Iteration 4 路线图（Aspect 1–8 已完成验收）：[`docs/iteration-4-overview.md`](docs/iteration-4-overview.md)
-- Iteration 4 新对话提示词：[`docs/iteration-4-prompts.md`](docs/iteration-4-prompts.md)
-- Iteration 4 完成报告：[`docs/iteration-4-closeout.md`](docs/iteration-4-closeout.md)
-- Iteration 4 真实模型验收：[`docs/iteration-4-live-model-acceptance.md`](docs/iteration-4-live-model-acceptance.md)
-- Iteration 4 开发日志：[`docs/iteration-4-development-log.md`](docs/iteration-4-development-log.md)
+- Iteration 1 完成报告：[`docs/history/iteration-1/iteration-1-closeout.md`](docs/history/iteration-1/iteration-1-closeout.md)
+- Iteration 1 任务与过程：[`docs/history/iteration-1/iteration-1-tasks.md`](docs/history/iteration-1/iteration-1-tasks.md)、[`docs/history/iteration-development-log.md`](docs/history/iteration-development-log.md)
+- Iteration 2 任务：[`docs/history/iteration-2/iteration-2-tasks.md`](docs/history/iteration-2/iteration-2-tasks.md)
+- Iteration 2 完成报告：[`docs/history/iteration-2/iteration-2-closeout.md`](docs/history/iteration-2/iteration-2-closeout.md)
+- Iteration 2 Token 基线：[`docs/history/iteration-2/iteration-2-token-baseline.md`](docs/history/iteration-2/iteration-2-token-baseline.md)
+- Iteration 2 开发日志：[`docs/history/iteration-2/iteration-2-development-log.md`](docs/history/iteration-2/iteration-2-development-log.md)
+- Iteration 3 路线图：[`docs/history/iteration-3/iteration-3-overview.md`](docs/history/iteration-3/iteration-3-overview.md)
+- Iteration 3 完成报告：[`docs/history/iteration-3/iteration-3-closeout.md`](docs/history/iteration-3/iteration-3-closeout.md)
+- Iteration 3 开发日志：[`docs/history/iteration-3/iteration-3-development-log.md`](docs/history/iteration-3/iteration-3-development-log.md)
+- Iteration 3 设计系统：[`docs/history/iteration-3/iteration-3-design-system.md`](docs/history/iteration-3/iteration-3-design-system.md)
+- Iteration 3 测试工作区：[`docs/history/iteration-3/iteration-3-test-workspaces.md`](docs/history/iteration-3/iteration-3-test-workspaces.md)
+- 新对话提示词：[`docs/history/iteration-3/iteration-3-prompts.md`](docs/history/iteration-3/iteration-3-prompts.md)
+- Iteration 4 路线图（Aspect 1–8 已完成验收）：[`docs/history/iteration-4/iteration-4-overview.md`](docs/history/iteration-4/iteration-4-overview.md)
+- Iteration 4 新对话提示词：[`docs/history/iteration-4/iteration-4-prompts.md`](docs/history/iteration-4/iteration-4-prompts.md)
+- Iteration 4 完成报告：[`docs/history/iteration-4/iteration-4-closeout.md`](docs/history/iteration-4/iteration-4-closeout.md)
+- Iteration 4 真实模型验收：[`docs/history/iteration-4/iteration-4-live-model-acceptance.md`](docs/history/iteration-4/iteration-4-live-model-acceptance.md)
+- Iteration 4 开发日志：[`docs/history/iteration-4/iteration-4-development-log.md`](docs/history/iteration-4/iteration-4-development-log.md)
+- Iteration 5 工程治理路线图（规划中）：[`docs/development/iteration-5/overview.md`](docs/development/iteration-5/overview.md)
+- Iteration 5 新对话提示词：[`docs/development/iteration-5/prompts.md`](docs/development/iteration-5/prompts.md)
+- 当前版本契约与升级/回滚说明：[`docs/versions.md`](docs/versions.md)
+- Aspect 3 工程规范与中文说明：[`docs/development/iteration-5/style-guide.md`](docs/development/iteration-5/style-guide.md)
+- Aspect 4 后端领域迁移映射：[`docs/architecture/backend-domain-migration.md`](docs/architecture/backend-domain-migration.md)
 
 ## 已知限制
 
@@ -425,7 +465,7 @@ python .\scripts\smoke_llm.py --provider zhipu --confirm-cost --with-embedding
 - Agent thread/checkpoint 与 session-only evidence 默认保留 7 天；Redis 数据丢失会使旧 thread 不可恢复，但不影响 MySQL 中的有效 artifact。
 - 仓库没有新增 Playwright/Vitest E2E runner；浏览器验收证据通过现有浏览器能力与 pytest 静态/SFC 契约完成。
 - GitHub Actions `Iteration 4 offline gates` 在 `main` 上执行离线门禁；托管状态以 README 顶部 badge 和 Actions 页面为准，不在文档中保存易过期的静态结论。
-- 本次收口不创建 Tag 或 GitHub Release；版本交付目标是 `origin/main`。
+- 本次发布为源码预发布 `v0.1.0-preview.1`，不发布 Docker 镜像；Aspect 8 的 Docker full-stack 与双拓扑 parity 仍为 Blocked。详见[源码预发布说明](docs/development/iteration-5/source-preview-v0.1.0-preview.1.md)和[Aspect 8 closeout](docs/development/iteration-5/closeout.md)。
 
 ## 常见问题
 

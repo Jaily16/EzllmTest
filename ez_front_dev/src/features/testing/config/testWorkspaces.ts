@@ -1,0 +1,107 @@
+import type { TestMenuState } from "@/features/planning/state/projectAnalysis";
+import acceptanceTesting from "@/features/testing/assets/illustrations/acceptance-testing.png";
+import apiTesting from "@/features/testing/assets/illustrations/api-testing.png";
+import databaseTesting from "@/features/testing/assets/illustrations/database-testing.png";
+import functionalTesting from "@/features/testing/assets/illustrations/functional-testing.png";
+import integrationTesting from "@/features/testing/assets/illustrations/integration-testing.png";
+import nonfunctionalTesting from "@/features/testing/assets/illustrations/nonfunctional-testing.png";
+import uiTesting from "@/features/testing/assets/illustrations/ui-testing.png";
+import unitTesting from "@/features/testing/assets/illustrations/unit-testing.png";
+
+export type TestWorkspaceKey = Exclude<keyof TestMenuState, "test_plan">;
+
+export type TestWorkspaceStatus =
+  "available" | "stale" | "locked" | "not-recommended" | "regenerating";
+
+export interface TestWorkspaceDefinition {
+  key: TestWorkspaceKey;
+  title: string;
+  englishTitle: string;
+  route: string;
+  terminalOperation: string;
+  nextStep: string;
+  illustration: string;
+}
+
+export interface TestWorkspaceCardViewModel extends TestWorkspaceDefinition {
+  status: TestWorkspaceStatus;
+  statusLabel: string;
+  reason: string;
+  progressHint: string;
+  disabled: boolean;
+}
+
+export const TEST_WORKSPACES: readonly TestWorkspaceDefinition[] = [
+  {
+    key: "unit_test",
+    title: "单元测试",
+    englishTitle: "Unit Testing",
+    route: "/unit",
+    terminalOperation: "unit_case",
+    nextStep: "先识别可测试模块、类与函数，再生成当前会话结果。",
+    illustration: unitTesting,
+  },
+  {
+    key: "integration_test",
+    title: "集成测试",
+    englishTitle: "Integration Testing",
+    route: "/integration",
+    terminalOperation: "integration_case",
+    nextStep: "先分析模块协作关系，再选择集成策略与目标。",
+    illustration: integrationTesting,
+  },
+  {
+    key: "api_test",
+    title: "API 接口测试",
+    englishTitle: "API Testing",
+    route: "/api",
+    terminalOperation: "api_case",
+    nextStep: "先识别接口与约束，再生成当前会话结果。",
+    illustration: apiTesting,
+  },
+  {
+    key: "ui_test",
+    title: "前端 UI 测试",
+    englishTitle: "UI Testing",
+    route: "/ui",
+    terminalOperation: "ui_case",
+    nextStep: "先分析页面与交互，再生成并保存测试结果。",
+    illustration: uiTesting,
+  },
+  {
+    key: "db_test",
+    title: "数据库测试",
+    englishTitle: "Database Testing",
+    route: "/database",
+    terminalOperation: "db_case",
+    nextStep: "先分析数据结构与约束，再生成并保存测试结果。",
+    illustration: databaseTesting,
+  },
+  {
+    key: "functional_test",
+    title: "系统功能性测试",
+    englishTitle: "Functional Testing",
+    route: "/functional",
+    terminalOperation: "functional_case",
+    nextStep: "先识别业务用例，再生成当前会话结果。",
+    illustration: functionalTesting,
+  },
+  {
+    key: "nonfunctional_test",
+    title: "系统非功能性测试",
+    englishTitle: "Nonfunctional Testing",
+    route: "/nfunctional",
+    terminalOperation: "nonfunctional_case",
+    nextStep: "先提取质量属性与约束，再生成当前会话结果。",
+    illustration: nonfunctionalTesting,
+  },
+  {
+    key: "acceptance_test",
+    title: "验收测试",
+    englishTitle: "Acceptance Testing",
+    route: "/acceptance",
+    terminalOperation: "acceptance_case",
+    nextStep: "先核对验收目标，再生成并保存测试结果。",
+    illustration: acceptanceTesting,
+  },
+] as const;

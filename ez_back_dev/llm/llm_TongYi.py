@@ -1,7 +1,5 @@
-"""Compatibility wrapper for the Alibaba Cloud TongYi provider."""
+"""Compatibility façade for the consolidated legacy model wrappers."""
 
-from llm.provider import get_lazy_chat_model
+from infrastructure.llm.legacy_models import TongYiModel, get_lazy_chat_model
 
-class TongYiModel:
-    def get_model(self):
-        return get_lazy_chat_model("通义千问")
+__all__ = ["TongYiModel", "get_lazy_chat_model"]

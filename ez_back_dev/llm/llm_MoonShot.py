@@ -1,8 +1,5 @@
-"""Compatibility wrapper for the Moonshot Kimi provider."""
+"""Compatibility façade for the consolidated legacy model wrappers."""
 
-from llm.provider import get_lazy_chat_model
+from infrastructure.llm.legacy_models import MoonShotModel, get_lazy_chat_model
 
-
-class MoonShotModel:
-    def get_model(self):
-        return get_lazy_chat_model("Moonshot Kimi")
+__all__ = ["MoonShotModel", "get_lazy_chat_model"]

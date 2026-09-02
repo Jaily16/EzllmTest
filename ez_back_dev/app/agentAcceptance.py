@@ -8,8 +8,8 @@ import os
 import sys
 from collections.abc import Sequence
 
-from service.agentAcceptanceContracts import AcceptanceSuite
-from service.agentAcceptanceRunner import run_acceptance
+from service.evaluation.acceptance_contracts import AcceptanceSuite
+from service.evaluation.acceptance_runner import run_acceptance
 
 
 def build_parser() -> argparse.ArgumentParser:

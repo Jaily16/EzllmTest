@@ -1,0 +1,9 @@
+services:
+  otel-collector:
+    profiles: ["observability"]
+  prometheus:
+    profiles: ["observability"]
+  tempo:
+    profiles: ["observability"]
+  grafana:
+    profiles: ["observability"]

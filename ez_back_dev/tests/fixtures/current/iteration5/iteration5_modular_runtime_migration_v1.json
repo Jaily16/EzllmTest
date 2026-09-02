@@ -1,0 +1,198 @@
+{
+  "schema_version": "iteration5-modular-runtime-migration-v1",
+  "aspect": 6,
+  "parent_baseline": "ez_back_dev/tests/fixtures/current/iteration5/iteration5_modular_runtime_baseline_v1.json",
+  "parent_baseline_sha256": "39d7f5645dd03f947b6e435a341a20cf929099565a3970414206dc974c0199b3",
+  "manual_reviewed": true,
+  "auto_accept_current_values": false,
+  "evidence_file_excluded_from_self_hash": true,
+  "batches": [
+    {
+      "id": "contract-and-checker",
+      "manual_reviewed": true,
+      "paths": [
+        {
+          "old_path": null,
+          "new_path": "ops/modular-runtime-contract.json",
+          "pre_hash": null,
+          "post_hash": "b0f0ebb563d0db2935fe0818dea23c083ab4cea7e1f75d6e1d29e73297f928fe",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": null,
+          "new_path": "scripts/check_modular_runtime.py",
+          "pre_hash": null,
+          "post_hash": "12c47cc46a05739f26a88c77790c5061fc9d280076ed92be14452b1a76991244",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": null,
+          "new_path": "ez_back_dev/tests/contract/iteration5/test_iteration5_modular_runtime.py",
+          "pre_hash": null,
+          "post_hash": "a0fada2ffe48ed5dde0c018515e94ababd07f4ce55445b2d3036865380b043e5",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": null,
+          "new_path": "ez_back_dev/tests/fixtures/current/iteration5/iteration5_modular_runtime_baseline_v1.json",
+          "pre_hash": null,
+          "post_hash": "39d7f5645dd03f947b6e435a341a20cf929099565a3970414206dc974c0199b3",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        }
+      ]
+    },
+    {
+      "id": "readiness",
+      "manual_reviewed": true,
+      "paths": [
+        {
+          "old_path": "ez_back_dev/app/main.py",
+          "new_path": "ez_back_dev/app/main.py",
+          "pre_hash": "f20a7e8922329880ca913b2d0d5ed908d25f6e797c02579a8d9393ad81ee98cc",
+          "post_hash": "4b61af716fb8ff651cdf8a42b86e4091e57a271657164849fe5a0adc72e73c68",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": "ez_back_dev/app/agentApi.py",
+          "new_path": "ez_back_dev/app/agentApi.py",
+          "pre_hash": "6cedde3457d5da3c1a6840a99389d1d69e456888d85c46944c7509ae288de25a",
+          "post_hash": "de8a64ad180c5c017e5f82fb1cb85c8197cfc706cd9de6cfba48bbe82a4db7e7",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": null,
+          "new_path": "ez_back_dev/tests/unit/test_readiness.py",
+          "pre_hash": null,
+          "post_hash": "fa0dc433906befdd2c5a1d4e18f6a113728eb04a3a41368fb87f2089728e107d",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        }
+      ]
+    },
+    {
+      "id": "runner-and-entrypoints",
+      "manual_reviewed": true,
+      "paths": [
+        {
+          "old_path": null,
+          "new_path": "scripts/modular_runtime.py",
+          "pre_hash": null,
+          "post_hash": "a80e615eae810d5df6789e4d20daf7325c1ce5d834da951503bb6902401381cc",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": null,
+          "new_path": "ops/modular/run.ps1",
+          "pre_hash": null,
+          "post_hash": "428e30bc7bed3637332c23627903a44538b9d1d65e461ed271192f16a1bd3d8e",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": null,
+          "new_path": "ops/modular/run.sh",
+          "pre_hash": null,
+          "post_hash": "4f17ea2f21774410272bf33f176499be0e6bbaef7ccefeca9b8eafc8d6e7839b",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": "ez_front_dev/vite.config.ts",
+          "new_path": "ez_front_dev/vite.config.ts",
+          "pre_hash": "848aef0686552536adb4a14190b7b34ef77f59443bef816f69e1f8dbb18eff30",
+          "post_hash": "eedcd56c9a3c20f323f811997bf7369b8443d2fb98eed39e9398c9facb6c9274",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        }
+      ]
+    },
+    {
+      "id": "operator-docs-and-ci",
+      "manual_reviewed": true,
+      "paths": [
+        {
+          "old_path": null,
+          "new_path": "docs/operations/README.md",
+          "pre_hash": null,
+          "post_hash": "396b4b41b40c019b5da88c3c78317501f94504a83a0fdaf2b4c34324eb66350c",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": null,
+          "new_path": "docs/operations/modular-runtime.md",
+          "pre_hash": null,
+          "post_hash": "c69e7697797ce3cad2e7bf775ebb96b1642d3540f9647a95bd0cdd88d425f796",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": "README.md",
+          "new_path": "README.md",
+          "pre_hash": "cc8b5393a56da16812b1ef5efaacf28f7b2393a555a74033e8ac2ec343b5eb7c",
+          "post_hash": "c599ae55a481e54fd239be372e1c6a5a658e249b5c62112f543632367465b570",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": "ez_front_dev/README.md",
+          "new_path": "ez_front_dev/README.md",
+          "pre_hash": "3f6b9bd14edad694efc6a3217bde4964903c2f417ffe82252b0ce8d4a8bf0c66",
+          "post_hash": "e9539eab2bc5863d5186091508e8769a8583650073c67eb3d16d4050ce679b46",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": ".github/workflows/iteration4-offline.yml",
+          "new_path": ".github/workflows/iteration4-offline.yml",
+          "pre_hash": "ec87158ef1f1e05f27fb822ca818cb8dfc1e82d0b963be2db0323a04a5286df9",
+          "post_hash": "7cc69e9b9342ff7c0aba065e0c2a96c1d36d3744ed50406e6d892038f6610134",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": "scripts/check_frontend_structure.py",
+          "new_path": "scripts/check_frontend_structure.py",
+          "pre_hash": "52abf4ff6fb4fbe675fd5a38e9c73de8a46f91ad74ca2e2757033ca9aedaa116",
+          "post_hash": "67eb2d19d582aa64ce0e2b7e0c32c9ccb4477dc6977b0e5840fe8fc3b69ede8b",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        },
+        {
+          "old_path": "docs/development/iteration-5/development-log.md",
+          "new_path": "docs/development/iteration-5/development-log.md",
+          "pre_hash": "f44fa43f146ae713841721b25e8def36573cf48c2227fd757fe368dbb856b223",
+          "post_hash": "75faa9f761eb86caecba1b4ae28b521007b584292debc3017e6eadf4a517a1ca",
+          "content_preserved": false,
+          "manual_review": true,
+          "redirect_stub": false
+        }
+      ]
+    }
+  ],
+  "removed_paths": []
+}

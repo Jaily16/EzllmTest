@@ -1,0 +1,259 @@
+{
+  "schema_version": "iteration5-frontend-structure-baseline-v1",
+  "aspect": 5,
+  "parent": {
+    "fixture": "ez_back_dev/tests/fixtures/current/iteration5/iteration5_backend_migration_v1.json",
+    "fixture_sha256": "27c46d1819729436cf9e965cebdf5d06d89aaf900ac8a85760804405ae95cd6d"
+  },
+  "manual_reviewed": true,
+  "auto_accept_current_values": false,
+  "route_snapshot": {
+    "paths": [
+      "/",
+      "/about",
+      "/create",
+      "/test",
+      "/menu",
+      "/plan",
+      "/unit",
+      "/integration",
+      "/api",
+      "/ui",
+      "/database",
+      "/functional",
+      "/nfunctional",
+      "/acceptance",
+      "/agent"
+    ],
+    "functional": {
+      "path": "/functional",
+      "old_component": "src/components/FounctionalTest.vue",
+      "component": "src/features/testing/pages/FunctionalTest.vue",
+      "meta": {"requiresWorkflow": true},
+      "lazy_loaded": true,
+      "operation": "functional_case"
+    },
+    "agent": {
+      "path": "/agent",
+      "old_component": "src/components/AgentWorkbench.vue",
+      "component": "src/features/agent/AgentWorkbench.vue",
+      "meta": {"requiresAgent": true},
+      "lazy_loaded": true
+    }
+  },
+  "source_path_map": {
+    "ez_front_dev/src/router/index.ts": "ez_front_dev/src/app/router/index.ts",
+    "ez_front_dev/src/views/AboutView.vue": "ez_front_dev/src/features/about/AboutView.vue",
+    "ez_front_dev/src/views/CreateView.vue": "ez_front_dev/src/features/onboarding/views/CreateView.vue",
+    "ez_front_dev/src/views/LoginView.vue": "ez_front_dev/src/features/onboarding/views/LoginView.vue",
+    "ez_front_dev/src/views/MainView.vue": "ez_front_dev/src/features/workspace/MainView.vue",
+    "ez_front_dev/src/components/AgentWorkbench.vue": "ez_front_dev/src/features/agent/AgentWorkbench.vue",
+    "ez_front_dev/src/components/AcceptanceTest.vue": "ez_front_dev/src/features/testing/pages/AcceptanceTest.vue",
+    "ez_front_dev/src/components/ApiTest.vue": "ez_front_dev/src/features/testing/pages/ApiTest.vue",
+    "ez_front_dev/src/components/DatabaseTest.vue": "ez_front_dev/src/features/testing/pages/DatabaseTest.vue",
+    "ez_front_dev/src/components/FounctionalTest.vue": "ez_front_dev/src/features/testing/pages/FunctionalTest.vue",
+    "ez_front_dev/src/components/IntegrationTest.vue": "ez_front_dev/src/features/testing/pages/IntegrationTest.vue",
+    "ez_front_dev/src/components/NonfunctionalTest.vue": "ez_front_dev/src/features/testing/pages/NonfunctionalTest.vue",
+    "ez_front_dev/src/components/UITest.vue": "ez_front_dev/src/features/testing/pages/UITest.vue",
+    "ez_front_dev/src/components/UnitTest.vue": "ez_front_dev/src/features/testing/pages/UnitTest.vue",
+    "ez_front_dev/src/components/LlmExecutionPanel.vue": "ez_front_dev/src/features/testing/components/LlmExecutionPanel.vue",
+    "ez_front_dev/src/components/LlmWorkflowExecution.vue": "ez_front_dev/src/features/testing/components/LlmWorkflowExecution.vue",
+    "ez_front_dev/src/components/TestMenu.vue": "ez_front_dev/src/features/planning/views/TestMenu.vue",
+    "ez_front_dev/src/components/TestPlan.vue": "ez_front_dev/src/features/planning/views/TestPlan.vue",
+    "ez_front_dev/src/components/WorkflowStepper.vue": "ez_front_dev/src/features/workspace/components/WorkflowStepper.vue",
+    "ez_front_dev/src/components/onboarding/DocumentUploadGroup.vue": "ez_front_dev/src/features/onboarding/components/DocumentUploadGroup.vue",
+    "ez_front_dev/src/components/onboarding/OnboardingShell.vue": "ez_front_dev/src/features/onboarding/components/OnboardingShell.vue",
+    "ez_front_dev/src/components/onboarding/ProjectIdDisplay.vue": "ez_front_dev/src/features/onboarding/components/ProjectIdDisplay.vue",
+    "ez_front_dev/src/components/planning/TestWorkspaceCard.vue": "ez_front_dev/src/features/planning/components/TestWorkspaceCard.vue",
+    "ez_front_dev/src/components/testing/TestFieldGroup.vue": "ez_front_dev/src/features/testing/components/TestFieldGroup.vue",
+    "ez_front_dev/src/components/testing/TestResultText.vue": "ez_front_dev/src/features/testing/components/TestResultText.vue",
+    "ez_front_dev/src/components/testing/TestRetentionNotice.vue": "ez_front_dev/src/features/testing/components/TestRetentionNotice.vue",
+    "ez_front_dev/src/components/testing/TestTargetSelector.vue": "ez_front_dev/src/features/testing/components/TestTargetSelector.vue",
+    "ez_front_dev/src/components/testing/TestWorkspaceScaffold.vue": "ez_front_dev/src/features/testing/components/TestWorkspaceScaffold.vue",
+    "ez_front_dev/src/components/workspace/FeedbackState.vue": "ez_front_dev/src/shared/components/FeedbackState.vue",
+    "ez_front_dev/src/components/workspace/ModelSelector.vue": "ez_front_dev/src/shared/components/ModelSelector.vue",
+    "ez_front_dev/src/components/workspace/ResultContainer.vue": "ez_front_dev/src/shared/components/ResultContainer.vue",
+    "ez_front_dev/src/components/workspace/WorkflowActionBar.vue": "ez_front_dev/src/shared/components/WorkflowActionBar.vue",
+    "ez_front_dev/src/components/workspace/WorkspacePageHeader.vue": "ez_front_dev/src/shared/components/WorkspacePageHeader.vue",
+    "ez_front_dev/src/components/workspace/WorkspaceSection.vue": "ez_front_dev/src/shared/components/WorkspaceSection.vue",
+    "ez_front_dev/src/composables/useAgentEvents.ts": "ez_front_dev/src/features/agent/composables/useAgentEvents.ts",
+    "ez_front_dev/src/composables/useLlmStream.ts": "ez_front_dev/src/shared/composables/useLlmStream.ts",
+    "ez_front_dev/src/composables/useLlmWorkflow.ts": "ez_front_dev/src/shared/composables/useLlmWorkflow.ts",
+    "ez_front_dev/src/composables/useTestWorkflow.ts": "ez_front_dev/src/features/testing/composables/useTestWorkflow.ts",
+    "ez_front_dev/src/config/models.ts": "ez_front_dev/src/shared/config/models.ts",
+    "ez_front_dev/src/config/routePresentation.ts": "ez_front_dev/src/shared/config/routePresentation.ts",
+    "ez_front_dev/src/config/testWorkspaces.ts": "ez_front_dev/src/features/testing/config/testWorkspaces.ts",
+    "ez_front_dev/src/plugins/elementPlus.ts": "ez_front_dev/src/shared/plugins/elementPlus.ts",
+    "ez_front_dev/src/state/agentWorkbench.ts": "ez_front_dev/src/features/agent/state/agentWorkbench.ts",
+    "ez_front_dev/src/state/projectAnalysis.ts": "ez_front_dev/src/features/planning/state/projectAnalysis.ts",
+    "ez_front_dev/src/state/projectSetup.ts": "ez_front_dev/src/features/onboarding/state/projectSetup.ts",
+    "ez_front_dev/src/styles/accessibility.css": "ez_front_dev/src/shared/styles/accessibility.css",
+    "ez_front_dev/src/styles/base.css": "ez_front_dev/src/shared/styles/base.css",
+    "ez_front_dev/src/styles/element-plus-theme.css": "ez_front_dev/src/shared/styles/element-plus-theme.css",
+    "ez_front_dev/src/styles/tokens.css": "ez_front_dev/src/shared/styles/tokens.css",
+    "ez_front_dev/src/ui/confirmations.ts": "ez_front_dev/src/shared/ui/confirmations.ts",
+    "ez_front_dev/src/ui/qualifiedReferences.ts": "ez_front_dev/src/shared/ui/qualifiedReferences.ts",
+    "ez_front_dev/src/components/HelloWorld.vue": "ez_front_dev/src/features/legacy/HelloWorld.vue"
+  },
+  "test_path_map": {
+    "frontend_contract": "ez_back_dev/tests/contract/frontend",
+    "backend_contract": "ez_back_dev/tests/contract/backend",
+    "iteration5_contract": "ez_back_dev/tests/contract/iteration5",
+    "current_unit": "ez_back_dev/tests/unit",
+    "current_integration": "ez_back_dev/tests/integration",
+    "current_acceptance": "ez_back_dev/tests/acceptance",
+    "historical_iteration3": "ez_back_dev/tests/historical/iteration3",
+    "historical_iteration4": "ez_back_dev/tests/historical/iteration4",
+    "support": "ez_back_dev/tests/support"
+  },
+  "fixture_path_map": {
+    "current": "ez_back_dev/tests/fixtures/current",
+    "historical_iteration3": "ez_back_dev/tests/fixtures/historical/iteration3",
+    "historical_iteration4": "ez_back_dev/tests/fixtures/historical/iteration4",
+    "current_iteration5": "ez_back_dev/tests/fixtures/current/iteration5"
+  },
+  "document_path_map": {
+    "iteration_1_4": "docs/history/iteration-{n}",
+    "iteration_5": "docs/development/iteration-5",
+    "development_log": "docs/history/iteration-development-log.md",
+    "long_text_audit": "docs/architecture/long-text-strategy-audit.md"
+  },
+  "active_source_hashes": {
+    "ez_front_dev/src/App.vue": {
+      "raw_sha256": "528b8b4c9a8bbb819d5678240339e6a36945f0dd582c4cd37d1a661a7300e11c",
+      "normalized_lf_sha256": "528b8b4c9a8bbb819d5678240339e6a36945f0dd582c4cd37d1a661a7300e11c"
+    },
+    "ez_front_dev/src/router/index.ts": {
+      "raw_sha256": "72669aa841cbe2863341aa085b9d37af189fb41a1b046a5d8176fbf97b64d05d",
+      "normalized_lf_sha256": "6cd3a2807326d2c074609867729017f652a41bc2f7c3f62c4dc4fec4819403b3"
+    },
+    "ez_front_dev/src/components/AgentWorkbench.vue": {
+      "raw_sha256": "94c46e755c1c9e50e5f6c7f145ed07be6a551f7ec4fcdf0eda76e2994d471698",
+      "normalized_lf_sha256": "19a455ab17732ad653383f5301800247ef0dadf8d6ef409e96d28e1a4f0b6ee3"
+    },
+    "ez_front_dev/src/state/agentWorkbench.ts": {
+      "raw_sha256": "abb93cca4f5d555e45ac4a71802dca5b5979520972e7a87007a522b0b169a28e",
+      "normalized_lf_sha256": "e0a5dfcf84b60de79bf70241afbb43ddfe498e39149bd2eba44fd8564cc6984b"
+    },
+    "ez_front_dev/src/main.ts": {
+      "raw_sha256": "4770ed3377cc1d4290f0a0f9c480be71398e295f388004e0e07e63a6dbd7f15a",
+      "normalized_lf_sha256": "4770ed3377cc1d4290f0a0f9c480be71398e295f388004e0e07e63a6dbd7f15a"
+    }
+  },
+  "asset_snapshot": {
+    "ez_front_dev/public/favicon.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 3623,
+      "sha256": "052c725be9c8dc4a48a8149b9f9b9b62bd75d52ee77b4f0c768dcde15f91044b"
+    },
+    "ez_front_dev/src/assets/static/image/ezlogo-workbench-v2.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 25193,
+      "sha256": "2c8e7d9818bef6c98cd0cf83b8a6e5d0419b57e620190a7ea3c25e85e8ea1716"
+    },
+    "ez_front_dev/src/assets/static/image/test-types-v2/acceptance-testing.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 76534,
+      "sha256": "c0b0f2caf092e0658174d36681775a9b27ac0189f64e48ac19c59445a053d8c7"
+    },
+    "ez_front_dev/src/assets/static/image/test-types-v2/api-testing.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 70598,
+      "sha256": "62b306a1733b2153cdd9991e372cadff266e4b7c4c61a94088f5fd3fd6d91d1a"
+    },
+    "ez_front_dev/src/assets/static/image/test-types-v2/database-testing.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 73969,
+      "sha256": "85ff23eb23f0c45451100cbcff93ff62ca0a17b91e64f92cf2087a3c577c8f37"
+    },
+    "ez_front_dev/src/assets/static/image/test-types-v2/functional-testing.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 55385,
+      "sha256": "9de3ee0ddb27402a4c87345fe0ce43a330cde2a582df59a2a4e9147b23e3cf6f"
+    },
+    "ez_front_dev/src/assets/static/image/test-types-v2/integration-testing.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 79103,
+      "sha256": "ca20ac896a706084f45fdf3c43004a385bfd9771e00d81f1a9b7281ffc7b7eeb"
+    },
+    "ez_front_dev/src/assets/static/image/test-types-v2/nonfunctional-testing.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 71791,
+      "sha256": "776610fe1ef8d24e22f7b321f3a8056362517e2f92e4bb95fbc1d1687f05ea00"
+    },
+    "ez_front_dev/src/assets/static/image/test-types-v2/ui-testing.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 67004,
+      "sha256": "bfdb73b396a1703b44d51e6130ed47b9238679ae2d47fd1137d4e71186e1a2f1"
+    },
+    "ez_front_dev/src/assets/static/image/test-types-v2/unit-testing.png": {
+      "classification": "Protected product asset",
+      "size_bytes": 73473,
+      "sha256": "c9b27b9a05acb546810e0e1baef3a419f5124d610144ad926aadcfbedc7eab8e"
+    },
+    "ez_front_dev/src/assets/static/font/Quantify.ttf": {
+      "classification": "Protected product asset",
+      "size_bytes": 65568,
+      "sha256": "4b91aa73f2b209eab6a995a781e971f86a48cfe7aea86c36ec24f52ceaff7dc3"
+    },
+    "ez_front_dev/src/assets/static/font/GjhnGZcrG5SS.woff": {
+      "classification": "Protected product asset",
+      "size_bytes": 3132,
+      "sha256": "c636ee0c52f80d1bc16ee8ebb7107a727793b5d24ac3a4fb43234d816e0c7234"
+    },
+    "ez_front_dev/src/assets/static/font/GjhnGZcrG5SS.woff2": {
+      "classification": "Protected product asset",
+      "size_bytes": 2344,
+      "sha256": "25d908d13bad07458ce33e28b7a42386dda86a09fad0df915d3db99a4b34aab9"
+    },
+    "ez_front_dev/src/assets/static/image/ezlogo-workbench.png": {
+      "classification": "Legacy candidate",
+      "size_bytes": 81689,
+      "sha256": "096fb1d231381844c94f5188f43064594eb43c48bbf8b003cd85c7d70a99cda7"
+    },
+    "ez_front_dev/src/assets/static/image/ezlogo.png": {
+      "classification": "Duplicate candidate",
+      "size_bytes": 688067,
+      "sha256": "e7a9177edbb1b3754ff452b59e57c6c17f7ae4c9ac3d5a2ee01242cfc5e7c5b0"
+    },
+    "ez_front_dev/src/assets/static/image/logo.png": {
+      "classification": "Duplicate candidate",
+      "size_bytes": 6849,
+      "sha256": "03d6d6da2545d3b3402855b8e721b779abaa87d113e69d9329ea6ea6325a83ce"
+    },
+    "ez_front_dev/src/assets/static/font/AlimamaFangYuan.ttf": {
+      "classification": "Legacy candidate",
+      "size_bytes": 7402152,
+      "sha256": "b0b8c4c057af7dbc6ccb52a3ad00138fed41d1ad37d4f4a666b6cd431c913d94"
+    },
+    "ez_front_dev/src/assets/static/font/SanJiBangKaiJianTi.ttf": {
+      "classification": "Legacy candidate",
+      "size_bytes": 10092392,
+      "sha256": "20339aecf4b4ace51ca8d7feda2d95be091345b7b410cb3f905d8caf05b3d459"
+    }
+  },
+  "protected_paths": [
+    ".env",
+    "example/",
+    "ez_back_dev/static/projects/",
+    "ez_back_dev/uploads/",
+    "ez_front_dev/node_modules/",
+    "ez_front_dev/dist/",
+    "ez_back_dev/tests/fixtures/iteration3_*",
+    "ez_back_dev/tests/fixtures/iteration4_*",
+    "ez_back_dev/tests/fixtures/iteration5_baseline_manifest_v1.json",
+    "ez_back_dev/tests/fixtures/iteration5_version_migration_v1.json",
+    "docs/superpowers/plans/",
+    "docs/images/readme/",
+    "ez_front_dev/public/favicon.png",
+    "ez_front_dev/src/components/HelloWorld.vue",
+    "ez_front_dev/src/components/FounctionalTest.vue"
+  ],
+  "removed_paths": [],
+  "unknowns": [
+    "HomeView.vue external consumers are not provable from the repository",
+    "old frontend source paths may have external consumers",
+    "historical document relative links need post-move resolution",
+    "legacy asset retention in historical evidence requires separate deletion proof"
+  ]
+}

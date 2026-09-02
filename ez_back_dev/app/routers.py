@@ -4,25 +4,26 @@ import os.path
 
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
-from dao import testProjectDao
-from service.llmAcceptanceTestService import find_out_requirement_info, generate_acceptance_test_cases
-from service.llmApiTestService import find_out_apis_info, generate_api_test_cases
-from service.llmDatabaseTestService import find_out_database_info, generate_db_test_cases
-from service.llmFunctionalTestService import find_out_use_cases_info, generate_functional_test_cases
-from service.llmNonfunctionalTestService import find_out_nonfunctional_info, generate_nonfunctional_test_cases
-from service.llmTestPlanService import generate_test_plan, generate_test_plan_again
-from service.llmTestPlanStreamService import (
+from infrastructure.persistence import project_repository as testProjectDao
+from service.legacy.acceptance import find_out_requirement_info, generate_acceptance_test_cases
+from service.legacy.api import find_out_apis_info, generate_api_test_cases
+from service.legacy.database import find_out_database_info, generate_db_test_cases
+from service.legacy.functional import find_out_use_cases_info, generate_functional_test_cases
+from service.legacy.nonfunctional import find_out_nonfunctional_info, generate_nonfunctional_test_cases
+from service.workflow.test_plan import generate_test_plan, generate_test_plan_again
+from service.workflow.test_plan_stream import (
     TestPlanStreamError,
     get_project_analysis_status,
     stream_test_plan,
 )
-from service.llmWorkflowStreamCore import WorkflowStreamError
-from service.llmWorkflowStreamService import stream_llm_workflow
-from service import projectSetupService, projectWorkflowStatusService
-from service.projectSetupService import ProjectSetupError
-from service.llmUITestService import find_out_ui_info, generate_ui_test_cases
+from service.workflow.stream_core import WorkflowStreamError
+from service.workflow.stream import stream_llm_workflow
+from service.project import setup as projectSetupService
+from service.project import workflow_status as projectWorkflowStatusService
+from service.project.setup import ProjectSetupError
+from service.legacy.ui import find_out_ui_info, generate_ui_test_cases
 from tools.status import Status
-from llm.provider import (
+from infrastructure.llm.gateway import (
     LLMConfigurationError,
     LLMEmptyResponseError,
     LLMProviderError,
@@ -30,14 +31,14 @@ from llm.provider import (
     LLMTimeoutError,
     ensure_supported_model,
 )
-from tools import fileTools
+from service.project import files as fileTools
 from model.HttpModel import MenuModel, UnitTestInvokeModel, InfoModel, IntegrationTestInvokeModel, ApiTestInvokeModel, \
     UITestInvokeModel, DBTestInvokeModel, FunctionalTestInvokeModel, NFunctionalTestInvokeModel, \
     AcceptanceTestInvokeModel, PlanStreamRequest, WorkflowStreamRequest
-from service.llmSummarizeService import start_test_summarize_analyze, get_test_menu, restart_test_summarize_analyze
-from service.llmUnitTestService import (summarize_unit_info, find_out_test_unit_info,
+from service.legacy.summarize import start_test_summarize_analyze, get_test_menu, restart_test_summarize_analyze
+from service.legacy.unit import (summarize_unit_info, find_out_test_unit_info,
                                         find_unit_test_knowledge, generate_test_cases, summarize_unit_info_again)
-from service.llmIntegrationTestService import (get_integration_test_info, get_integration_description,
+from service.legacy.integration import (get_integration_test_info, get_integration_description,
                                                find_integration_test_knowledge, generate_integration_test_cases)
 
 router = APIRouter()
@@ -47,6 +48,7 @@ def _validate_llm_name(llm_name: str) -> None:
     ensure_supported_model(llm_name)
 
 
+# legacy SSE 事件格式是公共 wire contract；这里只序列化安全 payload，不改变事件名和字段。
 def _sse_message(event: str, data: dict) -> str:
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     return f"event: {event}\ndata: {payload}\n\n"
@@ -603,6 +605,7 @@ async def project_analysis_status(pid: str):
 
 
 @router.post("/project/llm/plan/stream")
+# 旧计划流保持延迟保存和取消语义，不能因 Agent 工作台接入而隐式触发额外模型调用。
 async def test_plan_stream(item: PlanStreamRequest, request: Request):
     _validate_llm_name(item.llm_name)
 
@@ -635,6 +638,7 @@ async def test_plan_stream(item: PlanStreamRequest, request: Request):
 
 
 @router.post("/project/llm/workflow/stream")
+# workflow SSE 必须继续沿用 legacy 路由、事件顺序和安全错误信封。
 async def llm_workflow_stream(item: WorkflowStreamRequest, request: Request):
     _validate_llm_name(item.llm_name)
 

@@ -1,8 +1,5 @@
-"""Compatibility wrapper for the removed Llama provider."""
+"""Compatibility façade for the consolidated legacy model wrappers."""
 
-from llm.provider import get_lazy_chat_model
+from infrastructure.llm.legacy_models import LlamaModel, get_lazy_chat_model
 
-
-class LlamaModel:
-    def get_model(self):
-        return get_lazy_chat_model()
+__all__ = ["LlamaModel", "get_lazy_chat_model"]
