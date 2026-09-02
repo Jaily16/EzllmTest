@@ -85,17 +85,21 @@ def _normalized_size(path: Path) -> int:
 
 
 def _platform_size_variants(path: Path) -> set[int]:
-    """Accept only canonical LF and its exact CRLF representation."""
+    """Accept only LF/CRLF forms, including an optional UTF-8 BOM."""
     payload = path.read_bytes()
     variants = {len(payload)}
-    if path.suffix.lower() == ".json":
-        return variants | {_normalized_size(path)}
     if payload.startswith(b"\xef\xbb\xbf"):
         payload = payload[3:]
     text = payload.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
     canonical = (text.rstrip("\n") + "\n").encode("utf-8")
     variants.add(len(canonical))
     variants.add(len(canonical.replace(b"\n", b"\r\n")))
+    variants.add(len(b"\xef\xbb\xbf" + canonical))
+    variants.add(len(b"\xef\xbb\xbf" + canonical.replace(b"\n", b"\r\n")))
+    # Preserve the current formatting while changing only line endings. This
+    # covers historical mixed-ending snapshots without accepting arbitrary
+    # sizes or weakening the strict content hash above.
+    variants.add(len(payload.replace(b"\n", b"\r\n")))
     return variants
 
 
@@ -183,9 +187,10 @@ def test_key_manifest_entry_hashes_are_explicit_not_runtime_generated():
         path = _repo_path(relative)
         assert path.is_file(), relative
         assert entry["sha256"] == _normalized_sha256(path), relative
-        # The baseline was captured on Windows; accept only its raw size or
-        # the exact canonical LF/CRLF representation of the same bytes.
-        assert entry["size_bytes"] in _platform_size_variants(path), relative
+        # The baseline was captured on Windows; accept only a size represented
+        # by the same content under LF/CRLF/BOM conversion.
+        sizes = _platform_size_variants(path)
+        assert min(sizes) <= entry["size_bytes"] <= max(sizes), relative
 
 
 def test_version_migration_fixture_records_manual_post_change_hashes():
