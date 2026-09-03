@@ -28,6 +28,19 @@
 
 [Protected] This register is a non-sensitive summary. It intentionally contains no real environment value, provider input, user-data content, artifact detail, hash of protected data, or protected-data size.
 
+## Aspect 2 planning and authorization
+
+[Approved] The Aspect 2 execution prompt authorized historical validation-evidence consolidation and nothing beyond it:
+
+- Create one durable `docs/validation-history.md` from tracked Iteration 4 and 5 evidence.
+- Classify frozen structured facts, corroborated tracked narratives, repository-external report assertions, Blocked/Missing evidence, and protected data separately.
+- Record canonical source paths, Git blob OIDs, and `sha256_canonical_lf_v1` hashes through an explicit allowlist.
+- Preserve the fixed benchmark method, Eval/Acceptance results, performance and bundle measurements, real-model synthetic evidence, CI/container observations, and all limitations without rerunning them.
+- Update only the Aspect 2 plan/log and the shared overview/prompt register in addition to the durable history.
+- Use static link/hash/value/diff gates, create one docs-only commit, publish it by normal fast-forward push, and stop before Aspect 3.
+
+[Verified] Aspect 2 did not authorize tests, builds, service or container execution, environment changes, user-data inspection, provider/embedding calls, product-source changes, or changes to public contracts.
+
 ## Lifecycle
 
-[Approved] This register is not product documentation and must be removed before Aspect 7 finalizes GitHub `main`.
+[Approved] This register, the Aspect 1 plan/baseline, the Aspect 2 plan, the Iteration 6 development log, and the Iteration 6 overview are temporary process documents. They must be removed before Aspect 7 finalizes GitHub `main`.

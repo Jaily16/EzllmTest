@@ -4,9 +4,11 @@
 
 ## Status
 
-[Verified] Iteration 6 has an immutable source snapshot and a dedicated development worktree.
+[Verified] Iteration 6 has an immutable source snapshot, a dedicated development worktree, and a consolidated historical validation record.
 
-[Approved] Only Aspect 1 is authorized by this record. Aspect 2 through Aspect 7 are neither planned nor started here.
+[Verified] Aspect 1 established the immutable Git/worktree baseline. Aspect 2 consolidated the Iteration 4 and 5 validation evidence without rerunning historical gates.
+
+[Approved] Aspect 3 through Aspect 7 are neither authorized nor started here.
 
 [Protected] The existing V2 tracked, untracked, ignored, environment, upload, archive, artifact, quarantine, database, Redis, observability, and log assets remain outside V6 and must not be copied or cleaned.
 
@@ -34,4 +36,6 @@
 
 ## Lifecycle
 
-[Approved] This overview, the prompt register, the Aspect 1 plan, and the Aspect 1 baseline are development-process documents. They must be removed before Aspect 7 finalizes GitHub `main`.
+[Approved] This overview, the prompt register, the Aspect 1 plan and baseline, the Aspect 2 plan, and the Iteration 6 development log are development-process documents. They must be removed before Aspect 7 finalizes GitHub `main`.
+
+[Approved] `docs/validation-history.md` is durable product/repository documentation and is retained by default during the Aspect 7 final consolidation.
