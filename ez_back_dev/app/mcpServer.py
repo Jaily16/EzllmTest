@@ -8,16 +8,17 @@ from collections.abc import Sequence
 import uvicorn
 from starlette.applications import Starlette
 
-from service.agentContracts import TrustedProjectScope
-from service.agentMcpAdapter import ContextProvider, create_mcp_server
-from service.agentToolExecutor import AgentToolExecutor
-from service.agentToolRegistry import DEFAULT_TOOL_REGISTRY, ToolRegistry
+from service.agent.contracts import TrustedProjectScope
+from service.agent.mcp_adapter import ContextProvider, create_mcp_server
+from service.agent.executor import AgentToolExecutor
+from service.agent.tool_registry import DEFAULT_TOOL_REGISTRY, ToolRegistry
 
 
 LOOPBACK_HOST = "127.0.0.1"
 DEFAULT_MCP_PORT = 8011
 
 
+# MCP 仅绑定 loopback，并复用 Agent registry/context，不能成为审批或项目隔离的旁路。
 def create_loopback_app(
     *,
     project_scope: TrustedProjectScope,

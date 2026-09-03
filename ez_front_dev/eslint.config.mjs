@@ -12,7 +12,12 @@ configureVueProject({
 });
 
 export default defineConfigWithVueTs(
-  { ignores: ["dist/**", "node_modules/**"] },
+  {
+    ignores: ["dist/**", "node_modules/**"],
+    linterOptions: {
+      reportUnusedDisableDirectives: "error",
+    },
+  },
   js.configs.recommended,
   pluginVue.configs["flat/essential"],
   vueTsConfigs.recommended,

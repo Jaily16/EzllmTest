@@ -1,5 +1,5 @@
 <template>
-  <router-view/>
+  <router-view />
 </template>
 
 <script lang="ts" setup>
@@ -12,5 +12,4 @@ window.ResizeObserver = class DebouncedResizeObserver extends NativeResizeObserv
     super(debounce(callback, 100));
   }
 };
-
 </script>

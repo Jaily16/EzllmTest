@@ -1,0 +1,58 @@
+{
+  "schema_version": "iteration5-dual-mode-acceptance-baseline-v1",
+  "aspect": 8,
+  "manual_reviewed": true,
+  "auto_accept_current_values": false,
+  "parent_contract": "ops/iteration5-dual-mode-acceptance-contract.json",
+  "parent_contract_sha256": "19E1819CE5AC67504F98166FFE459C68E593919F33E2F50FAADED0B528CFE9AA",
+  "git": {
+    "branch": "main",
+    "head": "8812be4fa73ab6274ec642fd5099be060aafb5d6",
+    "origin_main": "8812be4fa73ab6274ec642fd5099be060aafb5d6",
+    "ahead_behind": "0 0",
+    "staged": 0
+  },
+  "acceptance_dataset": {
+    "path": "ez_back_dev/tests/fixtures/historical/iteration4/iteration4_agent_acceptance_v1.json",
+    "normalized_sha256": "44D8CAD27AA17365A6AA85300A2A7261275438AE162D3DA316371B0EFF4E1674",
+    "case_count": 18
+  },
+  "public_contract_snapshot": {
+    "workflow_count": 19,
+    "tool_count": 22,
+    "health": ["/health"],
+    "readiness": ["/ready"],
+    "rest_sse_mcp": "protected-by-existing-contract-tests"
+  },
+  "compose_snapshot": {
+    "services": [
+      "frontend",
+      "legacy-api",
+      "agent-api",
+      "worker",
+      "mysql",
+      "redis",
+      "otel-collector",
+      "prometheus",
+      "tempo",
+      "grafana"
+    ],
+    "ports": [8080, 8130, 8131, 9090, 3000],
+    "volumes": ["mysql_data", "redis_data", "project_files", "prometheus_data", "tempo_data", "grafana_data"],
+    "networks": ["application", "observability"]
+  },
+  "modular_snapshot": {
+    "managed_start_order": ["legacy-api", "agent-api", "worker", "frontend"],
+    "managed_stop_order": ["frontend", "worker", "agent-api", "legacy-api"],
+    "external_dependencies": ["mysql", "redis"],
+    "dependency_ports": {"mysql": 23306, "redis": 26379}
+  },
+  "protected_paths": [
+    ".env",
+    "ez_back_dev/static/projects",
+    "ezllmtest.sql",
+    "docs/development/iteration-5/prompts.md",
+    "ez_back_dev/tests/fixtures/historical/iteration4"
+  ],
+  "removed_paths": []
+}

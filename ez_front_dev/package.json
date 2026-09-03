@@ -6,30 +6,33 @@
   "scripts": {
     "serve": "vite --host 127.0.0.1",
     "build": "vite build",
-    "lint": "eslint .",
-    "type-check": "vue-tsc --noEmit"
+    "lint": "eslint src",
+    "type-check": "vue-tsc --noEmit",
+    "format": "prettier --ignore-path ../.prettierignore --write src",
+    "format:check": "prettier --ignore-path ../.prettierignore --check src"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.3.1",
-    "axios": "^1.6.8",
-    "core-js": "^3.8.3",
-    "element-plus": "^2.7.2",
-    "lodash": "^4.17.21",
-    "vue": "^3.2.13",
-    "vue-class-component": "^8.0.0-0",
-    "vue-clipboard3": "^2.0.0",
-    "vue-router": "^4.0.3"
+    "@element-plus/icons-vue": "2.3.2",
+    "axios": "1.20.0",
+    "core-js": "3.50.0",
+    "element-plus": "2.14.5",
+    "lodash": "4.18.1",
+    "vue": "3.5.42",
+    "vue-class-component": "8.0.0-rc.1",
+    "vue-clipboard3": "2.0.0",
+    "vue-router": "4.6.4"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@types/lodash": "^4.17.1",
+    "@types/lodash": "4.17.25",
     "@typescript-eslint/eslint-plugin": "8.68.0",
     "@typescript-eslint/parser": "8.68.0",
     "@vitejs/plugin-vue": "6.0.8",
-    "@vue/compiler-sfc": "3.4.26",
+    "@vue/compiler-sfc": "3.5.42",
     "@vue/eslint-config-typescript": "14.9.0",
-    "eslint": "10.8.0",
+    "eslint": "10.9.1",
     "eslint-plugin-vue": "10.10.0",
+    "prettier": "3.9.6",
     "typescript": "6.0.3",
     "vite": "8.2.2",
     "vue-tsc": "3.3.11"

@@ -4,7 +4,8 @@ import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   plugins: [vue()],
-  envPrefix: ['VITE_', 'VUE_APP_'],
+  envPrefix: ["VITE_", "VUE_APP_"],
+  envDir: process.env.EZLLMTEST_VITE_ENV_DIR || undefined,
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },

@@ -1,0 +1,141 @@
+{
+  "schema_version": "iteration5-container-delivery-v1",
+  "aspect": 7,
+  "auto_accept_current_values": false,
+  "product_release_source": "ops/version-contract.json",
+  "default_services": [
+    "frontend",
+    "legacy-api",
+    "agent-api",
+    "worker",
+    "mysql",
+    "redis",
+    "otel-collector",
+    "prometheus",
+    "tempo",
+    "grafana"
+  ],
+  "core_services": ["frontend", "legacy-api", "agent-api", "worker", "mysql", "redis"],
+  "observability_services": ["otel-collector", "prometheus", "tempo", "grafana"],
+  "application_services": ["legacy-api", "agent-api", "worker", "frontend"],
+  "external_services": ["mysql", "redis", "otel-collector", "prometheus", "tempo", "grafana"],
+  "published_ports": {
+    "frontend": {"host": "127.0.0.1", "port": 8080},
+    "legacy-api": {"host": "127.0.0.1", "port": 8130},
+    "agent-api": {"host": "127.0.0.1", "port": 8131},
+    "prometheus": {"host": "127.0.0.1", "port": 9090},
+    "grafana": {"host": "127.0.0.1", "port": 3000}
+  },
+  "named_volumes": [
+    "mysql_data",
+    "redis_data",
+    "project_files",
+    "prometheus_data",
+    "tempo_data",
+    "grafana_data"
+  ],
+  "networks": {
+    "application": {"internal": false},
+    "observability": {"internal": true}
+  },
+  "images": {
+    "application": {
+      "backend": "ezllmtest/backend:0.1.0",
+      "frontend": "ezllmtest/frontend:0.1.0"
+    },
+    "external_from_version_contract": [
+      "mysql",
+      "redis",
+      "otel-collector",
+      "prometheus",
+      "tempo",
+      "grafana"
+    ]
+  },
+  "dockerfiles": {
+    "backend": {
+      "path": "ez_back_dev/Dockerfile",
+      "stages": ["dependencies", "runtime"],
+      "runtime_user": "10001:10001",
+      "writable_path": "/app/static/projects",
+      "runtime_lock": "ez_back_dev/requirements.txt",
+      "install_requires_hashes": true,
+      "dev_tools_forbidden": ["ruff", "pip-tools", "requirements-dev"]
+    },
+    "frontend": {
+      "path": "ez_front_dev/Dockerfile",
+      "stages": ["build", "runtime"],
+      "runtime_user": "nginx",
+      "listen_port": 8080,
+      "install_command": "npm ci --ignore-scripts --no-audit --no-fund"
+    }
+  },
+  "service_security": {
+    "backend": {
+      "user": "10001:10001",
+      "read_only": true,
+      "tmpfs_prefixes": ["/tmp"],
+      "cap_drop": ["ALL"],
+      "security_opt": ["no-new-privileges:true"]
+    },
+    "frontend": {
+      "user": "nginx",
+      "read_only": true,
+      "tmpfs_prefixes": ["/tmp", "/var/cache/nginx", "/var/run"],
+      "cap_drop": ["ALL"],
+      "security_opt": ["no-new-privileges:true"]
+    }
+  },
+  "health_and_readiness": {
+    "legacy": {"health": "/health", "readiness": "/ready"},
+    "agent": {"health": "/health", "readiness": "/ready"},
+    "frontend": {"health": "/", "readiness": "/"},
+    "worker": {"health": "redis-ping", "readiness": "agent-worker-heartbeat"}
+  },
+  "profile_overlay": {
+    "path": "ops/compose/observability-profile.yaml",
+    "profile": "observability",
+    "services": ["otel-collector", "prometheus", "tempo", "grafana"]
+  },
+  "secret_file_policy": {
+    "allowlist": [
+      "DATABASE_URL",
+      "ZHIPU_API_KEY",
+      "DASHSCOPE_API_KEY",
+      "DEEPSEEK_API_KEY",
+      "MOONSHOT_API_KEY"
+    ],
+    "max_bytes": 8192,
+    "conflict_policy": "direct-and-file-is-error",
+    "error_output_contains_values": false,
+    "error_output_contains_paths": false
+  },
+  "dockerignore_required": [
+    ".env",
+    ".env.*",
+    "**/.env",
+    "**/.env.*",
+    "**/node_modules",
+    "**/dist",
+    "ez_back_dev/static/projects"
+  ],
+  "modular_runtime_contract": "ops/modular-runtime-contract.json",
+  "version_contract": "ops/version-contract.json",
+  "ci": {
+    "workflow": ".github/workflows/iteration4-offline.yml",
+    "disposable_project": "ezllm-aspect8-ci",
+    "normal_stop_forbidden_operations": [
+      "docker compose down -v",
+      "docker volume prune",
+      "docker volume rm",
+      "docker system prune"
+    ]
+  },
+  "protected_operations": [
+    "no-provider-call",
+    "no-database-write",
+    "no-redis-cleanup",
+    "no-user-volume-operation",
+    "no-secret-output"
+  ]
+}

@@ -26,23 +26,23 @@ if str(BACKEND_ROOT) not in sys.path:
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
-from app.config import get_settings
-from llm.provider import (
+from infrastructure.config import get_settings
+from infrastructure.llm.gateway import (
     LLMError,
     SUPPORTED_MODEL_LABEL,
     get_lazy_embeddings,
 )
-from llm.streaming import ModelStreamEvent, TokenUsage, stream_chat_completion
-from service.agentContracts import TrustedProjectScope
-from service.agentPlanner import (
+from infrastructure.llm.stream import ModelStreamEvent, TokenUsage, stream_chat_completion
+from service.agent.contracts import TrustedProjectScope
+from service.agent.planner import (
     PLANNER_RESPONSE_FORMAT,
     ProviderAgentPlanner,
     build_planner_provider_prompt,
 )
-from service.agentRetrieval import use_agent_retrieval
-from service.agentRuntimeContracts import ProjectObservation
-from vectorstore.indexRegistry import _reset_index_registry_for_tests
-from vectorstore.retrievers import RetrievalPolicy, get_project_retriever
+from service.retrieval.agent import use_agent_retrieval
+from service.agent.runtime_contracts import ProjectObservation
+from service.retrieval.index import _reset_index_registry_for_tests
+from service.retrieval.factory import RetrievalPolicy, get_project_retriever
 
 
 LIVE_SCHEMA_VERSION = 1

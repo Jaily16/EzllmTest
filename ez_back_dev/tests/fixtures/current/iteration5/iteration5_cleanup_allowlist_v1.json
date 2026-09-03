@@ -1,0 +1,59 @@
+{
+  "schema_version": "iteration5-cleanup-allowlist-v1",
+  "aspect": 1,
+  "apply_enabled": false,
+  "default_action": "report_only",
+  "matching_policy": "enumerate_then_review_exact_paths",
+  "path_policy": {
+    "repo_root_is_never_allowed": true,
+    "resolve_before_validate": true,
+    "reject_symlink_or_reparse_point": true,
+    "reject_path_escape": true,
+    "single_windows_process_boundary": true,
+    "forbid_git_reset_checkout_clean": true
+  },
+  "protected_prefixes": [
+    ".env",
+    "ez_front_dev/.env",
+    "example/",
+    "ez_back_dev/static/projects/",
+    "declared_compose_volumes",
+    "external_service_data"
+  ],
+  "approved_roots": [
+    "ez_back_dev",
+    "scripts",
+    "ez_front_dev"
+  ],
+  "candidate_kinds": [
+    "__pycache__",
+    ".pyc",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".coverage",
+    "coverage",
+    "htmlcov",
+    "dist",
+    "node_modules",
+    "benchmark",
+    "trace",
+    "screenshot",
+    "log"
+  ],
+  "exact_paths": [],
+  "required_review_fields": [
+    "asset_id",
+    "path_or_resource",
+    "classification",
+    "source",
+    "size_bytes_or_protected_null",
+    "sha256_or_protected_null",
+    "reference_evidence",
+    "proposed_action",
+    "recovery",
+    "review_state"
+  ],
+  "review_policy": "manual_review_required",
+  "auto_accept_current_values": false
+}

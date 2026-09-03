@@ -1,0 +1,236 @@
+{
+  "schema_version": "iteration5-version-contract-v1",
+  "product_release": "0.1.0",
+  "human_doc": "docs/versions.md",
+  "source_of_truth": {
+    "python": "ez_back_dev/requirements.in and the platform lock files",
+    "npm": "ez_front_dev/package.json and ez_front_dev/package-lock.json",
+    "containers": "Dockerfile FROM references and compose.yaml image references",
+    "actions": ".github/workflows/iteration4-offline.yml action commit references",
+    "cross_toolchain": "ops/version-contract.json"
+  },
+  "runtime": {
+    "python": {
+      "line": "3.11",
+      "exact": "3.11.15",
+      "dockerfile": "ez_back_dev/Dockerfile",
+      "ci_workflow": ".github/workflows/iteration4-offline.yml",
+      "support_policy": "Python 3.11 patch line; upgrade only after isolated resolver/import and full offline gates"
+    },
+    "node": {
+      "line": "24",
+      "exact": "24.18.0",
+      "npm_major": 11,
+      "dockerfile": "ez_front_dev/Dockerfile",
+      "ci_workflow": ".github/workflows/iteration4-offline.yml",
+      "support_policy": "Node 24 LTS line with npm 11; upgrade only after clean npm ci and frontend gates"
+    }
+  },
+  "python_lock": {
+    "input": "ez_back_dev/requirements.in",
+    "locks": {
+      "linux": "ez_back_dev/requirements.txt",
+      "windows": "ez_back_dev/requirements-windows.txt"
+    },
+    "generator": {
+      "name": "pip-tools",
+      "version": "7.6.1"
+    },
+    "direct_versions": {
+      "fastapi": "0.141.1",
+      "uvicorn": "0.52.4",
+      "pydantic": "2.13.5",
+      "sqlalchemy": "2.0.52",
+      "pymysql": "1.2.0",
+      "python-multipart": "0.0.32",
+      "python-dotenv": "1.2.3",
+      "toollib": "2.2.6",
+      "mcp": "2.1.1",
+      "langgraph": "1.2.11",
+      "langgraph-checkpoint": "4.2.0",
+      "redis": "8.1.0",
+      "opentelemetry-api": "1.44.0",
+      "opentelemetry-sdk": "1.44.0",
+      "opentelemetry-exporter-otlp-proto-grpc": "1.44.0",
+      "opentelemetry-semantic-conventions": "0.65b0",
+      "langchain-core": "1.6.1",
+      "langchain-openai": "1.6.0",
+      "langchain-text-splitters": "1.1.2",
+      "openai": "3.6.0",
+      "numpy": "2.4.6",
+      "pypdf": "6.16.2",
+      "docx2txt": "0.9",
+      "tiktoken": "0.14.0",
+      "pytest": "9.1.1",
+      "httpx": "0.28.1"
+    },
+    "install_policy": "python -m pip install --require-hashes -r <platform lock>",
+    "platform_policy": "Only explicit platform markers may differ; Windows-only packages must not appear in the Linux lock"
+  },
+  "node_lock": {
+    "manifest": "ez_front_dev/package.json",
+    "lock": "ez_front_dev/package-lock.json",
+    "lockfile_version": 3,
+    "install_policy": "npm ci --ignore-scripts --no-audit --no-fund",
+    "vue_policy": "vue and @vue/compiler-sfc must share the same major/minor",
+    "direct_dependencies": {
+      "@element-plus/icons-vue": "2.3.2",
+      "axios": "1.20.0",
+      "core-js": "3.50.0",
+      "element-plus": "2.14.5",
+      "lodash": "4.18.1",
+      "vue": "3.5.42",
+      "vue-class-component": "8.0.0-rc.1",
+      "vue-clipboard3": "2.0.0",
+      "vue-router": "4.6.4"
+    },
+    "direct_dev_dependencies": {
+      "@eslint/js": "10.0.1",
+      "@types/lodash": "4.17.25",
+      "@typescript-eslint/eslint-plugin": "8.68.0",
+      "@typescript-eslint/parser": "8.68.0",
+      "@vitejs/plugin-vue": "6.0.8",
+      "@vue/compiler-sfc": "3.5.42",
+      "@vue/eslint-config-typescript": "14.9.0",
+      "eslint": "10.9.1",
+      "eslint-plugin-vue": "10.10.0",
+      "prettier": "3.9.6",
+      "typescript": "6.0.3",
+      "vite": "8.2.2",
+      "vue-tsc": "3.3.11"
+    }
+  },
+  "frameworks": {
+    "python": {
+      "fastapi": "0.141.1",
+      "pydantic": "2.13.5",
+      "sqlalchemy": "2.0.52",
+      "langgraph": "1.2.11",
+      "langgraph-checkpoint": "4.2.0",
+      "mcp": "2.1.1",
+      "redis": "8.1.0",
+      "opentelemetry-api": "1.44.0",
+      "opentelemetry-sdk": "1.44.0",
+      "langchain-core": "1.6.1",
+      "langchain-openai": "1.6.0",
+      "openai": "3.6.0",
+      "numpy": "2.4.6",
+      "pypdf": "6.16.2"
+    },
+    "frontend": {
+      "vue": "3.5.42",
+      "element-plus": "2.14.5",
+      "vite": "8.2.2",
+      "typescript": "6.0.3",
+      "eslint": "10.9.1"
+    }
+  },
+  "images": {
+    "compose": "compose.yaml",
+    "application_tags": {
+      "backend": "ezllmtest/backend:0.1.0",
+      "frontend": "ezllmtest/frontend:0.1.0"
+    },
+    "external_services": ["mysql", "redis", "otel-collector", "prometheus", "tempo", "grafana"],
+    "refs": {
+      "mysql": "mysql:8.4@sha256:b3b90af2a6552ae30c266fdb7d5dd55f3afb72404bb78d37fe8a23eb857fd3fb",
+      "redis": "redis:8.2.8-alpine@sha256:a7859ed111db3c1f5404a973a4747505d559fb5ca32d37e447afc0ef845a2103",
+      "otel-collector": "otel/opentelemetry-collector-contrib:0.159.0@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc",
+      "prometheus": "prom/prometheus:v3.12.0@sha256:69f5241418838263316593f7274a304b095c40bcf22e57272865da91bd60a8ac",
+      "tempo": "grafana/tempo:2.10.7@sha256:032b3acb51ed02c4b801473d54bb63e9e9f13738d215126d9843c30283794f4b",
+      "grafana": "grafana/grafana:13.1.3@sha256:ab5cb380e3ff3172d6c8bd2e7cfd31cce977d2881b260e1f5bc089bf0b759b43"
+    },
+    "immutable_policy": "Every external image remains tag@sha256:digest; application tags carry the product release"
+  },
+  "dockerfiles": {
+    "backend_base": "python:3.11.15-slim@sha256:90744cff8f32887f075c47d747a173ff333e9e98801667af93c357fa9f5e28ff",
+    "frontend_build_base": "node:24.18.0-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd",
+    "frontend_runtime_base": "nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de"
+  },
+  "actions": {
+    "workflow": ".github/workflows/iteration4-offline.yml",
+    "refs": {
+      "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "actions/setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
+      "actions/setup-node": "48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e"
+    },
+    "comment_policy": "Full commit SHA plus reviewed release comment"
+  },
+  "documentation": {
+    "active_version_doc": "docs/versions.md",
+    "historical_prefix": "docs/iteration-",
+    "readme_policy": "README links the active version document and keeps only non-exact technology names"
+  },
+  "quality_tools": {
+    "ruff": {
+      "name": "ruff",
+      "version": "0.16.5",
+      "config": "ruff.toml",
+      "policy": "format and lint only the explicit Aspect 3 baseline scope"
+    },
+    "prettier": {
+      "name": "prettier",
+      "version": "3.9.6",
+      "config": ".prettierrc.json",
+      "policy": "format and check only the explicit active frontend/config/document scope"
+    },
+    "python_dev_locks": {
+      "input": "ez_back_dev/requirements-dev.in",
+      "linux": "ez_back_dev/requirements-dev.txt",
+      "windows": "ez_back_dev/requirements-dev-windows.txt",
+      "generator": {
+        "name": "pip-tools",
+        "version": "7.6.1"
+      }
+    },
+    "paths": {
+      "style_checker": "scripts/check_style_contract.py",
+      "style_baseline": "ez_back_dev/tests/fixtures/iteration5_style_baseline_v1.json",
+      "style_migration": "ez_back_dev/tests/fixtures/iteration5_style_migration_v1.json",
+      "ruff_config": "ruff.toml",
+      "prettier_config": ".prettierrc.json"
+    }
+  },
+  "protected_boundaries": [
+    "ez_back_dev/app",
+    "ez_back_dev/service",
+    "ez_front_dev/src",
+    "ezllmtest.sql",
+    "legacy REST and SSE routes",
+    "Agent REST, SSE and MCP schemas",
+    "workflow catalog and typed tool registry",
+    "revision-aware artifact, cache and RAG behavior",
+    "checkpoint, lease, idempotency, recovery, approval and budget behavior"
+  ],
+  "migration": {
+    "baseline_fixture": "ez_back_dev/tests/fixtures/iteration5_baseline_manifest_v1.json",
+    "migration_fixture": "ez_back_dev/tests/fixtures/iteration5_version_migration_v1.json",
+    "manual_review_required": true,
+    "mutable_baseline_paths": [
+      "README.md",
+      "docs/iteration-5-overview.md",
+      "ez_back_dev/requirements.in",
+      "ez_back_dev/requirements.txt",
+      "ez_back_dev/requirements-windows.txt",
+      "ez_front_dev/package.json",
+      "ez_front_dev/package-lock.json",
+      "ez_back_dev/Dockerfile",
+      "ez_front_dev/Dockerfile",
+      "compose.yaml",
+      ".github/workflows/iteration4-offline.yml",
+      "scripts/check_version_contract.py",
+      "ez_back_dev/tests/test_iteration5_version_contracts.py",
+      "ez_back_dev/tests/test_iteration4_vite_contracts.py",
+      "ez_back_dev/tests/test_iteration4_compose_contracts.py",
+      "ez_back_dev/tests/test_iteration4_ci_contracts.py",
+      "ez_back_dev/tests/test_iteration4_aspect2_contracts.py",
+      "ez_back_dev/tests/test_iteration4_aspect3_contracts.py",
+      "ez_back_dev/tests/test_iteration4_aspect7_contracts.py",
+      "ez_back_dev/tests/test_iteration4_aspect8_contracts.py",
+      "ez_back_dev/tests/test_iteration4_release_contracts.py",
+      "ez_back_dev/tests/test_iteration5_baseline_contracts.py",
+      "ez_back_dev/tests/test_iteration5_planning_contracts.py",
+      "docs/iteration-5-development-log.md"
+    ]
+  }
+}

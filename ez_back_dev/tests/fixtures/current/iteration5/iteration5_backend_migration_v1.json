@@ -1,0 +1,870 @@
+{
+  "schema_version": "iteration5-backend-migration-v1",
+  "aspect": 4,
+  "hash_policy": "sha256_canonical_lf_v1",
+  "manual_reviewed": true,
+  "auto_accept_current_values": false,
+  "parent": {
+    "fixture": "ez_back_dev/tests/fixtures/iteration5_backend_architecture_baseline_v1.json",
+    "fixture_sha256": "9b6704b80e4c6bc16439400297d73b636b7130dc7d66437f3f53350e5fa1a676"
+  },
+  "batches": [
+    {
+      "id": "infrastructure",
+      "manual_reviewed": true,
+      "source_paths": [
+        "ez_back_dev/app/config.py",
+        "ez_back_dev/dao/testProjectDao.py",
+        "ez_back_dev/dao/workflowArtifactDao.py",
+        "ez_back_dev/llm/provider.py",
+        "ez_back_dev/llm/streaming.py",
+        "ez_back_dev/service/agentBudgetLedger.py",
+        "ez_back_dev/service/agentContracts.py",
+        "ez_back_dev/service/agentRedisCoordinator.py",
+        "ez_back_dev/service/agentRuntimeContracts.py",
+        "ez_back_dev/service/agentTelemetry.py",
+        "ez_back_dev/service/structuredLogging.py"
+      ],
+      "canonical_paths": [
+        "ez_back_dev/infrastructure/config.py",
+        "ez_back_dev/infrastructure/llm/gateway.py",
+        "ez_back_dev/infrastructure/llm/stream.py",
+        "ez_back_dev/infrastructure/observability/agent_telemetry.py",
+        "ez_back_dev/infrastructure/observability/logging.py",
+        "ez_back_dev/infrastructure/persistence/artifact_repository.py",
+        "ez_back_dev/infrastructure/persistence/project_repository.py",
+        "ez_back_dev/infrastructure/runtime_hooks.py",
+        "ez_back_dev/service/agent/budget.py",
+        "ez_back_dev/service/agent/contracts.py",
+        "ez_back_dev/service/agent/coordinator.py",
+        "ez_back_dev/service/agent/runtime_contracts.py"
+      ],
+      "pre_change_sha256": {
+        "ez_back_dev/app/config.py": "48f5a1f0bcd41ce1d22c2c7e348ab042f00ad1fcace5f4b8f30cca787de12289",
+        "ez_back_dev/dao/testProjectDao.py": "b5d144541bd75ae27e107afab30929494d9d6731733c031f26abff7c1cfde81e",
+        "ez_back_dev/dao/workflowArtifactDao.py": "fb6de5c10f45e3917bfb9d02e1077385b361ec53c9eab26437be056624b4062b",
+        "ez_back_dev/llm/provider.py": "d73c8890058e66a255da0980d74096aea2dd179056417ac397308a4a3fa853c8",
+        "ez_back_dev/llm/streaming.py": "40752be86293eb0d71b22a1a225567be8e69e544bd72f7f1066fb63ad63c168e",
+        "ez_back_dev/service/agentBudgetLedger.py": "34e399d927030149332897206d672aaab8e6141b47304e5af639dff1c08a4c76",
+        "ez_back_dev/service/agentContracts.py": "67adac42d9e2f40806cff950e6ac13cbaa48f43b269574e49048d59e1605deec",
+        "ez_back_dev/service/agentRedisCoordinator.py": "a873ca302aa8362e24280aea2c661ada1a3a83d178ce93083c85e0ae45321db5",
+        "ez_back_dev/service/agentRuntimeContracts.py": "c9514505a206e740a39d54c543d8c5e37f789d6075482e319bac73fc7e56eb8f",
+        "ez_back_dev/service/agentTelemetry.py": "0e2594e31d35e3c646fa74c94b3ee8571456584be29e0eb03b50abb3265d8a21",
+        "ez_back_dev/service/structuredLogging.py": "fd8a190a3847a4a7b69d466bacc47d8b64493880fd6d39e6727dc18e6c905bf0"
+      },
+      "post_change_sha256": {
+        "ez_back_dev/infrastructure/config.py": "48f5a1f0bcd41ce1d22c2c7e348ab042f00ad1fcace5f4b8f30cca787de12289",
+        "ez_back_dev/infrastructure/llm/gateway.py": "35c224440a63b4bc7ddd6913f94ea2829321388025b003bc17f2cbb805d06137",
+        "ez_back_dev/infrastructure/llm/stream.py": "4416469528ac3fa70b1fbf67a3b41fb609ef0f24f74ee3da060d6d0088992adf",
+        "ez_back_dev/infrastructure/observability/agent_telemetry.py": "0e2594e31d35e3c646fa74c94b3ee8571456584be29e0eb03b50abb3265d8a21",
+        "ez_back_dev/infrastructure/observability/logging.py": "fd8a190a3847a4a7b69d466bacc47d8b64493880fd6d39e6727dc18e6c905bf0",
+        "ez_back_dev/infrastructure/persistence/artifact_repository.py": "6986cc73d84988782e78ead3533d8fed3e0333766bcf2eb8f4a0a94f71bfd043",
+        "ez_back_dev/infrastructure/persistence/project_repository.py": "25566b22d3bb717e0b02debf94b1c8362dc2aeb1e939f4d5ce2d611aafeeff69",
+        "ez_back_dev/infrastructure/runtime_hooks.py": "564e7daa258f6503494344357fc9f971c40471ad9538c19c13106649d3af9dc0",
+        "ez_back_dev/service/agent/budget.py": "3d71c58de9933aa905912ad06f944c23fdba7e37662644882739d0cb5a3deeac",
+        "ez_back_dev/service/agent/contracts.py": "68abc412d7e0aa5ebd5d3e28f4439c1a5b0a53c483a0e3b940caad5e0c0e97e7",
+        "ez_back_dev/service/agent/coordinator.py": "12049575836d530574f46d1aae56591fe54223aa7db42f255aed719f1377cec9",
+        "ez_back_dev/service/agent/runtime_contracts.py": "13a33fb25e7655d32f4e522d388bbeb6e2edbc7e0a6929cb6e301f274c8e28ba"
+      },
+      "review": "Canonical infrastructure implementations moved; old import paths remain explicit fa\u00e7ades."
+    },
+    {
+      "id": "retrieval-project-workflow",
+      "manual_reviewed": true,
+      "source_paths": [
+        "ez_back_dev/service/agentRetrieval.py",
+        "ez_back_dev/service/llmTestPlanService.py",
+        "ez_back_dev/service/llmTestPlanStreamService.py",
+        "ez_back_dev/service/llmWorkflowAnalysisStreamService.py",
+        "ez_back_dev/service/llmWorkflowCaseStreamService.py",
+        "ez_back_dev/service/llmWorkflowStreamCore.py",
+        "ez_back_dev/service/llmWorkflowStreamService.py",
+        "ez_back_dev/service/longTextPolicy.py",
+        "ez_back_dev/service/projectRevisionService.py",
+        "ez_back_dev/service/projectSetupService.py",
+        "ez_back_dev/service/projectTestEvidenceService.py",
+        "ez_back_dev/service/projectWorkflowStatusService.py",
+        "ez_back_dev/service/unitReferenceService.py",
+        "ez_back_dev/service/workflowArtifactService.py",
+        "ez_back_dev/service/workflowBudget.py",
+        "ez_back_dev/service/workflowCatalog.py",
+        "ez_back_dev/tools/documentTools.py",
+        "ez_back_dev/tools/fileTools.py",
+        "ez_back_dev/vectorstore/indexRegistry.py",
+        "ez_back_dev/vectorstore/loader.py",
+        "ez_back_dev/vectorstore/retrievers.py",
+        "ez_back_dev/vectorstore/splitter.py"
+      ],
+      "canonical_paths": [
+        "ez_back_dev/service/project/documents.py",
+        "ez_back_dev/service/project/files.py",
+        "ez_back_dev/service/project/revision.py",
+        "ez_back_dev/service/project/setup.py",
+        "ez_back_dev/service/project/test_evidence.py",
+        "ez_back_dev/service/project/workflow_status.py",
+        "ez_back_dev/service/retrieval/agent.py",
+        "ez_back_dev/service/retrieval/contracts.py",
+        "ez_back_dev/service/retrieval/factory.py",
+        "ez_back_dev/service/retrieval/index.py",
+        "ez_back_dev/service/retrieval/loaders.py",
+        "ez_back_dev/service/retrieval/splitters.py",
+        "ez_back_dev/service/workflow/analysis_stream.py",
+        "ez_back_dev/service/workflow/artifacts.py",
+        "ez_back_dev/service/workflow/budget.py",
+        "ez_back_dev/service/workflow/case_stream.py",
+        "ez_back_dev/service/workflow/catalog.py",
+        "ez_back_dev/service/workflow/long_text.py",
+        "ez_back_dev/service/workflow/stream.py",
+        "ez_back_dev/service/workflow/stream_core.py",
+        "ez_back_dev/service/workflow/test_plan.py",
+        "ez_back_dev/service/workflow/test_plan_stream.py",
+        "ez_back_dev/service/workflow/unit_reference.py"
+      ],
+      "pre_change_sha256": {
+        "ez_back_dev/service/agentRetrieval.py": "bf743edff4cb29c777ac9028ef9f18833a0aaea82decf4e836e0575644ff449f",
+        "ez_back_dev/service/llmTestPlanService.py": "1a198663fe0ec3b8bdafac693bfde7d1e9fe84256e8a23eb6b1209a190b4ddd8",
+        "ez_back_dev/service/llmTestPlanStreamService.py": "24bdf85fd90820742e35057d0a17102744481aa6ba46ea26e67049832f55dd17",
+        "ez_back_dev/service/llmWorkflowAnalysisStreamService.py": "c39f673a56d462f761d89b1f689a5627cca6f5181a3c4e3d690a34db645b0700",
+        "ez_back_dev/service/llmWorkflowCaseStreamService.py": "11f3d6047f9f214334231f1f1a146751775cf389861f046af61797c32eb0c103",
+        "ez_back_dev/service/llmWorkflowStreamCore.py": "8d22aa5dc43fa7c5985827cb90146ac1d1fd1d2183d94879ec70be474bf0d1c7",
+        "ez_back_dev/service/llmWorkflowStreamService.py": "8803f724430e07eddcc7499236e0adb312847bf9258277b8794c737d0b08e0ca",
+        "ez_back_dev/service/longTextPolicy.py": "459639d46abb1f7ba6f653d99bca7bec18b26f041d91b9076b1210277b16ab0a",
+        "ez_back_dev/service/projectRevisionService.py": "82cdd818a45dcd5044af8633c226c18efd3dfa4228777d664ede244ba74ef971",
+        "ez_back_dev/service/projectSetupService.py": "f84301546c1a2b487507cbc51df4c35392c0145bc0183763cb077ca8575738f1",
+        "ez_back_dev/service/projectTestEvidenceService.py": "272ea3181f0d0ac267161a3c427bbcd3bd991d505a2c8809029272a73616432a",
+        "ez_back_dev/service/projectWorkflowStatusService.py": "b3ca286728dd0d7927a66b9d32c039fb05b68115d11f896877d22ba8618f5d33",
+        "ez_back_dev/service/unitReferenceService.py": "de8c12a65ea7dcaa640b9d3838a96752dc6e6f84742268a7dc5264016569f404",
+        "ez_back_dev/service/workflowArtifactService.py": "9b5d0ed70ee45b547a438cba0d601a799b975e07f3bbcfad336041af9dbcb936",
+        "ez_back_dev/service/workflowBudget.py": "db6385ddfc8f0f6465a408cb1095d4c0b8e2b5f1e1c8806fc194dfe210e4a7e1",
+        "ez_back_dev/service/workflowCatalog.py": "41df1d554b92c13cee226b82e76dc8829638cad2bb09f6cd1d2616e830cf6048",
+        "ez_back_dev/tools/documentTools.py": "1ae2bda0bf5899cd47e7d9f35af730707c1ebde5bb76ce5068c899a9ce77a003",
+        "ez_back_dev/tools/fileTools.py": "871e07523128012c24c5eb6c05f166df92b6bfbc89e1a7e8ff7cb5fc62ea2976",
+        "ez_back_dev/vectorstore/indexRegistry.py": "2a23e52fccd10e6501fbd178548a069280beca0fcf2bbfcd39e25714442775b9",
+        "ez_back_dev/vectorstore/loader.py": "bf168be4ffe64db03c97e70d830e3d0ca4256e3f4554e696f5f64171fb2ae02e",
+        "ez_back_dev/vectorstore/retrievers.py": "2cce651b87bb9941643a6e5ee25a19606c97bec0ec8476f0ce5bfba702610833",
+        "ez_back_dev/vectorstore/splitter.py": "83f50170c86c437ba554dbbc1867c47a9b7f4003995e82df4d4bad8bc092539b"
+      },
+      "post_change_sha256": {
+        "ez_back_dev/service/project/documents.py": "391084347f592a87848205c4d03a1efdb238f6c2b7c66ac19f8e6d74732a043a",
+        "ez_back_dev/service/project/files.py": "871e07523128012c24c5eb6c05f166df92b6bfbc89e1a7e8ff7cb5fc62ea2976",
+        "ez_back_dev/service/project/revision.py": "1155ded20b24214ec97ef6546641297ba6421ffadf268b3cd7e62e4f8c1815e6",
+        "ez_back_dev/service/project/setup.py": "92844f3ffe4aeeff0212f83f5f0ba897149775af6aa975c196d9e4228bbd6cdf",
+        "ez_back_dev/service/project/test_evidence.py": "272ea3181f0d0ac267161a3c427bbcd3bd991d505a2c8809029272a73616432a",
+        "ez_back_dev/service/project/workflow_status.py": "bb92f497a331fcd8b85e676630ed59c528c21bdbdb62670683d2b28f1fcafadd",
+        "ez_back_dev/service/retrieval/agent.py": "45f9ce693ff110041604276f05a222556e9e4a3d4a227b6012ebc9b64ca9d05a",
+        "ez_back_dev/service/retrieval/contracts.py": "6cd13cd74931931eabcd495d20393b4763ce78b4e5a9e120255cc90426d3f70e",
+        "ez_back_dev/service/retrieval/factory.py": "232e0ec81804dbb2a57d2299cc0345e4509ee70f61bae0ff8bc37c14ea3071e2",
+        "ez_back_dev/service/retrieval/index.py": "0e47de38bf8cd296b02f4e73c9f06c57f951c4c6759db5976bff0acbe70cde59",
+        "ez_back_dev/service/retrieval/loaders.py": "bf168be4ffe64db03c97e70d830e3d0ca4256e3f4554e696f5f64171fb2ae02e",
+        "ez_back_dev/service/retrieval/splitters.py": "83f50170c86c437ba554dbbc1867c47a9b7f4003995e82df4d4bad8bc092539b",
+        "ez_back_dev/service/workflow/analysis_stream.py": "a15f0c221e5d8aa84ebbaa23ca8b1945e54c178ab2aead6d85eb818ee68dd2c2",
+        "ez_back_dev/service/workflow/artifacts.py": "3c2ee37f6b2d11ca9bd5c26896a5f722886736dd6282a7f72f38667c2d257364",
+        "ez_back_dev/service/workflow/budget.py": "8cc9a5674b8741d9c5d7acfff6664c0ed956111757d969aca42d99a396a1e6b6",
+        "ez_back_dev/service/workflow/case_stream.py": "fb8f653ed4781a4b40c24b1e2c14b9e4f10f7f2613ecb980c063c3baaf48b457",
+        "ez_back_dev/service/workflow/catalog.py": "41df1d554b92c13cee226b82e76dc8829638cad2bb09f6cd1d2616e830cf6048",
+        "ez_back_dev/service/workflow/long_text.py": "48fee49e765bcaffd6d017db849891aca01831480a5d831a4f46d8752d44f852",
+        "ez_back_dev/service/workflow/stream.py": "5ea83c24d357c92bf3fcb273919abf40d6a5eff20d22e401054fb30822d15a98",
+        "ez_back_dev/service/workflow/stream_core.py": "fd20291eb335a0f80bf0f4418d79869b252fff59e7b37e681ec7addab19dbd8e",
+        "ez_back_dev/service/workflow/test_plan.py": "193c76a5aad818ed25093c32e093587da9d099083996121aaa77167a576990a6",
+        "ez_back_dev/service/workflow/test_plan_stream.py": "c842bf46ad9c1d10026bd96207b5c1b34a10b6340513534247c47c53c44d3428",
+        "ez_back_dev/service/workflow/unit_reference.py": "de8c12a65ea7dcaa640b9d3838a96752dc6e6f84742268a7dc5264016569f404"
+      },
+      "review": "Retrieval, project and workflow implementations moved after the neutral retrieval contracts boundary was established."
+    },
+    {
+      "id": "agent-evaluation-legacy",
+      "manual_reviewed": true,
+      "source_paths": [
+        "ez_back_dev/llm/llm_ChatGLM.py",
+        "ez_back_dev/llm/llm_GLM4.py",
+        "ez_back_dev/llm/llm_GPT4.py",
+        "ez_back_dev/llm/llm_Llama.py",
+        "ez_back_dev/llm/llm_MoonShot.py",
+        "ez_back_dev/llm/llm_Spark.py",
+        "ez_back_dev/llm/llm_TongYi.py",
+        "ez_back_dev/llm/llm_WenXin.py",
+        "ez_back_dev/llm/llm_chatGPT.py",
+        "ez_back_dev/service/agentAcceptanceContracts.py",
+        "ez_back_dev/service/agentAcceptanceRunner.py",
+        "ez_back_dev/service/agentBenchmarkContracts.py",
+        "ez_back_dev/service/agentBenchmarkRunner.py",
+        "ez_back_dev/service/agentCheckpoint.py",
+        "ez_back_dev/service/agentContext.py",
+        "ez_back_dev/service/agentEvalContracts.py",
+        "ez_back_dev/service/agentEvalRunner.py",
+        "ez_back_dev/service/agentEvalScoring.py",
+        "ez_back_dev/service/agentGraph.py",
+        "ez_back_dev/service/agentInternalToolAdapter.py",
+        "ez_back_dev/service/agentMcpAdapter.py",
+        "ez_back_dev/service/agentMeasurement.py",
+        "ez_back_dev/service/agentPlanner.py",
+        "ez_back_dev/service/agentRagBenchmark.py",
+        "ez_back_dev/service/agentRagMeasurement.py",
+        "ez_back_dev/service/agentRuntimeFactory.py",
+        "ez_back_dev/service/agentRuntimeService.py",
+        "ez_back_dev/service/agentToolExecutor.py",
+        "ez_back_dev/service/agentToolRegistry.py",
+        "ez_back_dev/service/agentToolSchemas.py",
+        "ez_back_dev/service/agentWorkbenchContracts.py",
+        "ez_back_dev/service/agentWorkbenchService.py",
+        "ez_back_dev/service/agentWorkbenchStore.py",
+        "ez_back_dev/service/agentWorker.py",
+        "ez_back_dev/service/legacyLongTextService.py",
+        "ez_back_dev/service/llmAcceptanceTestService.py",
+        "ez_back_dev/service/llmApiTestService.py",
+        "ez_back_dev/service/llmDatabaseTestService.py",
+        "ez_back_dev/service/llmFunctionalTestService.py",
+        "ez_back_dev/service/llmIntegrationTestService.py",
+        "ez_back_dev/service/llmNonfunctionalTestService.py",
+        "ez_back_dev/service/llmSummarizeService.py",
+        "ez_back_dev/service/llmUITestService.py",
+        "ez_back_dev/service/llmUnitTestService.py",
+        "ez_back_dev/tools/llmTools.py"
+      ],
+      "canonical_paths": [
+        "ez_back_dev/infrastructure/llm/legacy_models.py",
+        "ez_back_dev/infrastructure/llm/selection.py",
+        "ez_back_dev/service/agent/checkpoint.py",
+        "ez_back_dev/service/agent/context.py",
+        "ez_back_dev/service/agent/executor.py",
+        "ez_back_dev/service/agent/factory.py",
+        "ez_back_dev/service/agent/graph.py",
+        "ez_back_dev/service/agent/internal_adapter.py",
+        "ez_back_dev/service/agent/mcp_adapter.py",
+        "ez_back_dev/service/agent/planner.py",
+        "ez_back_dev/service/agent/runtime.py",
+        "ez_back_dev/service/agent/tool_registry.py",
+        "ez_back_dev/service/agent/tool_schemas.py",
+        "ez_back_dev/service/agent/workbench_contracts.py",
+        "ez_back_dev/service/agent/workbench_service.py",
+        "ez_back_dev/service/agent/workbench_store.py",
+        "ez_back_dev/service/agent/worker.py",
+        "ez_back_dev/service/evaluation/acceptance_contracts.py",
+        "ez_back_dev/service/evaluation/acceptance_runner.py",
+        "ez_back_dev/service/evaluation/benchmark_contracts.py",
+        "ez_back_dev/service/evaluation/benchmark_runner.py",
+        "ez_back_dev/service/evaluation/eval_contracts.py",
+        "ez_back_dev/service/evaluation/eval_runner.py",
+        "ez_back_dev/service/evaluation/eval_scoring.py",
+        "ez_back_dev/service/evaluation/measurement.py",
+        "ez_back_dev/service/evaluation/rag_benchmark.py",
+        "ez_back_dev/service/evaluation/rag_measurement.py",
+        "ez_back_dev/service/legacy/acceptance.py",
+        "ez_back_dev/service/legacy/api.py",
+        "ez_back_dev/service/legacy/database.py",
+        "ez_back_dev/service/legacy/functional.py",
+        "ez_back_dev/service/legacy/integration.py",
+        "ez_back_dev/service/legacy/long_text.py",
+        "ez_back_dev/service/legacy/nonfunctional.py",
+        "ez_back_dev/service/legacy/summarize.py",
+        "ez_back_dev/service/legacy/ui.py",
+        "ez_back_dev/service/legacy/unit.py"
+      ],
+      "pre_change_sha256": {
+        "ez_back_dev/llm/llm_ChatGLM.py": "9bdda6c26916d0be947df168d56b260162a84a1f4c6834c61f5943428812bafb",
+        "ez_back_dev/llm/llm_GLM4.py": "7cce96ee04af5958fcc2ed36176fca9a3820603e8c8d081eab5bbd5a0e238d15",
+        "ez_back_dev/llm/llm_GPT4.py": "bed9ca1f9e9b2aa1c989f2153f3809a099f35ecef7425ecc2f16e6d841df167c",
+        "ez_back_dev/llm/llm_Llama.py": "03987ecaced016c78688c6a0f8a9212b61787d442a690fbfb4e4fe11264a0388",
+        "ez_back_dev/llm/llm_MoonShot.py": "b077afa032bb2a7e3049670a2762af45876c20cd7c1308b86b5628e19b8ab775",
+        "ez_back_dev/llm/llm_Spark.py": "ddf619751305be89ee67deb8fe82c30f937dc504234107bc4c007a664176296f",
+        "ez_back_dev/llm/llm_TongYi.py": "cc91c01af876c1525bda84ae862d866581c2f851971ce400f1214225a5500cfe",
+        "ez_back_dev/llm/llm_WenXin.py": "93598ebc022d39628d01cd86e158c4afbd482d7dc4a882b014e5ad9976e8e897",
+        "ez_back_dev/llm/llm_chatGPT.py": "19276d6f1cfb94947687c599319f5bcb46038ba4e4bb7d46bd529ed43051cbec",
+        "ez_back_dev/service/agentAcceptanceContracts.py": "a801d4a08e549c688becbea6cd64970f3180c0b3937771098aa8134b15e947d4",
+        "ez_back_dev/service/agentAcceptanceRunner.py": "c7b91efaaf3e4899e55ff654f17784cd2cf82d68d4411c1a147f3632c3b90b61",
+        "ez_back_dev/service/agentBenchmarkContracts.py": "a2b6bd27a0245ad10df47df7d2697c967468eb1b7fc93669f075a95f552cc515",
+        "ez_back_dev/service/agentBenchmarkRunner.py": "eacb47ef84181e094a667d94c2706df26cdf627c7a5d25983dcaf101c44bc61a",
+        "ez_back_dev/service/agentCheckpoint.py": "f71929d3e73383b3d91611601f30e0ac332b6864d749e99ab300215fa82ca412",
+        "ez_back_dev/service/agentContext.py": "f823f09f85bc3736a9be660c1272f5fdf486269e169bb28be1a8ebd44fda793d",
+        "ez_back_dev/service/agentEvalContracts.py": "8186465b1ad7b3a349c3525cf4da57b0c0b49be38ec3da1c2f6a430bd8805d55",
+        "ez_back_dev/service/agentEvalRunner.py": "d2348a066ba1e34024858904d2b83fa6c58e193cbfccdd48ab6be84b940b5a33",
+        "ez_back_dev/service/agentEvalScoring.py": "f3251abdbdd3af5ec485524545c32694207dae90c6ea8e51ad0458a9e35565b0",
+        "ez_back_dev/service/agentGraph.py": "e84802fabf93723f1d8adf3e0131910a7a1373a2071b36bbdc411652c4719643",
+        "ez_back_dev/service/agentInternalToolAdapter.py": "3fe484b726e3e4e9c38b94697730f415ea836355460f0fccf3034f2f72ef85a2",
+        "ez_back_dev/service/agentMcpAdapter.py": "b9228ca2e6ee6cf5b700171032a59c4a6b33e2bf5c3420ce015cc92248fc3c1a",
+        "ez_back_dev/service/agentMeasurement.py": "25bf08fd5b1b95cc1fb111278267cebf7a6d4bc9a8caffcbefae26bd5d2600c9",
+        "ez_back_dev/service/agentPlanner.py": "ba5bb6b9a7cc5c372b6c80739c3893485983e0655048c1ce84a53a724cf81c35",
+        "ez_back_dev/service/agentRagBenchmark.py": "6cc190bb20bdab7aab0f4460b017c65b1b92a67a0acb9e73c4bad2e3c9cfd3a2",
+        "ez_back_dev/service/agentRagMeasurement.py": "0ef98697535513fb4e1442da76a775dc163ac4f596d8841a59a918d62d030f44",
+        "ez_back_dev/service/agentRuntimeFactory.py": "e53f076f3490649dace8ceeb8ab9bc2f7287b8ffc60f93962303c4e0acf61d85",
+        "ez_back_dev/service/agentRuntimeService.py": "3d75291698bc9869743b95ca25ba3651ad632ce0670a13c6b4916ef3b7e6821c",
+        "ez_back_dev/service/agentToolExecutor.py": "7a477bf7a4796cca27b2465c84d1ac8c2c4545612c628a5df6e292b7785fcc3c",
+        "ez_back_dev/service/agentToolRegistry.py": "00e4df68cc5dcafac44b63beacec52f241547ed19ecb921c1de11480af3f2f54",
+        "ez_back_dev/service/agentToolSchemas.py": "c0fac162e9aaf9bca0a338ab89c29c992b8c374f467b3cb4d43d7998c6be3a03",
+        "ez_back_dev/service/agentWorkbenchContracts.py": "83824e8381b911ce2612751087fb24ab58153ecfc228026c467ca4bb4d94907e",
+        "ez_back_dev/service/agentWorkbenchService.py": "46bb66f2b7976970bcb578dd766dc55f9bfc61924645a50c5479bcccf71e1bab",
+        "ez_back_dev/service/agentWorkbenchStore.py": "f329edb86723b39d968516c7725d890eac12bea63bef952e11459e06d4dfefc8",
+        "ez_back_dev/service/agentWorker.py": "a73f3861e9ca93bc24e0f9c0813098973d01330a457f56f8fb82dbea7217870f",
+        "ez_back_dev/service/legacyLongTextService.py": "40da03c11b3899477952a2d229bd49246505fd2463c2595702b1fb7c50202b38",
+        "ez_back_dev/service/llmAcceptanceTestService.py": "7585cd498c8e25445a2ce3e2d271b9f14f168a2f1c60aa49002fe11828de6ef9",
+        "ez_back_dev/service/llmApiTestService.py": "3f912a3ca3655bfedf7dbc65fdcfab7bc684a2a9a941658864f9a2b3ab412eae",
+        "ez_back_dev/service/llmDatabaseTestService.py": "da454a6c438de5e200942ed9be1d4c2382a7af8b23efc16bbef5afcd537474d0",
+        "ez_back_dev/service/llmFunctionalTestService.py": "026fddeba7ca767b0f58e8e7ec2fd375cf9857f400a40b50859858f1e13b886c",
+        "ez_back_dev/service/llmIntegrationTestService.py": "71e77d40e99a3bf37c07f31aad819d9dee7cdf458ac541b403360576fc01628d",
+        "ez_back_dev/service/llmNonfunctionalTestService.py": "cab1b6a19e53b850d7a539fc848d33336a4a459579b1499ecafd3dd39e40c649",
+        "ez_back_dev/service/llmSummarizeService.py": "8bb6d89fd856b761734a51c546f5665c1514bbb5dc67492845c8f63c4c5e4564",
+        "ez_back_dev/service/llmUITestService.py": "a7e924b4fc0ff819bc85cfc9b5e4de1c8cf244219fd3fa365e3f4713d90b8abc",
+        "ez_back_dev/service/llmUnitTestService.py": "d9cbb4071e139e41fac5e4c7b3bbfaaa564ee1985846e8dc1a9e11ceef99ccd5",
+        "ez_back_dev/tools/llmTools.py": "ad7240f732ac350e9c54b16f584fb99f7023990b8f72dcceeed9a68c9c888777"
+      },
+      "post_change_sha256": {
+        "ez_back_dev/infrastructure/llm/legacy_models.py": "4950707fec6931d41c5609ad1ccf85c9a5d68dd3259d04c204730f6d4f62dd48",
+        "ez_back_dev/infrastructure/llm/selection.py": "2f73a18a42c771dbae0d9b8139d7cdf226796514170b62088f5619b6dcd3813d",
+        "ez_back_dev/service/agent/checkpoint.py": "9bed6514f153ff2f76dee1c71e9876996bea7bd9986d84a2a7ab0fbbf59794c8",
+        "ez_back_dev/service/agent/context.py": "7d563f0e08c8886ecf407ce2f03190598f7c5941a16b7d3e1a0b5f3192d19a7e",
+        "ez_back_dev/service/agent/executor.py": "ead6c86b478a8bd43de64a96475aa43b1154c1fe1bd70537a5d24e1b0a6a7e9f",
+        "ez_back_dev/service/agent/factory.py": "89bab05d9df54a7b3cd5319df8cfdd2954a3934b3e8e2758ad4848c2f8c00ad1",
+        "ez_back_dev/service/agent/graph.py": "d59077d99f00262d6ed17bf79ba08bf326642c23cd427c46018dc0d800be0f09",
+        "ez_back_dev/service/agent/internal_adapter.py": "01d7d4930b9e13dc809733ce9eaeb49fe99e644cabea2239826f17a6ff8bce56",
+        "ez_back_dev/service/agent/mcp_adapter.py": "bfda3c95eaa8b368081fddaff716b7846bea80d6d653e378f2c13deea4fae054",
+        "ez_back_dev/service/agent/planner.py": "d7dc46b25660016401e9d4d7511545cece8d4737d44fc5840bde5f70e7b0b60f",
+        "ez_back_dev/service/agent/runtime.py": "a652a1d2c6d207888f4447365801591e496d0b80c58d67d2e6f5d12f682b2cbc",
+        "ez_back_dev/service/agent/tool_registry.py": "612488ceadfbcf144fff3b43a1a3223b6ab47f3f3e1b45ea10239b92516f3b65",
+        "ez_back_dev/service/agent/tool_schemas.py": "cd1a3fde9ca896ffdaac9a74e7258fd847cb9cd006afc32b22c807b14dc0ac91",
+        "ez_back_dev/service/agent/workbench_contracts.py": "aa1f961b1ea0bc1ed0185222928017370073456fc11dbf89067f167908609cbc",
+        "ez_back_dev/service/agent/workbench_service.py": "cf1864c89ec03657c7b9fd03e36e3143302a2b579aa4b30c223dfc67349e3f4d",
+        "ez_back_dev/service/agent/workbench_store.py": "0a63aecf003c6e853e3765e033f8c1132d111458c49a016de8d7987bd37b22c9",
+        "ez_back_dev/service/agent/worker.py": "a1dc9190576c706efe3ae15b4511ef9cc2199ea30a759c4a9c066eb6e95e5d54",
+        "ez_back_dev/service/evaluation/acceptance_contracts.py": "a801d4a08e549c688becbea6cd64970f3180c0b3937771098aa8134b15e947d4",
+        "ez_back_dev/service/evaluation/acceptance_runner.py": "1f32d3ab2918ccb60fb86a3901951b4e09232806691b71d2134774d268751582",
+        "ez_back_dev/service/evaluation/benchmark_contracts.py": "a2b6bd27a0245ad10df47df7d2697c967468eb1b7fc93669f075a95f552cc515",
+        "ez_back_dev/service/evaluation/benchmark_runner.py": "c386d361dc28597f3c92c656e3dd78c967a615fd998d414f0c524c53a5d14e72",
+        "ez_back_dev/service/evaluation/eval_contracts.py": "73133b036582c6ba954dd2f9cd82aeb9486ea392007b8cad94027b0759e0c3b6",
+        "ez_back_dev/service/evaluation/eval_runner.py": "0911cf60ba06ad2b49d09091c19e5bdc01453c47024b8012c9278d63ee981bc7",
+        "ez_back_dev/service/evaluation/eval_scoring.py": "a89c8a5cacd20155082f86bcdbbbf5a37b267262a32154b7ce11769e63029de0",
+        "ez_back_dev/service/evaluation/measurement.py": "25bf08fd5b1b95cc1fb111278267cebf7a6d4bc9a8caffcbefae26bd5d2600c9",
+        "ez_back_dev/service/evaluation/rag_benchmark.py": "3d80625ff9f2634afa0610f593a4d8746323fb007e9e9ec0db5b5e21ab16597e",
+        "ez_back_dev/service/evaluation/rag_measurement.py": "0ef98697535513fb4e1442da76a775dc163ac4f596d8841a59a918d62d030f44",
+        "ez_back_dev/service/legacy/acceptance.py": "f52bc65ec843c9051c499aa704794b9c9cad8cbcf5f46f68d3e6de6c6d33bb22",
+        "ez_back_dev/service/legacy/api.py": "93127456e116b3a56bb745e9a8196926286b7fcb790d6881af045e020ed2a239",
+        "ez_back_dev/service/legacy/database.py": "7af2a3ddfb31234bdd0504ea8bc252fa3c5e3d107349635ba2b8e86df368c2d0",
+        "ez_back_dev/service/legacy/functional.py": "003cd62e8ca8d00b71ac200c77636fa2d02cc3dc9f89c1ad8fdd177d9d5fad44",
+        "ez_back_dev/service/legacy/integration.py": "10ec229952b5e89527fe5d7b0528aa0e645a298b53cc191b33ad6142a70895e6",
+        "ez_back_dev/service/legacy/long_text.py": "2d9502ec08efe21f091bb1da7cdf8f384f2f2aef325082aae1f42d756c788d97",
+        "ez_back_dev/service/legacy/nonfunctional.py": "de409f8c2f3ca922d2d49c213133db2abf419fc8b230d002111f8b586e50f8cb",
+        "ez_back_dev/service/legacy/summarize.py": "c92dd64f7373391b5ec86610a4a56f4b882642339d281b089bea248891dc5f83",
+        "ez_back_dev/service/legacy/ui.py": "87c2a1c3e0ab3e9f1c1466fe262a3b618340fdefac7d077a1ddbd05a72b8e62c",
+        "ez_back_dev/service/legacy/unit.py": "b0a0734569a911d16b259c3b841469ba45f8eb963e481a9c1dd68d02eff00708"
+      },
+      "review": "Agent, evaluation, legacy and provider-wrapper implementations moved; public CLI and legacy paths remain fa\u00e7ades."
+    },
+    {
+      "id": "delivery-facade-and-audit",
+      "manual_reviewed": true,
+      "source_paths": [
+        "ez_back_dev/app/agentApi.py",
+        "ez_back_dev/app/agentAcceptance.py",
+        "ez_back_dev/app/agentBenchmark.py",
+        "ez_back_dev/app/agentEval.py",
+        "ez_back_dev/app/agentWorker.py",
+        "ez_back_dev/app/main.py",
+        "ez_back_dev/app/mcpServer.py",
+        "ez_back_dev/app/routers.py",
+        "ez_back_dev/serve.py",
+        "ez_back_dev/scripts/agent_live_quality.py",
+        "ez_back_dev/scripts/smoke_llm.py",
+        "ez_back_dev/scripts/verify_database.py",
+        "scripts/check_style_contract.py",
+        "README.md",
+        "docs/iteration-5-overview.md",
+        "ez_back_dev/tests/test_iteration4_aspect4_contracts.py",
+        "ez_back_dev/tests/test_iteration4_aspect8_contracts.py",
+        "ez_back_dev/tests/test_iteration5_baseline_contracts.py",
+        "ez_back_dev/tests/test_iteration5_planning_contracts.py"
+      ],
+      "canonical_paths": [
+        "ez_back_dev/app/agentApi.py",
+        "ez_back_dev/app/agentAcceptance.py",
+        "ez_back_dev/app/agentBenchmark.py",
+        "ez_back_dev/app/agentEval.py",
+        "ez_back_dev/app/agentWorker.py",
+        "ez_back_dev/app/main.py",
+        "ez_back_dev/app/mcpServer.py",
+        "ez_back_dev/app/routers.py",
+        "ez_back_dev/serve.py",
+        "ez_back_dev/scripts/agent_live_quality.py",
+        "ez_back_dev/scripts/smoke_llm.py",
+        "ez_back_dev/scripts/verify_database.py",
+        "scripts/check_style_contract.py",
+        "README.md",
+        "docs/iteration-5-overview.md",
+        "ez_back_dev/tests/test_iteration4_aspect4_contracts.py",
+        "ez_back_dev/tests/test_iteration4_aspect8_contracts.py",
+        "ez_back_dev/tests/test_iteration5_baseline_contracts.py",
+        "ez_back_dev/tests/test_iteration5_planning_contracts.py"
+      ],
+      "pre_change_sha256": {
+        "ez_back_dev/app/agentApi.py": "2eb53915865d49e8aa0811e8c1b59f87661ab4157d00e1e6abf5e31949e5dae1",
+        "ez_back_dev/app/agentAcceptance.py": "409f0363d32e56224bd68893e8a1ed9e91c43da465cbe30ec6838404d8403a48",
+        "ez_back_dev/app/agentBenchmark.py": "c0d44ee9453195d11b23cc815717bc77af9792fc35918dc3acd280a8c7176be4",
+        "ez_back_dev/app/agentEval.py": "f99f5ad3d09c9e84c2dd3cd721b1f76586e968569f9a0c1ac5bcbaa5b03b224a",
+        "ez_back_dev/app/agentWorker.py": "0d2ac01608bf619a819c5b6caa0689874c25892701390bba22fa90d6daedaf35",
+        "ez_back_dev/app/main.py": "5ce0b8f065c42c38b03cd6683db37ff4bafbc19b4077d5240f460ae101de0477",
+        "ez_back_dev/app/mcpServer.py": "1470ada8d99af4030a7b1b4c7832bcde347e1d09d5b0ab99bb19228c5eab0843",
+        "ez_back_dev/app/routers.py": "ac7137ff9d3873eda981174d7a3b59a74d9a5f7b9abddc772356225f5cbfd431",
+        "ez_back_dev/serve.py": "a60d7ea768970016b33936deaf111c8695e10d2733b0094e129c675a6d9fbdf6",
+        "ez_back_dev/scripts/agent_live_quality.py": "4c23317641460f233fb3795eb6921c6554e346a4da1a03d5c863de1e7deacf40",
+        "ez_back_dev/scripts/smoke_llm.py": "0820205d706736deef74c648fe8ce0d0c9a4d50fe832fffa25ea993919706004",
+        "ez_back_dev/scripts/verify_database.py": "9e96e2408c33f1d2d6acc4e19c08c6d5e6f2ec03dbac5e764437f1b3441400c0",
+        "scripts/check_style_contract.py": "018f5477957590e74454d2fc8ea12ee8777f5060d0d01a752bb667fff182e531",
+        "README.md": "360f69bb82502bd8aad839c8a005f9db18fa78aba9acb4e444ca8034a804a88c",
+        "docs/iteration-5-overview.md": "df21339856f8766e93d05661d859b0a6828e9013a6cda11aaf11103fe0bce7b1",
+        "ez_back_dev/tests/test_iteration4_aspect4_contracts.py": "022380c766220055c49bde46c28cdee43b57106ae104f63727ee1b71a57dda75",
+        "ez_back_dev/tests/test_iteration4_aspect8_contracts.py": "cc83b0378affc06da71b85f92175add40b3e3673ef4123530c10606d3141a494",
+        "ez_back_dev/tests/test_iteration5_baseline_contracts.py": "811f4d29ad838227b17f1b7b51a8e7bc47f8126292c5935f8668b7aeecfa099b",
+        "ez_back_dev/tests/test_iteration5_planning_contracts.py": "3d2e9d142e72410cfae310914c836bae22c3c372704c5452178449f7c734b00e"
+      },
+      "post_change_sha256": {
+        "ez_back_dev/app/agentApi.py": "6cedde3457d5da3c1a6840a99389d1d69e456888d85c46944c7509ae288de25a",
+        "ez_back_dev/app/agentAcceptance.py": "61449711faef7f5036e51eaf90eac5a43e0c874dce0708ad1dcd3ce9d85c916d",
+        "ez_back_dev/app/agentBenchmark.py": "96fb1630bcbb98406ac1837b1dd2b44ea0a21d67cc18a3d8590b99ee9d196f5f",
+        "ez_back_dev/app/agentEval.py": "e307515186dc0c67079bbdd67034b5a62e14e61c291cb3ab90208a01830c4ec5",
+        "ez_back_dev/app/agentWorker.py": "429c844a5ddef00e8ef514c644f9c28774943d3163c574626a4e5c4f06d41be4",
+        "ez_back_dev/app/main.py": "f20a7e8922329880ca913b2d0d5ed908d25f6e797c02579a8d9393ad81ee98cc",
+        "ez_back_dev/app/mcpServer.py": "a9f788cf5f74f0bfa16c05de893b5182b2637b74ed559a7a53e6527e8ea8288b",
+        "ez_back_dev/app/routers.py": "d8a790359fe9b95e575e4f20f2fff2583616719e7142ffa7e9e47485f60d3f2c",
+        "ez_back_dev/serve.py": "cfdcb99ab9cecacab42b3503458ea69c2ffd43cafb1849af0330306cfbf50302",
+        "ez_back_dev/scripts/agent_live_quality.py": "f1b02d0570ecd1fa9b24f15c9a649553d8f96fde726913adc28dc9259733ccc0",
+        "ez_back_dev/scripts/smoke_llm.py": "f8eae159a46d80b55ce7e6aae58f5e14c644a4e4a3419726761b2772e3febdcd",
+        "ez_back_dev/scripts/verify_database.py": "92418c7a026c735ff60c322dd442a34b2990d35720a346e1a5ee6f3d57226e13",
+        "scripts/check_style_contract.py": "eaff961618dc06f48b986d223458c55a9c037de30127dae095d50f6999bae4c8",
+        "README.md": "a7c6d2f90591a1fcb1a1e77508db8f420b78461b9fb93cb885d85d98c0079718",
+        "docs/iteration-5-overview.md": "a4cbf8360faf81b485165022af9c4b2f38b631c070aeb067ee5fed2e6fba6923",
+        "ez_back_dev/tests/test_iteration4_aspect4_contracts.py": "fff9e3ef0919a9641afd7d7ef00020375fb960362e384bd55c48c096be660fbf",
+        "ez_back_dev/tests/test_iteration4_aspect8_contracts.py": "e8b9d0445888e5a5c8b1a108c9fd064a21a93eaeba2f1eb8142cca802cf0a03e",
+        "ez_back_dev/tests/test_iteration5_baseline_contracts.py": "184315ae56b726c32977acf9e730720fdaac89e241fcc566c33577beaa9c0f96",
+        "ez_back_dev/tests/test_iteration5_planning_contracts.py": "ae522353003df7f41e1873651d16efe8699e8c57257219fed39bfb279e63874d"
+      },
+      "review": "Delivery entrypoints and repository-owned scripts now import canonical modules; public module strings and CLI behavior remain unchanged."
+    }
+  ],
+  "new_path_post_change_sha256": {
+    "ez_back_dev/infrastructure/__init__.py": "437cb563722e9f6c15b62e507175740c9c1726011e72714299ca7def8ea1771d",
+    "ez_back_dev/infrastructure/llm/__init__.py": "0f6583fef7d1f8ad26fdbabfacce74b098cff98c750af25500534af62be26de9",
+    "ez_back_dev/infrastructure/persistence/__init__.py": "1c52f08f23f70b22d3caac817b9acfe3b12722379835e33c648b07f6c711c17c",
+    "ez_back_dev/infrastructure/observability/__init__.py": "e86fb39a9dff58a9569b4d49f66617f2e32dd0e65c46a0d8108624888aebfdd5",
+    "ez_back_dev/service/agent/__init__.py": "75c4a03d96ef40f57909a6ce30b7e33db44935bc626427aef6bf086e107a4959",
+    "ez_back_dev/service/workflow/__init__.py": "e71141a1b5c08498c9fa1177bba5d64e671f2143e3b3c4a6668756438ef403c8",
+    "ez_back_dev/service/project/__init__.py": "86003256e194d9e1f29bc3bb2da800d175e313d758e58f183c4e5e225e272bed",
+    "ez_back_dev/service/retrieval/__init__.py": "080dd55cbc072633cbd25a3a961b55995b4963c73942105480ff670c43cb49c2",
+    "ez_back_dev/service/evaluation/__init__.py": "9845bf6201ca6d883b14917d13974df0b29709acec6c521846263f231be9cd98",
+    "ez_back_dev/service/legacy/__init__.py": "3a2c771953e7c9bd476c3ecf63125b75d752c40c50a494b304419c820889ca6c",
+    "scripts/check_backend_boundaries.py": "f7ed3e083d50a213a398936b24694faf226cc055897067d761bb4ef521e26b26",
+    "ez_back_dev/tests/test_iteration5_backend_architecture.py": "2e51ebcfba85511a340cc00a9d4d76eab14a7188989f577607de7e763eb08a34",
+    "ez_back_dev/tests/fixtures/iteration5_backend_architecture_baseline_v1.json": "9b6704b80e4c6bc16439400297d73b636b7130dc7d66437f3f53350e5fa1a676",
+    "docs/architecture/backend-domain-migration.md": "dfcc738141a909cd34aa29851448e1d7ffa65bffaa38e6baf35f7d63f01c0611"
+  },
+  "removed_paths": [],
+  "compatibility_shims": [
+    {
+      "old": "app.config",
+      "target": "infrastructure.config",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "dao.testProjectDao",
+      "target": "infrastructure.persistence.project_repository",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "dao.workflowArtifactDao",
+      "target": "infrastructure.persistence.artifact_repository",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_ChatGLM",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_GLM4",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_GPT4",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_Llama",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_MoonShot",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_Spark",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_TongYi",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_WenXin",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.llm_chatGPT",
+      "target": "infrastructure.llm.legacy_models",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.provider",
+      "target": "infrastructure.llm.gateway",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "llm.streaming",
+      "target": "infrastructure.llm.stream",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentAcceptanceContracts",
+      "target": "service.evaluation.acceptance_contracts",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentAcceptanceRunner",
+      "target": "service.evaluation.acceptance_runner",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentBenchmarkContracts",
+      "target": "service.evaluation.benchmark_contracts",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentBenchmarkRunner",
+      "target": "service.evaluation.benchmark_runner",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentBudgetLedger",
+      "target": "service.agent.budget",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentCheckpoint",
+      "target": "service.agent.checkpoint",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentContext",
+      "target": "service.agent.context",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentContracts",
+      "target": "service.agent.contracts",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentEvalContracts",
+      "target": "service.evaluation.eval_contracts",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentEvalRunner",
+      "target": "service.evaluation.eval_runner",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentEvalScoring",
+      "target": "service.evaluation.eval_scoring",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentGraph",
+      "target": "service.agent.graph",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentInternalToolAdapter",
+      "target": "service.agent.internal_adapter",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentMcpAdapter",
+      "target": "service.agent.mcp_adapter",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentMeasurement",
+      "target": "service.evaluation.measurement",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentPlanner",
+      "target": "service.agent.planner",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentRagBenchmark",
+      "target": "service.evaluation.rag_benchmark",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentRagMeasurement",
+      "target": "service.evaluation.rag_measurement",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentRedisCoordinator",
+      "target": "service.agent.coordinator",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentRetrieval",
+      "target": "service.retrieval.agent",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentRuntimeContracts",
+      "target": "service.agent.runtime_contracts",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentRuntimeFactory",
+      "target": "service.agent.factory",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentRuntimeService",
+      "target": "service.agent.runtime",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentTelemetry",
+      "target": "infrastructure.observability.agent_telemetry",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentToolExecutor",
+      "target": "service.agent.executor",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentToolRegistry",
+      "target": "service.agent.tool_registry",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentToolSchemas",
+      "target": "service.agent.tool_schemas",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentWorkbenchContracts",
+      "target": "service.agent.workbench_contracts",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentWorkbenchService",
+      "target": "service.agent.workbench_service",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentWorkbenchStore",
+      "target": "service.agent.workbench_store",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.agentWorker",
+      "target": "service.agent.worker",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.legacyLongTextService",
+      "target": "service.legacy.long_text",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmAcceptanceTestService",
+      "target": "service.legacy.acceptance",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmApiTestService",
+      "target": "service.legacy.api",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmDatabaseTestService",
+      "target": "service.legacy.database",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmFunctionalTestService",
+      "target": "service.legacy.functional",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmIntegrationTestService",
+      "target": "service.legacy.integration",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmNonfunctionalTestService",
+      "target": "service.legacy.nonfunctional",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmSummarizeService",
+      "target": "service.legacy.summarize",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmTestPlanService",
+      "target": "service.workflow.test_plan",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmTestPlanStreamService",
+      "target": "service.workflow.test_plan_stream",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmUITestService",
+      "target": "service.legacy.ui",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmUnitTestService",
+      "target": "service.legacy.unit",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmWorkflowAnalysisStreamService",
+      "target": "service.workflow.analysis_stream",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmWorkflowCaseStreamService",
+      "target": "service.workflow.case_stream",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmWorkflowStreamCore",
+      "target": "service.workflow.stream_core",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.llmWorkflowStreamService",
+      "target": "service.workflow.stream",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.longTextPolicy",
+      "target": "service.workflow.long_text",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.projectRevisionService",
+      "target": "service.project.revision",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.projectSetupService",
+      "target": "service.project.setup",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.projectTestEvidenceService",
+      "target": "service.project.test_evidence",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.projectWorkflowStatusService",
+      "target": "service.project.workflow_status",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.structuredLogging",
+      "target": "infrastructure.observability.logging",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.unitReferenceService",
+      "target": "service.workflow.unit_reference",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.workflowArtifactService",
+      "target": "service.workflow.artifacts",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.workflowBudget",
+      "target": "service.workflow.budget",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "service.workflowCatalog",
+      "target": "service.workflow.catalog",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "tools.documentTools",
+      "target": "service.project.documents",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "tools.fileTools",
+      "target": "service.project.files",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "tools.llmTools",
+      "target": "infrastructure.llm.selection",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "vectorstore.indexRegistry",
+      "target": "service.retrieval.index",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "vectorstore.loader",
+      "target": "service.retrieval.loaders",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "vectorstore.retrievers",
+      "target": "service.retrieval.factory",
+      "reason": "public compatibility path retained"
+    },
+    {
+      "old": "vectorstore.splitter",
+      "target": "service.retrieval.splitters",
+      "reason": "public compatibility path retained"
+    }
+  ],
+  "unresolved_dynamic_imports": [],
+  "public_contract_snapshot": {
+    "fixture": "ez_back_dev/tests/fixtures/iteration3_contract_baseline_v1.json",
+    "workflow_count": 19,
+    "tool_count": 22,
+    "rest_sse_mcp_unchanged": true
+  },
+  "reference_audit": {
+    "manual_reviewed": true,
+    "scan_roots": [
+      "ez_back_dev",
+      "scripts",
+      ".github",
+      "docs",
+      "README.md",
+      "compose.yaml"
+    ],
+    "canonical_compatibility_imports": [],
+    "unknown_dynamic_imports": []
+  }
+}

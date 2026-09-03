@@ -8,8 +8,8 @@ import os
 import sys
 from collections.abc import Sequence
 
-from service.agentEvalContracts import EvalSuite
-from service.agentEvalRunner import run_eval
+from service.evaluation.eval_contracts import EvalSuite
+from service.evaluation.eval_runner import run_eval
 
 
 def build_parser() -> argparse.ArgumentParser:

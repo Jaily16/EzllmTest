@@ -11,7 +11,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from llm.provider import LLMError, get_chat_model, get_embeddings, list_model_specs
+from infrastructure.llm.gateway import LLMError, get_chat_model, get_embeddings, list_model_specs
 
 
 PROVIDER_LABELS = {spec.provider: spec.label for spec in list_model_specs()}

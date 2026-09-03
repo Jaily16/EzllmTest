@@ -6,15 +6,13 @@ import argparse
 import json
 import sys
 
-from service.agentBenchmarkContracts import BenchmarkSuite, BenchmarkTelemetryMode
-from service.agentBenchmarkRunner import run_benchmark
+from service.evaluation.benchmark_contracts import BenchmarkSuite, BenchmarkTelemetryMode
+from service.evaluation.benchmark_runner import run_benchmark
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="EzLLM offline Agent benchmark")
-    parser.add_argument(
-        "--suite", choices=[item.value for item in BenchmarkSuite], default="all"
-    )
+    parser.add_argument("--suite", choices=[item.value for item in BenchmarkSuite], default="all")
     parser.add_argument(
         "--telemetry",
         choices=[item.value for item in BenchmarkTelemetryMode],

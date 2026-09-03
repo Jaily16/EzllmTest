@@ -1,0 +1,93 @@
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--ez-focus-color);
+  outline-offset: var(--ez-focus-offset);
+}
+
+.el-button.el-button:focus-visible,
+:where(.el-input__wrapper, .el-select__wrapper):has(input:focus-visible),
+.el-segmented__item:has(input:focus-visible),
+.el-radio-button:has(input:focus-visible) .el-radio-button__inner {
+  outline: 3px solid var(--ez-focus-color);
+  outline-offset: var(--ez-focus-offset);
+}
+
+/* Element Plus composite controls expose a native input as their focus proxy.
+   The visible wrapper owns the focus ring, so the internal proxy must not draw
+   a second, overlapping outline. */
+:where(.el-input__wrapper, .el-select__wrapper, .el-segmented__item, .el-radio-button)
+  input:focus-visible {
+  outline: none;
+}
+
+:where(main, [tabindex="-1"], h1, h2, h3, h4, [id]) {
+  scroll-margin-top: calc(var(--ez-shell-header-height) + var(--ez-space-4));
+}
+
+:where(code, kbd, samp, .project-id, .test-target-selector__detail) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  button,
+  .el-button,
+  .el-menu-item,
+  .el-sub-menu__title,
+  .el-input__wrapper,
+  .el-select__wrapper,
+  .el-segmented__item,
+  .el-radio-button__inner,
+  .el-collapse-item__header,
+  .skip-link,
+  summary {
+    min-height: var(--ez-touch-target) !important;
+  }
+
+  button,
+  .el-button,
+  summary {
+    min-width: var(--ez-touch-target) !important;
+  }
+
+  .skip-link {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 320px) {
+  .ez-page {
+    padding-inline: var(--ez-space-3);
+  }
+}
+
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+  .el-button.el-button:focus-visible,
+  :where(.el-input__wrapper, .el-select__wrapper):has(input:focus-visible),
+  .el-segmented__item:has(input:focus-visible),
+  .el-radio-button:has(input:focus-visible) .el-radio-button__inner {
+    outline: 2px solid CanvasText;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

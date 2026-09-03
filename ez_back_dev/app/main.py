@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from app.routers import router
-from app.config import get_settings
-from dao.testProjectDao import engine
-from llm.provider import (
+from infrastructure.config import get_settings
+from infrastructure.persistence.project_repository import engine
+from infrastructure.llm.gateway import (
     LLMConfigurationError,
     LLMEmptyResponseError,
     LLMOutputParsingError,
@@ -17,6 +17,7 @@ from llm.provider import (
 from tools.status import Status
 
 settings = get_settings()
+READINESS_SCHEMA_VERSION = "iteration5-readiness-v1"
 
 app = FastAPI(
     title="EzllmTest BackEnd API",
@@ -80,6 +81,28 @@ def health():
         "chat_model": settings.zhipu_chat_model,
         "embedding_model": settings.zhipu_embedding_model,
     }
+
+
+@app.get("/ready")
+def readiness():
+    """Return a safe, read-only readiness result for the legacy API."""
+    database_ok = False
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        database_ok = True
+    except Exception:
+        database_ok = False
+
+    return JSONResponse(
+        status_code=200 if database_ok else 503,
+        content={
+            "schema_version": READINESS_SCHEMA_VERSION,
+            "service": "legacy-api",
+            "status": "ready" if database_ok else "not_ready",
+            "checks": {"database": "ok" if database_ok else "unavailable"},
+        },
+    )
 
 # 将配置挂在到app上,解决跨域问题
 app.add_middleware(
