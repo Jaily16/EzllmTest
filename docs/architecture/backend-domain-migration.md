@@ -1,9 +1,11 @@
 # Aspect 4 后端领域迁移映射
 
+> [Verified] 历史资料：本文记录 Iteration 5 的迁移证据。机器 fixture 与 checker 已从当前 V6 树移除，以下两个来源固定指向不可变 V5 快照，不是当前可执行验证入口。
+
 本文是 Iteration 5 Aspect 4 的结构证据，不是新的运行时配置，也不替代
-[`iteration5_backend_architecture_baseline_v1.json`](../../ez_back_dev/tests/fixtures/current/iteration5/iteration5_backend_architecture_baseline_v1.json)
+[`iteration5_backend_architecture_baseline_v1.json`](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/current/iteration5/iteration5_backend_architecture_baseline_v1.json)
 或
-[`iteration5_backend_migration_v1.json`](../../ez_back_dev/tests/fixtures/current/iteration5/iteration5_backend_migration_v1.json)。
+[`iteration5_backend_migration_v1.json`](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/current/iteration5/iteration5_backend_migration_v1.json)。
 机器可读 fixture 保存完整路径映射、每批 pre/post normalized SHA-256 和人工审查状态；
 `scripts/check_backend_boundaries.py` 在离线检查时重新验证它们。
 

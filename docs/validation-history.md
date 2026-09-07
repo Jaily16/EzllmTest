@@ -1,6 +1,7 @@
 # EzLLM Test Validation History
 
 - Captured: 2026-09-03 (Asia/Shanghai)
+- Iteration 6 closeout supplement: 2026-09-07 (Asia/Shanghai)
 - Iteration 6 evidence baseline: `b34a188ac1b5c98e869837009561f47363336821`
 - Immutable source snapshot: `5cf1effb32a8efcd34902df05d27442f3586dc1c`
 
@@ -41,6 +42,12 @@ sorted keys and compact separators. `Blob OID` identifies the exact Git object
 at the evidence baseline. Historical manifests may contain their own hash
 policy; those values are preserved separately rather than rewritten.
 
+[Verified] Aspect 3 removed repository-only verification sources from the V6
+working tree. Their source links below now pin the unchanged historical paths
+to immutable snapshot `5cf1effb32a8efcd34902df05d27442f3586dc1c`.
+Source IDs, blob OIDs, hashes, measurements, and evidence classes are unchanged;
+this link repair is provenance maintenance, not startup or runtime evidence.
+
 | ID | Canonical source | Blob OID | `sha256_canonical_lf_v1` |
 | --- | --- | --- | --- |
 | S01 | [Iteration 4 measurement protocol](history/iteration-4/iteration-4-measurement-protocol.md) | `789d5307a8c6cb22833ad6d5c558d3c93ef91028` | `7b31343bda8dcd9dcaa4643ee5ad883821014b70722ef150daa27764e4909d9a` |
@@ -49,22 +56,23 @@ policy; those values are preserved separately rather than rewritten.
 | S04 | [Iteration 4 live-model acceptance](history/iteration-4/iteration-4-live-model-acceptance.md) | `d6e4565ac3d580b6f8ffce6dcd10304296fce67c` | `e085676e0594bbef5045b6852934ceba024b2e3fd68c3acb6f9e0984c24778af` |
 | S05 | [Iteration 4 Eval/security contract](history/iteration-4/iteration-4-aspect-6-eval-security-contract.md) | `b38f3ef51100ad9211b04f93cd1584cde4c0d09c` | `213a23edeaa1045966554dac96361e4059733e554a7fdd4d2ae27b08a02d1286` |
 | S06 | [Iteration 4 observability/delivery contract](history/iteration-4/iteration-4-aspect-7-observability-delivery-contract.md) | `9d15b1dbb797536cf045612778a41a36bf445029` | `7e8cd895e041f9e2c43129eb0d61489236d949621c0b95f2e96dd9084626f476` |
-| S07 | [Acceptance dataset](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_agent_acceptance_v1.json) | `30c5798a3a59b127c2ab90dcff78d1af26ecc8a5` | `6b6e6c8205c8fe2c2a44777e087ca555fc4872a71d32b9d2a55bbb17dfc60e74` |
-| S08 | [Eval dataset v2](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_agent_eval_v2.json) | `7b80a5e4c8d93b77ab53182f3dec4896adcf8496` | `4240f1a0e63241f8661f6111875b3428d0b64ba7f0a0c841621db6c66f3ec14b` |
-| S09 | [Aspect 6 gate](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect6_gate_v1.json) | `10af3c361b739b25459b2c6e8d8a6a743ac6d5d9` | `e45b601372557a2caad8d7d80529375555c816d0046336f96a58b3a0a0954700` |
-| S10 | [Aspect 6 manifest](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect6_manifest_v1.json) | `f7f6f815423f1b4c63c4fe918630a77d10b32198` | `9bc830fe5be3f99d9106aaddbe3080323962ecced0a59845824c7f7e5e8ed6b2` |
-| S11 | [Aspect 7 pre-change performance](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect7_prechange_performance_v1.json) | `6eaedde6378c277df6ea5f6e42590e4857b6b11b` | `8c486712a8f33044c0f18d4eb1eb747e1f8de206d13a0ca1b2f341070edd69ad` |
-| S12 | [Aspect 7 performance gate](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect7_performance_gate_v1.json) | `076d58e9782dd2e629b452726ac064cea990a4b4` | `ab9593258111f170a25ced2955ea441a9a7379717583b2a8e80f571c6cedb6ff` |
-| S13 | [Aspect 8 gate](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect8_gate_v1.json) | `5dc2db148be74ba838117566fc1110975fb7032c` | `032792dc6803e1730a945a9dffb1f97541cc285db9a459601de990cb88926647` |
-| S14 | [Aspect 8 manifest](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect8_manifest_v1.json) | `1dcd842e22e4b671fc16ba4c6e08145bb47040f2` | `068c76a9c531f8d2178bddcbcabe8ba38181761a2a5b6fbb440c4de7b988fadb` |
-| S15 | [Iteration 4 release manifest](../ez_back_dev/tests/fixtures/historical/iteration4/iteration4_release_manifest_v1.json) | `747f42ca0fa5342ec236d52aa157517315793405` | `8a3bd176e77c85d7393e1e84040f8d181a5c938267e8d98b64fb89f25a4b9235` |
+| S07 | [Acceptance dataset](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_agent_acceptance_v1.json) | `30c5798a3a59b127c2ab90dcff78d1af26ecc8a5` | `6b6e6c8205c8fe2c2a44777e087ca555fc4872a71d32b9d2a55bbb17dfc60e74` |
+| S08 | [Eval dataset v2](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_agent_eval_v2.json) | `7b80a5e4c8d93b77ab53182f3dec4896adcf8496` | `4240f1a0e63241f8661f6111875b3428d0b64ba7f0a0c841621db6c66f3ec14b` |
+| S09 | [Aspect 6 gate](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect6_gate_v1.json) | `10af3c361b739b25459b2c6e8d8a6a743ac6d5d9` | `e45b601372557a2caad8d7d80529375555c816d0046336f96a58b3a0a0954700` |
+| S10 | [Aspect 6 manifest](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect6_manifest_v1.json) | `f7f6f815423f1b4c63c4fe918630a77d10b32198` | `9bc830fe5be3f99d9106aaddbe3080323962ecced0a59845824c7f7e5e8ed6b2` |
+| S11 | [Aspect 7 pre-change performance](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect7_prechange_performance_v1.json) | `6eaedde6378c277df6ea5f6e42590e4857b6b11b` | `8c486712a8f33044c0f18d4eb1eb747e1f8de206d13a0ca1b2f341070edd69ad` |
+| S12 | [Aspect 7 performance gate](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect7_performance_gate_v1.json) | `076d58e9782dd2e629b452726ac064cea990a4b4` | `ab9593258111f170a25ced2955ea441a9a7379717583b2a8e80f571c6cedb6ff` |
+| S13 | [Aspect 8 gate](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect8_gate_v1.json) | `5dc2db148be74ba838117566fc1110975fb7032c` | `032792dc6803e1730a945a9dffb1f97541cc285db9a459601de990cb88926647` |
+| S14 | [Aspect 8 manifest](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_aspect8_manifest_v1.json) | `1dcd842e22e4b671fc16ba4c6e08145bb47040f2` | `068c76a9c531f8d2178bddcbcabe8ba38181761a2a5b6fbb440c4de7b988fadb` |
+| S15 | [Iteration 4 release manifest](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/historical/iteration4/iteration4_release_manifest_v1.json) | `747f42ca0fa5342ec236d52aa157517315793405` | `8a3bd176e77c85d7393e1e84040f8d181a5c938267e8d98b64fb89f25a4b9235` |
 | S16 | [Iteration 5 development log](development/iteration-5/development-log.md) | `124bcb325d7c673beed782a18418bb69dd82acfc` | `8264d42d22df130d98a78bc3725bbb0f1db664831662d6129423a9d5e8f6e505` |
 | S17 | [Iteration 5 closeout](development/iteration-5/closeout.md) | `e00f7280ef32fa0627166e2268abbf61df99f742` | `ecd0aa21e99575eb263224cfa44adfc5fd7adeaaf06649f15f7ac814ddb0f321` |
 | S18 | [Iteration 5 source preview](development/iteration-5/source-preview-v0.1.0-preview.1.md) | `93d31abaa9fadd6efe571b9d9d4f3fe7ea5f9524` | `61566abaf2de40bf49ee5481c119fb9fde8f239010bc11a290b054edbfe8ca71` |
-| S19 | [Iteration 5 dual-mode baseline](../ez_back_dev/tests/fixtures/current/iteration5/iteration5_dual_mode_acceptance_baseline_v1.json) | `44db1809339a1cfb64ac7b9306935390eaa2b77b` | `a2f76a5c8a464a7a7c75cb8c5140d9d7bfdf874c12f4c3c0a92906ec9d5e0683` |
-| S20 | [Benchmark CLI](../ez_back_dev/app/agentBenchmark.py) | `0d435b1a347f3b7720ba79881d89b96c3bed585b` | `96fb1630bcbb98406ac1837b1dd2b44ea0a21d67cc18a3d8590b99ee9d196f5f` |
-| S21 | [Benchmark runner](../ez_back_dev/service/agentBenchmarkRunner.py) | `18e4ccf82743e1f4859814bb427cbc35d02de17a` | `711006c36af2112d231c2a42b5c02c3bf62efcc6e3e9c861f2e8546f65c2b0b2` |
-| S22 | [Benchmark contracts](../ez_back_dev/service/agentBenchmarkContracts.py) | `6d09f5454ba47eda06ee4ce3129ad4ea6611f100` | `c3b39420f82d5d1b5339ff5144cd20656386a4aa9da0dacb977f8d380de0ab02` |
+| S19 | [Iteration 5 dual-mode baseline](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/tests/fixtures/current/iteration5/iteration5_dual_mode_acceptance_baseline_v1.json) | `44db1809339a1cfb64ac7b9306935390eaa2b77b` | `a2f76a5c8a464a7a7c75cb8c5140d9d7bfdf874c12f4c3c0a92906ec9d5e0683` |
+| S20 | [Benchmark CLI](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/app/agentBenchmark.py) | `0d435b1a347f3b7720ba79881d89b96c3bed585b` | `96fb1630bcbb98406ac1837b1dd2b44ea0a21d67cc18a3d8590b99ee9d196f5f` |
+| S21 | [Benchmark runner](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/service/agentBenchmarkRunner.py) | `18e4ccf82743e1f4859814bb427cbc35d02de17a` | `711006c36af2112d231c2a42b5c02c3bf62efcc6e3e9c861f2e8546f65c2b0b2` |
+| S22 | [Benchmark contracts](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ez_back_dev/service/agentBenchmarkContracts.py) | `6d09f5454ba47eda06ee4ce3129ad4ea6611f100` | `c3b39420f82d5d1b5339ff5144cd20656386a4aa9da0dacb977f8d380de0ab02` |
+| S23 | [Iteration 6 closeout](iteration-6-closeout.md) | `0852b878adab8ff658e833aed6031f505dfcc6ee` | `5d87a93c8fa8e7a34938823539d6ffb15ac0f9e5a6e8aa2f017d7410139a6f8e` |
 
 The Aspect 8 manifest records the Acceptance dataset SHA-256 as
 `44d8cad27aa17365a6aa85300a2a7261275438ae162d3da316371b0eff4e1674`.
@@ -104,6 +112,7 @@ deterministic benchmark matrix, not a production pressure or capacity test.
 | Iteration 4 Aspect 8 | Acceptance `18/18`, Eval `104/104`, a later benchmark sample, browser checks, isolated Compose, telemetry, safety, and zero-cost counters were frozen together. [S13, S14] |
 | Iteration 4 closeout | Deterministic offline gates were followed by separately authorized real-model synthetic quality and an isolated synthetic Agent E2E. [S03, S04, S15] |
 | Iteration 5 closeout | Source-preview validation was attempted in changing local and hosted environments. Some gates passed in task-owned environments, but Docker full-stack/parity remained blocked. Raw task-owned reports are not in this repository. [S16, S17, S18] |
+| Iteration 6 closeout | Current-tree static/local gates and a separately authorized, bounded real-model/embedding/RAG smoke were consolidated. Static facts are auditable from the final tree; smoke details remain class C because raw runtime reports and protected data are not committed. [S23] |
 
 ## Correctness, Eval, Acceptance, and safety
 
@@ -202,6 +211,40 @@ baseline. Deterministic gates, planner/RAG quality, and the synthetic E2E are
 three separate evidence layers and cannot substitute for one another. [S03,
 S04]
 
+## Iteration 6 local release supplement
+
+[Verified] The final Iteration 6 tree retains 19 workflows, 22 typed Agent
+tools, 62 FastAPI routes, REST/SSE/MCP entry points, and seven SQL tables.
+All 163 backend Python files compile in memory; all 902 functions have Chinese
+docstrings. All 561 frontend function nodes are classified, with 461 required
+targets documented in Chinese and the remaining callbacks assigned explicit
+exclusion categories. Type-check, ESLint, Prettier, and a temporary-directory
+production build passed without changing repository `dist`. [S23]
+
+[Verified] The current local runtime uses explicit backend/frontend/
+observability configuration and five managed modules. Loopback readiness for
+the observability API, frontend, legacy API, and Agent API passed, including
+database, Redis, and worker checks. The local observability path is bounded to
+seven days and 100,000 rows and excludes prompt, completion, reasoning,
+project, tool-payload, SQL/Redis-content, exception, and credential fields.
+These are local functional gates, not availability or capacity evidence.
+[S23]
+
+[Candidate] A separately authorized minimal smoke used one synthetic project:
+one GLM analysis was atomically saved and restored (`1085` input tokens,
+`4499` total tokens), one `embedding-3` response contained `2048` finite
+dimensions (about `2.38 s`), and a legacy RAG request first timed out at about
+`45.69 s`. After setting a 300-second minimum timeout for the default RAG chat
+model, exactly one retry succeeded in about `56.15 s` and persisted two
+expected knowledge results. Provider automatic retry remained zero. Raw
+reports, project identifiers, generated text, and vectors are not committed,
+so these observations remain class C. [S23]
+
+[Missing] The supplement did not run production stress, sustained load,
+capacity, customer data, a complete browser project journey, or a complete
+Agent E2E. It does not provide a provider currency-cost baseline or a formal
+production-readiness claim. [S23]
+
 ## Browser, observability, containers, and CI
 
 [Verified] Aspect 7 checked five viewports, zero horizontal overflow and console
@@ -243,8 +286,8 @@ S18]
 - [Missing] Absolute wall-clock timings are not cross-machine comparable.
   Relative ratios require the original same-machine protocol.
 - [Missing] Readiness probes, controlled ASGI acceptance, deterministic fake
-  edges, and browser fixtures do not prove a complete current network Agent
-  workflow journey.
+  edges, browser fixtures, and the bounded Iteration 6 legacy smoke do not
+  prove a complete current network Agent workflow journey.
 - [Protected] Real environment values, credentials, uploaded projects, user
   persistence, observability payloads, logs, traces, and model bodies are not
   evidence inputs to this document.
@@ -259,7 +302,15 @@ and an explicitly synthetic real-model journey. [S09, S12, S13, S15]
 its repository-external reports and incomplete Docker parity prevent promotion
 to frozen current evidence. [S16, S17, S18]
 
-[Missing] Nothing in this history establishes present production readiness or
-completes Iteration 6. Aspect 2 only consolidates evidence and does not modify
-product behavior, public APIs, workflows, tools, persistence, security, or
-runtime configuration.
+[Verified] Iteration 6 adds current-tree structural, configuration,
+observability, documentation, build, and local readiness evidence while
+preserving the public workflows, tools, protocols, persistence, and security
+boundaries. [S23]
+
+[Candidate] Its minimal synthetic model, embedding, and legacy RAG smoke is a
+bounded local observation, not a frozen execution fixture or customer-quality
+result. [S23]
+
+[Missing] Nothing in this history establishes present production capacity,
+SLA, security certification, customer-project quality, or formal production
+readiness. Repository closeout cannot substitute for those separate gates.

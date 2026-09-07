@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("preflight", "start", "status", "ready", "stop")]
+    [ValidateSet("config-check", "preflight", "start", "status", "ready", "stop")]
     [string]$Command,
 
     [Parameter(ValueFromRemainingArguments = $true)]

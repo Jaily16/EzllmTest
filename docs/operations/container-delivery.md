@@ -1,5 +1,7 @@
 # 容器交付与运维边界
 
+> [Verified] 历史资料：本文记录 Iteration 5 的容器设计，所述 Docker/Compose 与外部观测设施已从当前 V6 树移除，不是当前可执行入口。原始设施见[不可变 V5 快照](https://github.com/Jaily16/EzllmTest/tree/5cf1effb32a8efcd34902df05d27442f3586dc1c)；当前入口见[分模块运行](modular-runtime.md)。
+
 本文描述 Iteration 5 Aspect 7 的容器交付约束。它只说明构建、权限、配置注入、健康检查和数据保留边界，不替代产品 API、Agent、MCP 或数据库契约。
 
 ## 运行组合

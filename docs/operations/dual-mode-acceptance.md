@@ -1,10 +1,12 @@
 # Aspect 8 双模式集成验收
 
+> [Verified] 历史资料：本文记录 Iteration 5 的未完成双拓扑验收流程；相关 harness、Compose 与 fixture 已从当前 V6 树移除，不得将以下命令当作当前运行入口。当前限制见[验证历史](../validation-history.md)。
+
 本手册描述 Iteration 5 的两种验收拓扑。它们使用同一份不可变的 Iteration 4 historical Acceptance dataset；网络/进程探针和确定性业务验收分别记录，不能把 `/health` 或 `/ready` 当作 Agent workflow E2E。
 
 ## 固定输入与安全边界
 
-- 契约：[`ops/iteration5-dual-mode-acceptance-contract.json`](../../ops/iteration5-dual-mode-acceptance-contract.json)
+- 契约：[`ops/iteration5-dual-mode-acceptance-contract.json`](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/ops/iteration5-dual-mode-acceptance-contract.json)
 - dataset：`ez_back_dev/tests/fixtures/historical/iteration4/iteration4_agent_acceptance_v1.json`
 - case 数：18；provider：`deterministic_fake`
 - 报告目录必须是仓库外的绝对路径；脚本自行创建 synthetic env，不接受真实 `.env`。

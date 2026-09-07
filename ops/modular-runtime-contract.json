@@ -4,8 +4,7 @@
   "auto_accept_current_values": false,
   "source_documents": {
     "backend_env_names": ".env.example",
-    "frontend_env_names": "ez_front_dev/.env.example",
-    "compose": "compose.yaml",
+    "frontend_env_names": "frontend/.env.example",
     "version_contract": "ops/version-contract.json"
   },
   "external_dependencies": [
@@ -49,7 +48,7 @@
       "kind": "managed-process",
       "runner_managed": true,
       "depends_on": ["mysql"],
-      "working_dir": "ez_back_dev",
+      "working_dir": "backend",
       "entrypoint": "serve.py",
       "command": ["python", "-B", "serve.py"],
       "host": "127.0.0.1",
@@ -58,14 +57,13 @@
         "kind": "http",
         "method": "GET",
         "path": "/ready"
-      },
-      "compose_service": "legacy-api"
+      }
     },
     "agent-api": {
       "kind": "managed-process",
       "runner_managed": true,
       "depends_on": ["redis"],
-      "working_dir": "ez_back_dev",
+      "working_dir": "backend",
       "entrypoint": "app/agentApi.py",
       "command": ["python", "-B", "-m", "app.agentApi", "--port", "8131"],
       "host": "127.0.0.1",
@@ -74,49 +72,41 @@
         "kind": "http",
         "method": "GET",
         "path": "/ready"
-      },
-      "compose_service": "agent-api"
+      }
     },
     "worker": {
       "kind": "managed-process",
       "runner_managed": true,
       "depends_on": ["redis", "agent-api"],
-      "working_dir": "ez_back_dev",
+      "working_dir": "backend",
       "entrypoint": "app/agentWorker.py",
       "command": ["python", "-B", "-m", "app.agentWorker", "--consumer", "modular-worker"],
       "readiness": {
         "kind": "agent-worker-heartbeat"
-      },
-      "compose_service": "worker"
+      }
     },
     "frontend": {
       "kind": "managed-process",
       "runner_managed": true,
       "depends_on": ["legacy-api", "agent-api", "worker"],
-      "working_dir": "ez_front_dev",
+      "working_dir": "frontend",
       "entrypoint": "package.json",
-      "command": ["npm", "run", "serve", "--", "--host", "127.0.0.1", "--port", "8080", "--strictPort"],
+      "command": ["node", "node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "8080", "--strictPort"],
       "host": "127.0.0.1",
       "port": 8080,
       "readiness": {
         "kind": "http",
         "method": "GET",
         "path": "/"
-      },
-      "compose_service": "frontend"
+      }
     },
     "mcp": {
       "kind": "manual-optional",
       "runner_managed": false,
-      "working_dir": "ez_back_dev",
+      "working_dir": "backend",
       "entrypoint": "app/mcpServer.py",
       "port": 8011,
       "data_owner": "project-scope-supplied-by-operator"
-    },
-    "observability": {
-      "kind": "compose-optional",
-      "runner_managed": false,
-      "data_owner": "existing-compose-volumes"
     }
   },
   "runtime_state": {
@@ -127,6 +117,12 @@
   },
   "environment_policy": {
     "explicit_env_file_required_for": ["preflight", "start"],
+    "optional_model_env_file_argument": "--model-env-file",
+    "optional_moonshot_model_argument": "--moonshot-model",
+    "allowed_moonshot_model_override": "kimi-k3",
+    "model_override_applied_after_validated_source_merge": true,
+    "model_source_uses_fixed_allowlist": true,
+    "model_source_cannot_override_infrastructure": true,
     "implicit_env_discovery": false,
     "python_dotenv_disabled_value": "true",
     "frontend_env_dir_is_task_owned": true,
@@ -141,21 +137,6 @@
     "no-provider-call",
     "no-project-discovery"
   ],
-  "compose_crosscheck": {
-    "services": [
-      "frontend",
-      "legacy-api",
-      "agent-api",
-      "worker",
-      "mysql",
-      "redis",
-      "otel-collector",
-      "prometheus",
-      "tempo",
-      "grafana"
-    ],
-    "loopback_published_ports": [8080, 8130, 8131, 9090, 3000]
-  },
   "documentation": {
     "operator_guide": "docs/operations/modular-runtime.md",
     "portable_wrapper": "ops/modular/run.sh",

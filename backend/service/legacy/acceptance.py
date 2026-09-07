@@ -1,0 +1,96 @@
+from chain.BasicChain import BasicChain
+from chain.KnowledgeChain import knowledge_retrieval_chain
+from infrastructure.persistence import project_repository as testProjectDao
+from infrastructure.llm.gateway import LLMError
+from infrastructure.llm.legacy_models import ChatGPTModel
+from prompt.templates import USE_CASE_INFO_TEMPLATE, \
+    USE_CASE_INFO_MAP_TEMPLATE, USE_CASE_INFO_MAP_REDUCE_TEMPLATE, FUNCTIONAL_TEST_GENERATE_ONE_TEST_CASE_TEMPLATE, \
+    FUNCTIONAL_TEST_GENERATE_ALL_TEST_CASE_TEMPLATE, ACCEPTANCE_TEST_GENERATE_TEST_CASE_TEMPLATE
+from service.project import documents as documentTools
+from tools.InfoType import InfoType
+import prompt.promptStr as prompt
+from service.retrieval.splitters import testdoc_text_splitter_for_acceptance
+from service.legacy.long_text import invoke_exhaustive_document_analysis
+
+llm = ChatGPTModel().get_model()
+
+
+def find_out_requirement_info(pid: str):
+    """查找OUT需求信息，并遵循现有调用契约。
+
+    参数:
+        `pid`：项目 ID。"""
+    try:
+        # 如果此前分析过了就取历史数据
+        history_result = testProjectDao.get_project_info(pid, InfoType.PROJECT_ACCEPTANCE_SUMMARY.value)
+        if history_result:
+            result = history_result
+        else:
+            result = invoke_exhaustive_document_analysis(
+                operation="acceptance_info",
+                pid=pid,
+                document_loader=documentTools.generate_require_testdocs_docs,
+                splitter=testdoc_text_splitter_for_acceptance,
+                stuff_prompt=prompt.ACCEPTANCE_TEST_SUMMARY_PROMPT_STR,
+                map_prompt=prompt.ACCEPTANCE_TEST_SUMMARY_MAP_PROMPT_STR,
+                reduce_prompt=prompt.ACCEPTANCE_TEST_SUMMARY_REDUCE_PROMPT_STR,
+                llm=llm,
+                max_concurrency=5,
+            )
+            testProjectDao.add_project_info(pid, InfoType.PROJECT_ACCEPTANCE_SUMMARY.value, result)
+        return result
+    except LLMError:
+        raise
+    except Exception as e:
+        print("encountered exception {}".format(e))
+        return False
+
+
+def find_acceptance_test_knowledge(pid: str):
+    """查找验收测试测试知识库，并遵循现有调用契约。
+
+    参数:
+        `pid`：项目 ID。"""
+    try:
+        history_result = testProjectDao.get_project_info(pid, InfoType.PROJECT_ACCEPTANCE_TEST_KNOWLEDGE.value)
+        if history_result:
+            return history_result
+        else:
+            knowledge_docs = documentTools.generate_knowledge_docs(pid)
+            knowledge_chain = knowledge_retrieval_chain(knowledge_docs)
+            acceptance_test_knowledge = knowledge_chain.invoke({"input": prompt.ACCEPTANCE_TEST_KNOWLEDGE_STR})[
+                "answer"]
+            testProjectDao.add_project_info(pid, InfoType.PROJECT_ACCEPTANCE_TEST_KNOWLEDGE.value,
+                                            acceptance_test_knowledge)
+            return acceptance_test_knowledge
+    except LLMError:
+        raise
+    except Exception as e:
+        print("encountered exception {}".format(e))
+        return False
+
+
+def get_acceptance_test_cases(acceptance_test_knowledge: str, info: str):
+    """获取验收测试测试用例，并遵循现有调用契约。"""
+    try:
+        test_case_chain = BasicChain.stuff_chain(ACCEPTANCE_TEST_GENERATE_TEST_CASE_TEMPLATE, llm)
+        return test_case_chain.invoke(
+            {"acceptance_test_knowledge": acceptance_test_knowledge, "content": info})
+    except LLMError:
+        raise
+    except Exception as e:
+        print("encountered exception {}".format(e))
+        return False
+
+
+def generate_acceptance_test_cases(pid: str, info: str):
+    """生成验收测试测试用例，并遵循现有调用契约。"""
+    try:
+        acceptance_test_knowledge = find_acceptance_test_knowledge(pid)
+        test_cases = get_acceptance_test_cases(acceptance_test_knowledge, info)
+        return {"acceptance_test_knowledge": acceptance_test_knowledge, "test_cases": test_cases}
+    except LLMError:
+        raise
+    except Exception as e:
+        print("encountered exception {}".format(e))
+        return False

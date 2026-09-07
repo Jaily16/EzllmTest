@@ -21,9 +21,12 @@ dist/
 *.egg-info/
 
 # Frontend dependencies and build output.
-ez_front_dev/node_modules/
-ez_front_dev/dist/
-ez_front_dev/.cache/
+frontend/node_modules/
+frontend/dist/
+frontend/.cache/
+
+# Local observability data is user-owned runtime state.
+/observability/data/
 
 # IDE and editor-local metadata.
 .idea/
@@ -47,4 +50,4 @@ Desktop.ini
 
 # Local project recreation examples and document exports.
 /example/
-/ez_back_dev/static/projects/
+/backend/static/projects/

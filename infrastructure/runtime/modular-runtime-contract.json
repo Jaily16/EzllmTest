@@ -1,0 +1,238 @@
+{
+  "schema_version": "iteration6-modular-runtime-v2",
+  "readiness_schema_version": "iteration5-readiness-v1",
+  "auto_accept_current_values": false,
+  "source_documents": {
+    "configuration_schema": "backend/infrastructure/runtime_config.py",
+    "backend_example": "backend/.env.example",
+    "frontend_example": "frontend/.env.example",
+    "observability_example": "observability/.env.example",
+    "historical_version_contract": "ops/version-contract.json"
+  },
+  "external_dependencies": [
+    "mysql",
+    "redis"
+  ],
+  "runner_owned": [
+    "observability-api",
+    "legacy-api",
+    "agent-api",
+    "worker",
+    "frontend"
+  ],
+  "managed_start_order": [
+    "observability-api",
+    "legacy-api",
+    "agent-api",
+    "worker",
+    "frontend"
+  ],
+  "managed_stop_order": [
+    "frontend",
+    "worker",
+    "agent-api",
+    "legacy-api",
+    "observability-api"
+  ],
+  "modules": {
+    "observability-api": {
+      "kind": "managed-process",
+      "runner_managed": true,
+      "depends_on": [],
+      "working_dir": "backend",
+      "entrypoint": "app/observabilityApi.py",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "app.observabilityApi",
+        "--port",
+        "8140"
+      ],
+      "host": "127.0.0.1",
+      "port": 8140,
+      "readiness": {
+        "kind": "http",
+        "method": "GET",
+        "path": "/ready"
+      },
+      "data_owner": "local-user-managed"
+    },
+    "mysql": {
+      "kind": "external",
+      "runner_managed": false,
+      "required_for": [
+        "legacy-api"
+      ],
+      "probe": "database-select-1-and-schema-read",
+      "data_owner": "external-user-managed"
+    },
+    "redis": {
+      "kind": "external",
+      "runner_managed": false,
+      "required_for": [
+        "agent-api",
+        "worker"
+      ],
+      "probe": "redis-ping",
+      "data_owner": "external-user-managed"
+    },
+    "legacy-api": {
+      "kind": "managed-process",
+      "runner_managed": true,
+      "depends_on": [
+        "mysql"
+      ],
+      "working_dir": "backend",
+      "entrypoint": "serve.py",
+      "command": [
+        "python",
+        "-B",
+        "serve.py"
+      ],
+      "host": "127.0.0.1",
+      "port": 8230,
+      "readiness": {
+        "kind": "http",
+        "method": "GET",
+        "path": "/ready"
+      }
+    },
+    "agent-api": {
+      "kind": "managed-process",
+      "runner_managed": true,
+      "depends_on": [
+        "redis"
+      ],
+      "working_dir": "backend",
+      "entrypoint": "app/agentApi.py",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "app.agentApi",
+        "--port",
+        "8231"
+      ],
+      "host": "127.0.0.1",
+      "port": 8231,
+      "readiness": {
+        "kind": "http",
+        "method": "GET",
+        "path": "/ready"
+      }
+    },
+    "worker": {
+      "kind": "managed-process",
+      "runner_managed": true,
+      "depends_on": [
+        "redis",
+        "agent-api"
+      ],
+      "working_dir": "backend",
+      "entrypoint": "app/agentWorker.py",
+      "command": [
+        "python",
+        "-B",
+        "-m",
+        "app.agentWorker",
+        "--consumer",
+        "modular-worker"
+      ],
+      "readiness": {
+        "kind": "agent-worker-heartbeat"
+      }
+    },
+    "frontend": {
+      "kind": "managed-process",
+      "runner_managed": true,
+      "depends_on": [
+        "legacy-api",
+        "agent-api",
+        "worker"
+      ],
+      "working_dir": "frontend",
+      "entrypoint": "package.json",
+      "command": [
+        "node",
+        "node_modules/vite/bin/vite.js",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8180",
+        "--strictPort"
+      ],
+      "host": "127.0.0.1",
+      "port": 8180,
+      "readiness": {
+        "kind": "http",
+        "method": "GET",
+        "path": "/"
+      }
+    },
+    "mcp": {
+      "kind": "manual-optional",
+      "runner_managed": false,
+      "working_dir": "backend",
+      "entrypoint": "app/mcpServer.py",
+      "port": 8011,
+      "data_owner": "project-scope-supplied-by-operator"
+    }
+  },
+  "runtime_state": {
+    "root": "system-temp/ezllmtest-modular-runtime",
+    "repository_path_forbidden": true,
+    "stores": [
+      "pid",
+      "start_time",
+      "module",
+      "port",
+      "command_fingerprint",
+      "status"
+    ],
+    "stores_sensitive_values": false
+  },
+  "environment_policy": {
+    "explicit_env_file_required_for": [
+      "config-check",
+      "preflight",
+      "start"
+    ],
+    "canonical_arguments": [
+      "--backend-env-file",
+      "--frontend-env-file",
+      "--observability-env-file"
+    ],
+    "deprecated_legacy_arguments": [
+      "--env-file",
+      "--model-env-file",
+      "--moonshot-model",
+      "--frontend-port"
+    ],
+    "new_and_legacy_modes_mutually_exclusive": true,
+    "implicit_env_discovery": false,
+    "python_dotenv_disabled_value": "true",
+    "frontend_public_names": [
+      "VUE_APP_API_BASE_URL",
+      "VUE_APP_AGENT_API_BASE_URL",
+      "VUE_APP_OBSERVABILITY_API_BASE_URL"
+    ],
+    "frontend_env_dir_is_task_owned_legacy_shim": true,
+    "unknown_names_are_errors": true,
+    "schema_from_example_files": false
+  },
+  "protected_operations": [
+    "database-read-only",
+    "redis-read-only",
+    "no-compose-start",
+    "no-compose-stop",
+    "no-volume-operation",
+    "no-provider-call",
+    "no-project-discovery"
+  ],
+  "documentation": {
+    "operator_guide": "docs/operations/modular-runtime.md",
+    "portable_wrapper": "ops/modular/run.sh",
+    "windows_wrapper": "ops/modular/run.ps1"
+  }
+}

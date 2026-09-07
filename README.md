@@ -1,10 +1,10 @@
 # EzllmTest
 
-[![Iteration 4 offline gates](https://github.com/Jaily16/EzllmTest/actions/workflows/iteration4-offline.yml/badge.svg?branch=main)](https://github.com/Jaily16/EzllmTest/actions/workflows/iteration4-offline.yml)
+> [Verified] 当前仓库树为 Iteration 6 最终基线：保留 19 个工作流、22 个 Agent 工具、REST/SSE/MCP、MySQL/Redis 持久化与安全边界，并采用三文件本地运行及中文观测后台。范围、验证和限制见 [Iteration 6 收口报告](docs/iteration-6-closeout.md)；历史结论见 [验证历史](docs/validation-history.md)，不代表当前复跑或正式生产就绪。
 
 一个面向软件测试团队的本地 AI 测试工作台：从项目资料上传开始，经业务分析、测试计划和推荐菜单，继续生成单元、集成、API、UI、数据库、功能、非功能与验收测试成果。
 
-当前仓库已完成 Iteration 1–4。Iteration 3 统一了应用壳、设计系统、项目恢复和八类测试页，并通过真实 `GLM-4.7`、`embedding-3` 与本地 MySQL 完成一条脱敏代表性旅程；Iteration 4 在不替换原有确定性 workflow 的前提下，新增了可规划、可审批、可恢复、可评测、可观测的 LangGraph 单 Agent 编排层，并通过完整离线验收与隔离的真实模型合成项目 E2E。Iteration 5 的 Aspect 1–7 已形成当前工程基线，Aspect 8 已执行但未完成（Blocked）；真实 gate 状态与未完成限制见 [`docs/development/iteration-5/closeout.md`](docs/development/iteration-5/closeout.md)。
+历史基线记录了 Iteration 1–4 的完成结果。Iteration 3 统一了应用壳、设计系统、项目恢复和八类测试页，并通过真实 `GLM-4.7`、`embedding-3` 与本地 MySQL 完成一条脱敏代表性旅程；Iteration 4 在不替换原有确定性 workflow 的前提下，新增了可规划、可审批、可恢复、可评测、可观测的 LangGraph 单 Agent 编排层，并通过完整离线验收与隔离的真实模型合成项目 E2E。Iteration 5 的 Aspect 1–7 已形成当前工程基线，Aspect 8 已执行但未完成（Blocked）；真实 gate 状态与未完成限制见 [`docs/development/iteration-5/closeout.md`](docs/development/iteration-5/closeout.md)。
 
 > 仓库为私有项目。私有可见性不是凭证保险箱：任何 API Key、数据库密码、真实项目 ID、客户资料和运行时产物都不得提交。
 
@@ -31,12 +31,11 @@
 - **显式生成与取消**：页面首次进入只读取状态，不自动调用 chat 或 embedding；运行中可取消并保留 partial output。
 - **清晰的保留边界**：五类 final 为 session-only；UI、数据库和验收 final 为 persisted artifact。
 - **可访问的响应式工作台**：覆盖 320px reflow、移动抽屉、键盘焦点、reduced-motion、状态 live region 和长文本安全换行。
-- **离线回归夹具**：Python 标准库 loopback fixture 可验证缓存、stale、取消、结构化错误、持久化失败和 onboarding，不连接真实模型或数据库。
 - **受控 Agent 编排**：LangGraph 单 Agent 只选择 22 个类型化工具中的受控能力；项目作用域由可信宿主注入，付费、持久化与 regenerate 动作必须人工审批。
 - **持久执行与恢复**：Redis 保存有 TTL 的 checkpoint、租约、幂等、取消和事件重放；MySQL 仍是项目、revision 与有效 artifact 的长期真源。
 - **工作台与 MCP**：独立 Agent API、worker 和 `/agent` 工作台展示结构化计划、审批、证据、预算、恢复与 trace；loopback MCP 默认只能执行三个只读工具。
-- **评测与可观测性**：固定 synthetic Eval/acceptance/benchmark 覆盖轨迹、安全、恢复、RAG、缓存和性能；OpenTelemetry、Prometheus、Tempo 与 Grafana 由本地 Docker Compose 提供。
-- **真实模型合成验收**：修复后的 planner 结构化输出为 `6/6`，真实 RAG 为 `3/3`；隔离的 `ui_info → ui_case` 旅程经过两次人工审批后完成，并实际使用 chat、embedding、RAG 与 artifact 服务。
+- **本地安全观测**：保留 OpenTelemetry 埋点，使用 loopback HTTP 写入 7 天/100,000 行上限的 SQLite；中文 `/observability` 展示健康、指标、安全日志和 Trace，不使用外部 Collector/Prometheus/Tempo/Grafana/LangSmith tracing。
+- **历史真实模型合成验收**：修复后的 planner 结构化输出为 `6/6`，真实 RAG 为 `3/3`；隔离的 `ui_info → ui_case` 旅程经过两次人工审批后完成，并实际使用 chat、embedding、RAG 与 artifact 服务。
 
 ## 关键界面
 
@@ -98,9 +97,9 @@ UI、数据库和验收 final 会持久化；页面可以仅隐藏当前显示�
 | 检索     | RAG、请求级内存向量索引、智谱 `embedding-3`                                                          |
 | 流式协议 | REST + Server-Sent Events（SSE）                                                                     |
 | 文档     | pypdf、docx2txt、Markdown/纯文本读取                                                                 |
-| 可观测性 | OpenTelemetry、Prometheus、Tempo、Grafana、脱敏 JSON 日志                                            |
-| 交付     | Docker Compose、GitHub Actions 离线门禁                                                              |
-| 质量门禁 | pytest、Agent Eval/acceptance/benchmark、Vite lint/type-check/build、credential scan、bundle checker |
+| 可观测性 | OpenTelemetry SDK、本地 HTTP exporter、FastAPI 观测 API、SQLite、中文 Vue UI |
+| 本地运行 | 现有 Conda / Node、外部 MySQL / Redis、五模块显式配置启动器 |
+| 验证证据 | 历史结果见验证历史；当前观测实现已通过离线、production build、五模块 readiness 与浏览器门禁 |
 
 聊天模型注册表：
 
@@ -109,7 +108,7 @@ UI、数据库和验收 final 会持久化；页面可以仅隐藏当前显示�
 | `zhipu`       | `glm-4.7`           | `GLM-4.7`       | `ZHIPU_API_KEY`     |
 | `alibaba`     | `qwen3.5-plus`      | `通义千问`      | `DASHSCOPE_API_KEY` |
 | `deepseek`    | `deepseek-v4-flash` | `DeepSeek`      | `DEEPSEEK_API_KEY`  |
-| `moonshot`    | `kimi-k2.5`         | `Moonshot Kimi` | `MOONSHOT_API_KEY`  |
+| `moonshot`    | `kimi-k3`           | `Moonshot Kimi` | `MOONSHOT_API_KEY`  |
 
 RAG 当前统一使用智谱 `embedding-3`；即使聊天模型选择其他 provider，也需要配置智谱 embedding。
 
@@ -118,8 +117,9 @@ RAG 当前统一使用智谱 `embedding-3`；即使聊天模型选择其他 prov
 ```mermaid
 flowchart LR
     Browser[浏览器] --> Vue[Vue 3 / TypeScript]
-    Vue -->|legacy REST / SSE| API[FastAPI :8130]
-    Vue -->|Agent REST / SSE| AgentAPI[Agent API :8131]
+    Vue -->|legacy REST / SSE| API[FastAPI :8230]
+    Vue -->|Agent REST / SSE| AgentAPI[Agent API :8231]
+    Vue -->|观测 GET| ObsAPI[Observability API :8140]
     AgentAPI --> Redis[(Redis checkpoint / queue)]
     Redis --> Worker[LangGraph worker]
     Worker --> Catalog[22 typed tools / 19 workflows]
@@ -130,7 +130,11 @@ flowchart LR
     Worker --> MySQL
     MySQL --> Artifact[revision-aware artifacts]
     Artifact --> API
-    AgentAPI -. trace/metrics .-> OTel[OTel Collector / Tempo / Prometheus / Grafana]
+    AgentAPI -. 安全 spans / metrics / logs .-> ObsAPI
+    Worker -. 安全 spans / metrics / logs .-> ObsAPI
+    ObsAPI --> ObsDB[(SQLite · 7 天 / 100k)]
+    ObsAPI -. 只读健康探测 .-> API
+    ObsAPI -. 只读健康探测 .-> AgentAPI
 ```
 
 legacy 模型输出的生命周期仍是：显式操作 → REST/SSE 请求 → 分阶段预算与结构校验 → 延迟保存 → workflow status 恢复。Agent 在其上增加观察 → 结构化计划 → 风险审批 → 工具执行 → 验证/恢复；工具在进程内调用应用服务层，不通过 HTTP 或 MCP 自调。页面路由守卫只服从服务器 lifecycle、allowed routes 和 stale 信息。
@@ -155,272 +159,112 @@ legacy 模型输出的生命周期仍是：显式操作 → REST/SSE 请求 → 
 
 ```text
 EzllmTest/
-├─ ez_front_dev/                 # Vue 3 / TypeScript 前端
-│  ├─ public/                    # HTML 与 favicon
+├─ backend/                     # FastAPI / Agent 产品源码
+│  ├─ app/                     # legacy API、Agent API、worker、MCP
+│  ├─ service/                 # canonical domain、workflow、工具与兼容 facade
+│  ├─ infrastructure/          # 持久化、队列与模型等产品适配层
+│  ├─ llm/                     # provider、预算、RAG 与结构化输出
+│  └─ dao/                     # SQLAlchemy 数据访问
+├─ frontend/                    # Vue 3 / TypeScript / Vite
 │  └─ src/
-│     ├─ components/             # 规划、测试、反馈与 onboarding 组件
-│     ├─ composables/            # SSE、工作流和取消/恢复控制
-│     ├─ state/                  # 项目 setup 与 analysis 状态
-│     ├─ styles/                 # tokens、Element Plus bridge、基础与无障碍样式
-│     └─ views/                  # 入口、创建与持久化应用壳
-├─ ez_back_dev/                  # FastAPI 后端
-│  ├─ app/                       # legacy/Agent API、worker、MCP、Eval 与验收入口
-│  ├─ service/                   # workflow catalog、Agent runtime、工具与 telemetry
-│  ├─ llm/                       # provider、预算、RAG 与结构化输出
-│  ├─ dao/                       # SQLAlchemy 数据访问
-│  └─ tests/                     # 后端及前端静态/SFC 契约
-├─ scripts/                      # 凭证扫描、离线 fixture、bundle checker
-├─ ops/                          # Compose 与 Collector/Prometheus/Tempo/Grafana 配置
-├─ compose.yaml                  # digest-pinned 本地完整工程栈
-├─ docs/                         # 迭代计划、开发日志、closeout 与 README 图片
-├─ ezllmtest.sql                 # 七张空表的唯一数据库结构文件
-├─ .env.example                  # 后端变量名示例，不含真实值
+│     ├─ app/                  # router 与应用壳
+│     ├─ features/             # Agent 与八类测试生成功能
+│     ├─ shared/               # 共享组件、composable 与样式
+│     ├─ assets/               # 产品静态资源
+│     └─ views/                # 保留的兼容入口
+├─ observability/               # 本地观测配置说明与 ignored SQLite data
+├─ infrastructure/
+│  ├─ database/schema.sql      # 原始结构文件，仅供审核后空库初始化
+│  └─ runtime/                 # 当前运行拓扑与精确前端公开配置适配
+├─ scripts/modular_runtime.py  # 显式本地启动、状态、就绪与归属校验停机
+├─ ops/                         # 保留的兼容包装入口与历史契约，不是新配置来源
+├─ docs/                        # 产品文档、长期收口、验证历史与图片
+├─ .env.example                 # 旧位置迁移说明，不含运行变量
 └─ README.md
 ```
 
+[Verified] 产品公共 Python 模块名与已有 Vue 路由保持不变，并新增无需项目 ID 的 `/observability`。仓库自测、Eval/Acceptance/Benchmark、CI、Docker/Compose 与外部观测配置已从当前 V6 移除；产品中名称含 Test 或 acceptance 的生成能力仍保留。少量空旧目录和受保护的既有缓存不作为可执行验证设施，也不自动清理。
+
 ## 本地运行
 
-### 环境要求
+### 环境与当前边界
 
-- Windows 10/11
-- Conda、Python、Node.js 与 npm；精确兼容组合见 [`docs/versions.md`](docs/versions.md)
-- MySQL；Agent 模式需要 Redis，推荐使用 Docker Desktop 与仓库 Compose 栈
-- 真实生成需要至少一个聊天模型 API Key；仅运行离线门禁不需要 provider Key
-- 真实 RAG 生成需要智谱 API Key
+[Verified] 本次使用已有 Conda Python 3.11.15、Node v24.18.0、npm 11.16.0、MySQL 和本地 Redis 8.2.9，不使用 WSL、Docker 或容器。当前依赖环境没有被升级；Python/npm manifests 与 locks 随产品原样保留，包含尚未收敛的旧测试依赖和版本差异，不能视为重新求解后的产品最小依赖集。
 
-默认地址：前端 `http://localhost:8080`，legacy API `http://localhost:8130`，Agent API `http://localhost:8131`；完整 Compose 还提供 Grafana `3000` 与 Prometheus `9090`。
+[Protected] 新启动方式仅使用用户本机填写的 backend/frontend/observability 三份真实 `.env`，全部显式指定、被 Git 忽略。不自动复制旧凭据、不读取 V2 补齐缺项，不改 Windows 用户/系统环境。已有旧配置、上传、数据库、Redis 及日志保留原样。
 
-### 1. 克隆私有仓库
+[Verified] 当前五模块运行拓扑使用 8180/8230/8231/8140；旧显式兼容模式仍保留 8080/8130/8131 与本地 8140。配置值只进入对应子进程，不回写文件或 Windows 环境。
 
-先确保当前 GitHub 账号具有仓库权限并配置 SSH：
+[Verified] 三文件配置解析、五模块假进程、API/SQLite/exporter、Vue 静态门禁和系统临时 production build 已通过。用户在本机完成 ignored 配置后，脱敏 config-check、MySQL/Redis preflight、五模块 readiness、安全 Trace 查询和中文页面检查也均通过。真实配置值未进入仓库或文档。
 
-```powershell
-git clone git@github.com:Jaily16/EzllmTest.git
-Set-Location .\EzllmTest
-```
+| 服务 | 本次地址 | 归属 |
+| --- | --- | --- |
+| 本地观测 API | `http://127.0.0.1:8140` | 当前 runner |
+| 前端 | `http://127.0.0.1:8180` | 当前 runner |
+| legacy API | `http://127.0.0.1:8230` | 当前 runner |
+| Agent API | `http://127.0.0.1:8231` | 当前 runner |
+| Agent worker | 无 HTTP 端口 | 当前 runner |
+| MySQL / Redis | 显式配置中的本地连接 | 外部管理，不由 runner 启停 |
 
-也可以先执行 `gh auth login`，再用 `gh repo clone Jaily16/EzllmTest`。不要把 PAT、一次性验证码或凭证写进命令历史、文档或仓库。
+### 显式配置启动
 
-### 2. 创建 Python 环境
-
-```powershell
-conda create --name ezllmtest python=3.11 -y
-conda activate ezllmtest
-python -m pip install --upgrade pip
-python -m pip install --require-hashes -r .\ez_back_dev\requirements-windows.txt
-python -m pip check
-```
-
-Windows 本地使用 Windows 锁；Docker 与 CI 使用 Linux 锁。精确依赖、镜像、Actions 和升级/回滚策略统一见 [`docs/versions.md`](docs/versions.md)。
-
-### 3. 创建本地配置
+先在本机按三个模块的 `.env.example` 填写对应 `.env`。后端必须保留当前 V6 的数据库连接、Redis 数据库及 namespace；密钥不发送到聊天或前端。以下纯配置检查不探测数据库/Redis、不启动服务：
 
 ```powershell
-if (-not (Test-Path .\.env)) { Copy-Item .\.env.example .\.env }
-if (-not (Test-Path .\ez_front_dev\.env)) { Copy-Item .\ez_front_dev\.env.example .\ez_front_dev\.env }
-notepad .\.env
+& 'D:\tool\anaconda3\envs\ezllmtest\python.exe' -B 'D:\codex\EzllmTest_v6\scripts\modular_runtime.py' config-check --backend-env-file 'D:\codex\EzllmTest_v6\backend\.env' --frontend-env-file 'D:\codex\EzllmTest_v6\frontend\.env' --observability-env-file 'D:\codex\EzllmTest_v6\observability\.env' --format json
 ```
 
-只把真实值写入本机 `.env`。前端不得保存任何 provider Key。
+维护窗口前先确认没有生成任务，再按 [运行指南](docs/operations/modular-runtime.md) 执行 `preflight`、归属校验停机及 `start`。预检仅使用 MySQL `SELECT 1`/表名元数据和 Redis `PING`；启动后 worker 会维护运行心跳。启动器不初始化数据库、不安装依赖、不扫描项目或调用模型。已有前端依赖保持原样，通过 Node/Vite 启动，不重新执行 npm。
 
-## 配置变量
+[Verified] `--env-file`、`--model-env-file`、`--moonshot-model` 和 `--frontend-port` 仅属于明确选择的弃用兼容模式，不得与三文件模式混用，也没有自动回退。模型专用旧来源仍只保留固定 17 个字段，不追随 `_FILE`；新后端主配置支持五项明确允许的 `_FILE`，与直接赋值互斥。模型 key 可留空至选用该 provider 时；配置通过不证明账户或额度可用。
 
-| 变量名                                   | 用途                                           |
-| ---------------------------------------- | ---------------------------------------------- |
-| `DATABASE_URL`                           | MySQL SQLAlchemy 连接地址                      |
-| `ZHIPU_API_KEY`                          | 智谱 chat 与 embedding 凭证                    |
-| `ZHIPU_BASE_URL`                         | 智谱 OpenAI-compatible 地址                    |
-| `ZHIPU_CHAT_MODEL`                       | 智谱聊天模型 ID                                |
-| `ZHIPU_EMBEDDING_MODEL`                  | 智谱 embedding 模型 ID                         |
-| `DASHSCOPE_API_KEY`                      | 阿里云百炼凭证                                 |
-| `DASHSCOPE_BASE_URL`                     | 百炼 OpenAI-compatible 地址                    |
-| `DASHSCOPE_CHAT_MODEL`                   | 百炼聊天模型 ID                                |
-| `DEEPSEEK_API_KEY`                       | DeepSeek 凭证                                  |
-| `DEEPSEEK_BASE_URL`                      | DeepSeek API 地址                              |
-| `DEEPSEEK_CHAT_MODEL`                    | DeepSeek 模型 ID                               |
-| `MOONSHOT_API_KEY`                       | Moonshot 凭证                                  |
-| `MOONSHOT_BASE_URL`                      | Moonshot API 地址                              |
-| `MOONSHOT_CHAT_MODEL`                    | Moonshot 模型 ID                               |
-| `BACKEND_HOST` / `BACKEND_PORT`          | FastAPI 监听地址与端口                         |
-| `CORS_ORIGINS`                           | 允许访问后端的前端 origin                      |
-| `AGENT_REDIS_URL` / `AGENT_REDIS_PREFIX` | Agent checkpoint、命令、租约和事件使用的 Redis |
-| `AGENT_API_PORT`                         | 独立 Agent API 端口，默认 8131                 |
-| `AGENT_WORKER_HEARTBEAT_TTL_SECONDS`     | worker 可用性心跳 TTL                          |
-| `AGENT_TELEMETRY_ENABLED`                | 普通本地默认关闭；Compose 显式启用             |
-| `AGENT_OTLP_ENDPOINT`                    | 仅允许 loopback 或 Compose 内部 Collector      |
-| `LANGCHAIN_TRACING_V2`                   | LangChain tracing 开关，默认关闭               |
-| `VUE_APP_API_BASE_URL`                   | 前端调用 legacy API 的地址                     |
-| `VUE_APP_AGENT_API_BASE_URL`             | 前端调用 Agent API 的地址                      |
-| `VUE_APP_GRAFANA_BASE_URL`               | 可选 loopback Grafana Explore 地址             |
+[Verified] 新模式在 backend 配置中明确指定 `MOONSHOT_CHAT_MODEL=kimi-k3`，不再依赖旧模型覆盖参数。兼容模式的显式覆盖行为保留。K2.5 停用的历史依据见 [Kimi 官方模型列表](https://platform.kimi.ai/docs/models)；未在本次调用平台验证。
 
-Moonshot Key 必须与平台地区地址匹配。数据库密码应通过本机安全方式管理，不要复制到 issue、截图或聊天中。
+[Verified] 最终测试计划中，DeepSeek 使用 `high / max_tokens=16384`，K3 保持 `high / max_completion_tokens=8192`。DeepSeek 的 high 是 low/high/max 三档中的中档，medium 也映射到 high；不是独立的更低强度。额度由思考与正文共用，不保证思考长度，也不是整个工作流或输入费用上限。K3 不发送旧 thinking 参数；摘要阶段仍为 K3 low、DeepSeek off。达到上限、空正文或中断均不会保存为成功结果。保存契约和新 DeepSeek 缓存身份已经直接经过实际工作流/保存函数的无网络模拟验证，没有重放真实项目或付费调用。更大的 DeepSeek 输出可能增加费用与延迟。详见 [运行说明](docs/operations/modular-runtime.md)。
 
-### 4. 初始化 MySQL
+[Verified] 八类测试（单元、集成、API、UI、数据库、功能、非功能、验收）的共享最终用例上限现为 **32768**，相关十个分析操作的最终上限为 **16384**，适用于四个已注册模型。小步骤预算不扩大；DeepSeek 仍启用中档 high 思考，K3 通用工作流仍为 low，以上独立测试计划设置不变。请求、SSE 预算提示及上下文预留共用同一 profile；既有有效缓存和 session-only 保存规则保持不变。新额度只影响后续生成，不自动重试、续写或覆盖旧结果；可能增加单次耗时与费用，也仍可能截断。
 
-先登录 MySQL，创建 `ezllmtest_dev` 数据库和最小权限应用用户。然后在项目根目录导入结构：
+`start` 返回 run ID。用同一 Python 调用 `status --run-id <run-id>`、`ready --run-id <run-id>`；需要停止时仅使用 `stop --run-id <run-id>` 处理归属验证通过的本轮进程。完整参数、配置隔离和安全停机协议见 [分模块运行](docs/operations/modular-runtime.md)。
 
-```powershell
-cmd /c "mysql -u root -p ezllmtest_dev < ezllmtest.sql"
-```
+### 配置名称与数据库结构
 
-`ezllmtest.sql` 是唯一的数据库结构文件，定义六张基础表和 `tb_project_workflow_artifact`，不包含 `INSERT`、`REPLACE` 或 `LOAD DATA`。可执行只读验证：
+[Verified] 配置字段由 [纯配置模块](backend/infrastructure/runtime_config.py) 定义；[后端示例](backend/.env.example)、[前端示例](frontend/.env.example) 和 [观测示例](observability/.env.example) 只作说明，不充当 schema。当前拓扑位于 [运行契约](infrastructure/runtime/modular-runtime-contract.json)。Python/npm manifest、lock、格式化和历史版本治理文件不是应用运行配置。
 
-```powershell
-conda activate ezllmtest
-Set-Location .\ez_back_dev
-python .\scripts\verify_database.py
-Set-Location ..
-```
+| 配置名称 | 作用与边界 |
+| --- | --- |
+| `DATABASE_URL` | 专用 MySQL 连接；敏感，只给后端 |
+| `AGENT_REDIS_URL` / `AGENT_REDIS_PREFIX` | Agent 状态、队列与 namespace；不进入浏览器 |
+| `BACKEND_HOST` / `BACKEND_PORT` | loopback legacy API 与独立端口 |
+| `AGENT_API_PORT` | loopback Agent API 端口 |
+| `CORS_ORIGINS` | 允许的前端 origin |
+| `FRONTEND_PORT` 与三个 `VUE_APP_*_BASE_URL` | 前端端口只给启动器；浏览器只接收 legacy、Agent、本地观测三个明确允许的 loopback URL |
+| `OBSERVABILITY_*` | 8140、ignored SQLite 路径、保留/行数门禁与前端 CORS；仅给观测服务 |
+| `AGENT_TELEMETRY_*` / `AGENT_OTEL_*` | 启用本地安全 exporter；外部 endpoint/tracing 字段被拒绝 |
+| provider key、模型和 embedding 配置 | 保留现有字段名；新模式仅从 backend 文件注入后端，不执行 provider 验证请求 |
+| `AGENT_FOCUSED_MAX_*_TOKENS` / `AGENT_STANDARD_MAX_*_TOKENS` | 新运行的独立输入/输出总限额；不随 workflow 单次额度联动 |
 
-### 5. 安装前端依赖
+[Verified] Agent 修复后的规划和执行使用同一选定模型，规划仍限制 4096 Token 和严格 JSON；K3 规划 low，支持关闭思考的其他模型保持关闭。新运行的聚焦输入/输出总额度默认 768000/393216，标准 2048000/1048576；步数、时间和调用次数未扩大。旧运行展示与执行均使用创建时保存的预算，不因配置更新而重算；合成成本单位不是货币金额。当前三文件运行已加载这些修复。
 
-```powershell
-Set-Location .\ez_front_dev
-npm ci
-Set-Location ..
-```
+[Protected] [schema.sql](infrastructure/database/schema.sql) 保持原始内容，其中含 `DROP TABLE IF EXISTS`。不得直接导入已有用户数据库。本次由单独获授权的初始化流程在新库建立七表，只给专用应用账户必要权限；配置值与数据不写进文档。
 
-### 6. 启动后端与前端
+## 历史验证与当前验证范围
 
-终端一：
+[Verified] [验证历史](docs/validation-history.md) 区分冻结 fixture、跟踪叙述、仓库外未审计结果、Blocked 与 Protected，并保留原始方法、数值和限制。移除的验证代码和容器设施可从[不可变历史快照](https://github.com/Jaily16/EzllmTest/tree/5cf1effb32a8efcd34902df05d27442f3586dc1c)恢复；旧执行说明见[快照 README](https://github.com/Jaily16/EzllmTest/blob/5cf1effb32a8efcd34902df05d27442f3586dc1c/README.md)，不适用于当前 V6。
 
-```powershell
-conda activate ezllmtest
-Set-Location .\ez_back_dev
-python .\serve.py
-```
+[Verified] Iteration 6 的本地验证包括产品内容保留、Python AST、19 workflows/22 tools/八类页面、配置隔离、四模型合成规划、预算/持久化保护、本地观测的严格 schema、SQLite 边界、API/CORS、五进程 token 隔离，以及 902 个 Python 函数和 561 个前端函数节点的注释覆盖/等价门禁、Vue type/lint/format 和 production build。完整范围见 [Iteration 6 收口报告](docs/iteration-6-closeout.md)。
 
-终端二（Agent API，需要本地 Redis）：
+[Candidate] 2026-09-07 另行授权的最小真实烟测使用合成项目完成一次 GLM 分析保存/恢复、一次 2048 维有限 `embedding-3`，以及一次 legacy RAG 超时修复后的唯一成功重试。它没有保存项目标识、生成正文或向量，也不能外推为客户项目质量。
 
-```powershell
-conda activate ezllmtest
-Set-Location .\ez_back_dev
-python -m app.agentApi --port 8131
-```
-
-终端三（Agent worker）：
-
-```powershell
-conda activate ezllmtest
-Set-Location .\ez_back_dev
-python -m app.agentWorker --consumer local-worker
-```
-
-终端四：
-
-```powershell
-Set-Location .\ez_front_dev
-npm run serve -- --port 8080 --strictPort
-```
-
-打开 `http://localhost:8080`。项目 ID 的格式为 `Ez` 加 19 位数字；它是恢复项目的入口，不应公开分享。legacy API 文档位于 `http://localhost:8130/docs`，Agent 健康检查位于 `http://localhost:8131/health`。完整十服务栈与安全停机方式见 [`docs/history/iteration-4/iteration-4-compose.md`](docs/history/iteration-4/iteration-4-compose.md)。
-
-### 7. 分模块运行与安全停机
-
-不启动完整 Compose 时，推荐使用统一的显式配置入口。先确认 MySQL 和 Redis 已由外部环境提供；预检只执行数据库和 Redis 的只读探针：
-
-```powershell
-$repoRoot = (Get-Location).Path
-$envFile = '<absolute-env-file>'
-python -B scripts/modular_runtime.py preflight --repo-root $repoRoot --env-file $envFile
-python -B scripts/modular_runtime.py start --repo-root $repoRoot --env-file $envFile
-```
-
-Windows 包装入口和 portable 命令、readiness 响应、进程归属与安全停止协议见 [`docs/operations/modular-runtime.md`](docs/operations/modular-runtime.md)。runner 不自动寻找 `.env`，不初始化或覆盖数据库，不停止 MySQL、Redis、Compose 容器或 named volume。完整 Compose 入口保持不变。
-
-### 8. 容器交付与安全停机
-
-默认 `compose.yaml` 仍启动完整十服务栈；需要只启动核心服务或显式加入观测服务时，使用 profile overlay。所有命令都应显式传入绝对 env 文件路径；不要把真实 `.env`、数据库导出或项目文件放进镜像构建上下文。
-
-```powershell
-$envFile = '<absolute-env-file>'
-docker compose --env-file $envFile up --build -d --wait
-docker compose --env-file $envFile -f compose.yaml -f ops/compose/observability-profile.yaml up --build -d --wait
-docker compose --env-file $envFile -f compose.yaml -f ops/compose/observability-profile.yaml --profile observability up --build -d --wait
-```
-
-容器权限、`*_FILE` 的受限 allowlist、health/readiness、六个 named volume 的职责以及备份、升级和回滚边界见 [`docs/operations/container-delivery.md`](docs/operations/container-delivery.md)。普通停机使用 `docker compose down`，不使用 `-v`；不要对用户项目、数据库或 Redis 执行 prune、volume 删除或自动迁移。
-
-## 测试与质量门禁
-
-### 完整离线测试
-
-```powershell
-conda activate ezllmtest
-Set-Location .\ez_back_dev
-python -m pytest .\tests -q
-Set-Location ..
-```
-
-### 前端 lint 与构建
-
-```powershell
-Set-Location .\ez_front_dev
-npm run lint
-npm run type-check
-npm run build
-Set-Location ..
-python .\scripts\check_frontend_bundle.py .\ez_front_dev\dist
-```
-
-发布门禁会构建到排除 `.env*` 的系统临时镜像，避免覆盖用户已有 `dist`。
-
-### Aspect 3 工程规范
-
-```powershell
-Set-Location .\ez_front_dev
-npm run format:check
-npm run lint -- --no-fix
-npm run type-check
-Set-Location ..
-python .\scripts\check_style_contract.py --check --format text
-```
-
-Python 的 Ruff 版本、显式检查范围和中文说明尺度见 [`docs/development/iteration-5/style-guide.md`](docs/development/iteration-5/style-guide.md)。版本契约与 lock 真源见 [`docs/versions.md`](docs/versions.md)。
-
-### Agent 离线门禁
-
-以下命令使用 deterministic fake planner/provider 和合成项目，不产生模型费用；完整套件需要 credential-free loopback Redis：
-
-```powershell
-Set-Location .\ez_back_dev
-python -m app.agentEval --suite all --format json
-python -m app.agentAcceptance --suite all --format json
-python -m app.agentBenchmark --suite all --telemetry compare --format json
-Set-Location ..
-```
-
-### 凭证扫描
-
-```powershell
-python .\scripts\scan_credentials.py
-```
-
-扫描器只报告文件与规则，不输出命中值或原始凭证行。
-
-### 真实 provider smoke
-
-以下命令可能产生费用，只有显式 `--confirm-cost` 才创建模型客户端：
-
-```powershell
-Set-Location .\ez_back_dev
-python .\scripts\smoke_llm.py --provider zhipu --confirm-cost
-python .\scripts\smoke_llm.py --provider alibaba --confirm-cost
-python .\scripts\smoke_llm.py --provider deepseek --confirm-cost
-python .\scripts\smoke_llm.py --provider moonshot --confirm-cost
-python .\scripts\smoke_llm.py --provider zhipu --confirm-cost --with-embedding
-```
-
-真实 provider smoke 只验证选定 provider 的 Key、Base URL、模型 ID 与模型工厂；不等于全产品真实 E2E。
+[Missing] 本次未复跑 pytest、Eval、Acceptance 或 Benchmark，也未执行压力/容量、持续负载、完整浏览器项目 E2E 或完整 Agent E2E。production build、readiness、观测页面与有限真实烟测均不消除历史 Blocked，也不构成正式生产就绪证明。
 
 ## 安全与费用
 
 - **凭证**：真实 `.env`、PAT、API Key、数据库密码和 tracing token 永远不得提交；一旦疑似泄露，应立即在供应商后台撤销或轮换。
 - **私有仓库**：保持 GitHub `PRIVATE`，但仍按最小披露原则审阅 README、图片、Git 历史和 ignored/untracked 文件。
 - **项目 ID**：完整项目 ID 相当于本地恢复入口。公开截图必须遮盖，日志和交付消息不得输出。
-- **模型费用**：页面加载不会自动调用模型；生成与真实 smoke 都应先核对 provider、余额和预期调用范围。
+- **模型费用**：页面加载不会自动调用模型；生成应先核对 provider、余额和预期调用范围。Iteration 6 曾在逐项授权下执行有限的合成项目模型/embedding/RAG 烟测；最终收口验证未再触发付费调用。
 - **数据库备份**：仓库 SQL 面向空库初始化，包含 `DROP TABLE IF EXISTS`。不要直接覆盖已有数据库；升级前必须备份并由数据库管理员审核 DDL。
-- **业务资料**：`ez_back_dev/static/projects/`、向量索引、上传源文档、截图中间文件、`dist` 与缓存均受 ignore/发布审计保护。
+- **业务资料**：`backend/static/projects/`、向量索引、上传源文档、截图中间文件、`dist` 与缓存均受 ignore/发布审计保护。
 - **reasoning**：界面 reasoning 仅当前会话展示且默认折叠，不持久化；公开材料不得复制模型内部推理、请求 payload 或 provider 异常详情。
 - **Agent reasoning**：legacy SSE 的 `reasoning_delta` 为受保护兼容字段；Agent checkpoint、API、SSE、MCP、日志和 trace 均不保存或展示 chain-of-thought。
 
@@ -431,7 +275,7 @@ python .\scripts\smoke_llm.py --provider zhipu --confirm-cost --with-embedding
 - SQLAlchemy 声明模型迁移到 2.x，同时保留原六张表、列名和主键，并增加 workflow artifact 表。
 - RAG 使用请求级内存向量库与进程内 revision-aware 复用，避免不同项目共享全局检索数据。
 - FastAPI 路径、请求字段、`{status, reason, data}` 响应信封和现有 REST/SSE wire format 保持兼容。
-- 根目录结构脚本面向空库；仓库中不再保留独立迁移目录。
+- `infrastructure/database/schema.sql` 面向审核后的空库初始化；本次没有对既有用户数据库执行迁移。
 
 ## 迭代文档
 
@@ -452,26 +296,28 @@ python .\scripts\smoke_llm.py --provider zhipu --confirm-cost --with-embedding
 - Iteration 4 完成报告：[`docs/history/iteration-4/iteration-4-closeout.md`](docs/history/iteration-4/iteration-4-closeout.md)
 - Iteration 4 真实模型验收：[`docs/history/iteration-4/iteration-4-live-model-acceptance.md`](docs/history/iteration-4/iteration-4-live-model-acceptance.md)
 - Iteration 4 开发日志：[`docs/history/iteration-4/iteration-4-development-log.md`](docs/history/iteration-4/iteration-4-development-log.md)
-- Iteration 5 工程治理路线图（规划中）：[`docs/development/iteration-5/overview.md`](docs/development/iteration-5/overview.md)
+- Iteration 5 工程治理路线图（历史记录）：[`docs/development/iteration-5/overview.md`](docs/development/iteration-5/overview.md)
 - Iteration 5 新对话提示词：[`docs/development/iteration-5/prompts.md`](docs/development/iteration-5/prompts.md)
-- 当前版本契约与升级/回滚说明：[`docs/versions.md`](docs/versions.md)
+- 保留的历史版本契约与升级/回滚说明：[`docs/versions.md`](docs/versions.md)
 - Aspect 3 工程规范与中文说明：[`docs/development/iteration-5/style-guide.md`](docs/development/iteration-5/style-guide.md)
 - Aspect 4 后端领域迁移映射：[`docs/architecture/backend-domain-migration.md`](docs/architecture/backend-domain-migration.md)
+- Iteration 6 最终收口：[`docs/iteration-6-closeout.md`](docs/iteration-6-closeout.md)
+- 跨迭代验证证据索引：[`docs/validation-history.md`](docs/validation-history.md)
 
 ## 已知限制
 
 - Iteration 4 的真实模型证据只覆盖版本化合成目标、合成文档和隔离的 `ui_info → ui_case` 旅程；尚未验证真实客户项目、生产负载或用户 MySQL，不应外推为生产质量结论。
 - RAG 索引是进程内缓存，容量、TTL、后端重启或多 worker 会触发各自重建。
 - Agent thread/checkpoint 与 session-only evidence 默认保留 7 天；Redis 数据丢失会使旧 thread 不可恢复，但不影响 MySQL 中的有效 artifact。
-- 仓库没有新增 Playwright/Vitest E2E runner；浏览器验收证据通过现有浏览器能力与 pytest 静态/SFC 契约完成。
-- GitHub Actions `Iteration 4 offline gates` 在 `main` 上执行离线门禁；托管状态以 README 顶部 badge 和 Actions 页面为准，不在文档中保存易过期的静态结论。
-- 本次发布为源码预发布 `v0.1.0-preview.1`，不发布 Docker 镜像；Aspect 8 的 Docker full-stack 与双拓扑 parity 仍为 Blocked。详见[源码预发布说明](docs/development/iteration-5/source-preview-v0.1.0-preview.1.md)和[Aspect 8 closeout](docs/development/iteration-5/closeout.md)。
+- 历史浏览器与静态/SFC 验收只证明相应历史版本；当前 V6 的一次合成项目分析、embedding 和 RAG 烟测仍不是完整浏览器项目 E2E 或 Agent E2E。
+- 当前 V6 不包含旧 GitHub Actions 门禁与容器交付设施；不会把远程 main 的历史状态当作 V6 验证结果。
+- 历史 `v0.1.0-preview.1` 的 Docker full-stack、容器内 Acceptance 与双拓扑 parity 仍为 Blocked；本次没有处理这些历史限制。详见[源码预发布说明](docs/development/iteration-5/source-preview-v0.1.0-preview.1.md)和[历史 closeout](docs/development/iteration-5/closeout.md)。
+- 保留公共兼容 facade 不代表已穷尽仓库外消费者；目录改名对外部硬编码脚本的影响尚不能从仓库证明。
 
 ## 常见问题
 
 - `/health` 显示 `database: error`：检查 MySQL 服务、应用用户权限和 `DATABASE_URL`。
-- `/health` 显示 `llm_configured: false`：检查本机对应 provider 的 API Key 变量。
+- 提示模型 key 未配置：新模式检查 `--backend-env-file` 选中的配置；旧模式才检查 `--env-file` / `--model-env-file`。修改后需受控重启，不要发送密钥。`/health` 的 `llm_configured` 只检查智谱，不能推断全部 provider 可用。
 - 前端无法访问后端：确认后端端口、`VUE_APP_API_BASE_URL` 和 `CORS_ORIGINS` 使用同一前端 origin。
-- 修改前端 `.env` 后必须重启 `npm run serve`。
+- 此 runner 不自动寻找任何 `.env`；只读取显式传入的文件。更改配置仅对新进程生效，重启前先确认任务空闲及对应 run ID 的归属。
 - Moonshot 返回 401：确认 Key 与 `.cn`/`.ai` 平台地址匹配。
-- smoke 脚本提示费用未确认：核对余额后增加 `--confirm-cost`，不要修改脚本绕过费用门。
