@@ -13,6 +13,7 @@
 - [可选 runner 与维护](#maintenance)
 - [开发与排错](#development)
 - [中文说明与审阅规则](#chinese-comments)
+- [README 展示与复现维护](#readme-refresh)
 
 <a id="product"></a>
 ## 产品与边界
@@ -31,9 +32,9 @@ EzllmTest 是本地软件测试工作台：项目资料登记与准备 → 业�
 | observability | 观测配置与数据所有权 | 示例配置、简明说明、受保护 SQLite；Python 查询与写入实现属于 backend |
 | infrastructure | 当前有效声明 | 七表 SQL 和 runtime JSON；不放历史报告、秘密或前端可执行适配 |
 | ops | 可选运维辅助 | modular_runtime.py 及 PowerShell/shell 包装；主启动说明使用分终端命令 |
-| docs | 三份长期文档 | 本文件、iteration-history.md、validation-history.md；无子目录或图片 |
+| docs | 三份长期文档与文档图片 | 本文件、iteration-history.md、validation-history.md；assets 仅存历史截图与架构 SVG |
 
-根 README 是简明入口，Git/语言/格式化等必要根文件继续保留。没有根 scripts、tests、migrations 或 skills；端内测试已有实际用例，其他目录只有存在真实职责时才新增。用户项目数据不属于可删除的旧源码残留。方面六经精确备份和消费者核验退出五份旧 frontend/src/assets 资源；根 .env.aspect3.local、依赖、缓存和已有构建目录均不因源码收口被删除。历史出处及更正见[方面六记录](iteration-history.md#iteration7-aspect6)。
+根 README 是项目展示、架构导览与首次复现入口，Git/语言/格式化等必要根文件继续保留。没有根 scripts、tests、migrations 或 skills；端内测试已有实际用例，其他目录只有存在真实职责时才新增。用户项目数据不属于可删除的旧源码残留。方面六经精确备份和消费者核验退出五份旧 frontend/src/assets 资源；根 .env.aspect3.local、依赖、缓存和已有构建目录均不因源码收口被删除。历史出处及更正见[方面六记录](iteration-history.md#iteration7-aspect6)。
 
 后端的五个入口统一通过 bootstrap 显式装配，业务代码位于 modules/projects、knowledge、generation、agent、observability：
 
@@ -315,3 +316,10 @@ runner start 会启动普通消费 worker，不等于 --no-consume 验收。只�
 - 修改后比较 Python 执行 AST、完整公开 schema/工具元数据和 TypeScript/Vue 结构；格式检查只处理本次注释引入的问题，不顺带重排代码。发现行为问题只登记，不在注释任务中修复。
 
 方面五的逐文件、逐节点清单与验证结果见[验证历史](validation-history.md#iteration7-aspect5)。中文 docstring 数只用于筛查，已有有效说明、补充、重写与具体豁免分别记录；类说明、普通注释和调用方边界不能用一个函数计数取代。
+
+<a id="readme-refresh"></a>
+## README 展示与复现入口维护（2026-09-09）
+
+本次确认 docs 采用“三份长期 Markdown + assets 文档图片目录”；它替代此前无子目录约定，不修改方面四、六当时的清理事实。根 [README](../README.md#setup)集中提供安装、全新数据库初始化、三份配置示例和每个终端自包含的 Windows/Linux 指引。本文件继续承载深入设计与既有本机验收说明；其中绝对工具路径是原验收环境记录，不是新读者必须使用的路径。
+
+十张 PNG 是 2026-08-25 合成项目历史截图，按固定 Git Blob 原字节恢复；架构 SVG 表达当前源码职责。Linux 只给关闭遥测后的核心入口参考，没有实机验收，不启动观测 API 或统一 runner。Java、RabbitMQ、Prometheus 仅属未集成扩展阅读。产品源码、配置值、依赖与启动脚本没有因本次文档维护改变。

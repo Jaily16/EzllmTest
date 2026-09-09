@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1360" viewBox="0 0 1280 1360" role="img" aria-labelledby="title description">
+  <title id="title">EzllmTest：从资料到测试产物的双路径架构</title>
+  <desc id="description">Vue 工作台以 REST 和 SSE 连接产品与 Agent API。确定性工作流和单 Agent 规划执行复用项目、知识与生成领域。MySQL 保存有效数据，Redis 协调执行，内存索引与本地文件提供资料。独立 Windows 观测通过会话命名管道共享内存 token，脱敏事件进入观测 API 和 SQLite。审批、预算、项目隔离及失败结果保护贯穿全程。</desc>
+  <defs>
+    <linearGradient id="paper" x2="1" y2="1"><stop stop-color="#f7fbff"/><stop offset="1" stop-color="#f2f8f6"/></linearGradient>
+    <linearGradient id="teal" x2="1"><stop stop-color="#087f8c"/><stop offset="1" stop-color="#199889"/></linearGradient>
+    <linearGradient id="purple" x2="1"><stop stop-color="#6653b9"/><stop offset="1" stop-color="#8974ce"/></linearGradient>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M1 1 6 4 1 7" fill="none" stroke="#648095" stroke-width="1.5"/></marker>
+    <marker id="mint-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M1 1 6 4 1 7" fill="none" stroke="#168581" stroke-width="1.5"/></marker>
+    <symbol id="document" viewBox="0 0 40 44"><path d="M7 3h17l10 10v28H7zM24 3v11h10M13 22h15M13 29h15M13 36h10" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></symbol>
+    <symbol id="spark" viewBox="0 0 40 40"><path d="M20 2l5 13 13 5-13 5-5 13-5-13L2 20l13-5z" fill="none" stroke="currentColor" stroke-width="2.2"/></symbol>
+    <symbol id="search" viewBox="0 0 40 40"><circle cx="17" cy="17" r="11" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="m25 25 11 11M11 17h12M17 11v12" stroke="currentColor" stroke-width="2.5"/></symbol>
+    <symbol id="shield" viewBox="0 0 40 44"><path d="m20 3 15 6v12c0 10-15 20-15 20S5 31 5 21V9zM12 21l6 6 11-13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></symbol>
+    <symbol id="pulse" viewBox="0 0 40 40"><path d="M2 22h9l5-14 9 26 5-12h8" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></symbol>
+    <style>
+      text{font-family:system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;fill:#18334d}
+      .h{font-size:28px;font-weight:700}.m{font-size:23px;font-weight:650}.b{font-size:21px}.s{font-size:19px;fill:#536d82}.white{fill:#fff}.muted{fill:#607b8d}.teal{fill:#087f82}.purple{fill:#6755ad}
+      .line{fill:none;stroke:#8ba3b4;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1280" height="1360" rx="28" fill="url(#paper)"/>
+  <circle cx="1210" cy="66" r="154" fill="#e9f1ff" opacity=".7"/>
+  <circle cx="1091" cy="135" r="83" fill="#e5f4ef" opacity=".8"/>
+  <text x="48" y="64" font-size="38" font-weight="750">EzllmTest</text>
+  <text x="272" y="64" font-size="30" font-weight="650">资料 → 计划 → 测试产物</text>
+  <text x="50" y="102" class="b muted">一个工作台，两条执行路径，共享领域能力与明确的数据边界</text>
+  <rect x="1020" y="43" width="212" height="40" rx="20" fill="#18334d"/>
+  <text x="1126" y="70" text-anchor="middle" class="s white">ITERATION 7</text>
+
+  <!-- 浏览器带：页面交互与两类协议 -->
+  <rect x="48" y="138" width="1184" height="134" rx="22" fill="#fff" stroke="#d6e4ec"/>
+  <rect x="72" y="162" width="90" height="82" rx="10" fill="#eef8f6" stroke="#85b9b1"/>
+  <path d="M73 181h88M84 172h3m7 0h3m7 0h3" stroke="#398b81" stroke-width="3"/>
+  <path d="m99 202-10 9 10 9m25-18 10 9-10 9m-7-21-7 27" fill="none" stroke="#168581" stroke-width="3"/>
+  <text x="188" y="184" class="h">Vue 工作台</text>
+  <text x="188" y="220" class="b">资料准备 · 测试生成 · Agent 工作台 · 观测摘要</text>
+  <rect x="833" y="163" width="153" height="38" rx="19" fill="#e5f4f0"/>
+  <text x="909" y="189" text-anchor="middle" class="b teal">REST 请求</text>
+  <rect x="1001" y="163" width="206" height="38" rx="19" fill="#eeebfa"/>
+  <text x="1104" y="189" text-anchor="middle" class="b purple">SSE 增量事件</text>
+  <text x="833" y="237" class="s">显式公开 URL · 路由与状态守卫</text>
+  <path d="M220 273v29" class="line"/>
+  <path d="M1102 273v29" class="line"/>
+
+  <!-- 后端入口四分带；标明任务角色，而非四套产品 -->
+  <text x="49" y="320" class="s">01 / 入口与装配</text>
+  <rect x="48" y="339" width="844" height="116" rx="18" fill="#fff" stroke="#d6e4ec"/>
+  <path d="M259 357v80m211-80v80m211-80v80" stroke="#dce6ed"/>
+  <text x="70" y="377" class="m">产品 API</text><text x="70" y="408" class="s">项目 / 生成</text><text x="70" y="435" class="s">8230 · REST / SSE</text>
+  <text x="281" y="377" class="m">Agent API</text><text x="281" y="408" class="s">运行 / 审批 / 事件</text><text x="281" y="435" class="s">8231 · REST / SSE</text>
+  <text x="492" y="377" class="m">worker</text><text x="492" y="408" class="s">异步任务执行</text><text x="492" y="435" class="s">队列 / 租约</text>
+  <text x="703" y="377" class="m">MCP</text><text x="703" y="408" class="s">tools / resources</text><text x="703" y="435" class="s">显式 project scope</text>
+
+  <!-- 双轨道：少量语义箭头贯穿实际执行阶段 -->
+  <text x="49" y="493" class="s">02 / 两条执行路径</text>
+  <rect x="48" y="513" width="844" height="101" rx="18" fill="#e4f3ef"/>
+  <rect x="48" y="513" width="192" height="101" rx="18" fill="url(#teal)"/>
+  <text x="69" y="552" class="m white">19 workflows</text><text x="69" y="584" class="s white">确定性生成</text>
+  <path d="M270 566h580" fill="none" stroke="#79b5a6" stroke-width="3"/>
+  <circle cx="289" cy="566" r="8" fill="#168581"/><circle cx="499" cy="566" r="8" fill="#168581"/><circle cx="747" cy="566" r="8" fill="#168581"/>
+  <text x="268" y="547" class="b">检索 / 预算</text><text x="477" y="547" class="b">模型生成</text><text x="706" y="547" class="b">校验 / 保存</text>
+  <text x="268" y="601" class="s">资料与证据</text><text x="477" y="601" class="s">流式草稿</text><text x="706" y="601" class="s">有效产物</text>
+  <rect x="48" y="631" width="844" height="101" rx="18" fill="#eeebf9"/>
+  <rect x="48" y="631" width="192" height="101" rx="18" fill="url(#purple)"/>
+  <text x="69" y="670" class="m white">单 Agent</text><text x="69" y="702" class="s white">22 类型化工具</text>
+  <path d="M270 684h580" fill="none" stroke="#b0a5d8" stroke-width="3"/>
+  <circle cx="289" cy="684" r="8" fill="#7663bb"/><circle cx="499" cy="684" r="8" fill="#7663bb"/><circle cx="747" cy="684" r="8" fill="#7663bb"/>
+  <text x="268" y="665" class="b">规划</text><text x="477" y="665" class="b">审批 / 执行</text><text x="706" y="665" class="b">恢复 / 重放</text>
+  <text x="268" y="719" class="s">可信模型选择</text><text x="477" y="719" class="s">预算与工具约束</text><text x="706" y="719" class="s">状态与事件</text>
+  <path d="M470 456v44" class="line"/>
+  <path d="M470 733v38" class="line"/>
+
+  <!-- 业务所有者：公共应用操作使两条路径复用能力 -->
+  <text x="49" y="780" class="s">03 / 业务所有者 · public / ports 边界</text>
+  <rect x="48" y="799" width="844" height="125" rx="18" fill="#fff" stroke="#d6e4ec"/>
+  <path d="M330 817v88m281-88v88" stroke="#dce6ed"/>
+  <use href="#document" x="69" y="823" width="34" height="38" color="#168581"/>
+  <text x="114" y="849" class="m">projects</text><text x="73" y="889" class="b">资料 · revision · 准备状态</text>
+  <use href="#search" x="351" y="823" width="35" height="37" color="#168581"/>
+  <text x="396" y="849" class="m">knowledge</text><text x="355" y="889" class="b">切分 · 索引 · 项目检索</text>
+  <use href="#spark" x="632" y="823" width="35" height="37" color="#7663bb"/>
+  <text x="677" y="849" class="m">generation</text><text x="636" y="889" class="b">工作流 · 提示词 · 产物</text>
+  <path d="M470 925v38" class="line"/>
+
+  <!-- 数据底座：圆柱区分持久化与协调；索引不假装外部向量库 -->
+  <text x="49" y="978" class="s">04 / 数据与通用 platform</text>
+  <rect x="48" y="997" width="844" height="191" rx="18" fill="#eaf0f5"/>
+  <path d="M73 1033c0-20 205-20 205 0v100c0 20-205 20-205 0z" fill="#fff" stroke="#9ab1c2" stroke-width="1.5"/>
+  <ellipse cx="175.5" cy="1033" rx="102.5" ry="17" fill="#dcece8" stroke="#9ab1c2" stroke-width="1.5"/>
+  <text x="175" y="1080" class="m" text-anchor="middle">MySQL</text><text x="175" y="1114" class="b" text-anchor="middle">项目 / 有效结果</text>
+  <path d="M302 1033c0-20 236-20 236 0v100c0 20-236 20-236 0z" fill="#fff" stroke="#9ab1c2" stroke-width="1.5"/>
+  <ellipse cx="420" cy="1033" rx="118" ry="17" fill="#e5def7" stroke="#9ab1c2" stroke-width="1.5"/>
+  <text x="420" y="1080" class="m" text-anchor="middle">Redis</text><text x="420" y="1110" class="s" text-anchor="middle">queue · checkpoint · lease</text><text x="420" y="1136" class="s" text-anchor="middle">幂等 · 取消 · 重放</text>
+  <path d="M566 1026h37l12 12h251v118H566z" fill="#fff" stroke="#9ab1c2" stroke-width="1.5"/>
+  <text x="587" y="1074" class="m">内存索引 + 本地文件</text>
+  <text x="587" y="1104" class="s">InMemoryVectorStore</text><text x="587" y="1128" class="s">有界缓存 / 原始资料</text><text x="587" y="1151" class="s">static/projects</text>
+
+  <!-- 独立观测轨道：竖向分区、生命周期与鉴权归属 -->
+  <rect x="938" y="304" width="294" height="884" rx="22" fill="#eeeaf8" stroke="#d4cbe9"/>
+  <use href="#pulse" x="959" y="325" width="38" height="38" color="#7663bb"/>
+  <text x="1008" y="353" class="h">独立观测</text>
+  <text x="963" y="386" class="s">Windows · 当前登录会话</text>
+  <rect x="958" y="412" width="254" height="97" rx="14" fill="#fff"/>
+  <text x="977" y="446" class="m">OpenTelemetry SDK</text><text x="977" y="478" class="s">仅传输白名单脱敏事件</text>
+  <path d="M891 684h24V461h39" fill="none" stroke="#8974ba" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
+  <path d="M1208 460h15v297h-11" fill="none" stroke="#168581" stroke-width="2" marker-end="url(#mint-arrow)"/>
+  <path d="M1085 551v-35" fill="none" stroke="#8974ba" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
+  <rect x="958" y="551" width="254" height="126" rx="14" fill="#e0d8f2"/>
+  <use href="#shield" x="975" y="569" width="32" height="36" color="#6653aa"/>
+  <text x="1017" y="594" class="m">会话命名管道</text><text x="977" y="627" class="s">显式 DACL / 身份绑定</text><text x="977" y="655" class="s">token 仅在进程内存共享</text>
+  <path d="M1085 719v-35" fill="none" stroke="#8974ba" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
+  <rect x="958" y="719" width="254" height="130" rx="14" fill="#fff"/>
+  <text x="977" y="755" class="m">观测 API · 8140</text><text x="977" y="789" class="s">HTTP ingestion / 查询聚合</text><text x="977" y="819" class="s">token 鉴权 / 重启轮换</text>
+  <path d="M1085 850v35" class="line"/>
+  <path d="M976 916c0-22 218-22 218 0v117c0 22-218 22-218 0z" fill="#fff" stroke="#ada0ce" stroke-width="1.5"/>
+  <ellipse cx="1085" cy="916" rx="109" ry="18" fill="#ded6ef" stroke="#ada0ce" stroke-width="1.5"/>
+  <text x="1085" y="963" text-anchor="middle" class="m">SQLite</text><text x="1085" y="996" text-anchor="middle" class="s">脱敏日志 / Trace / 指标</text><text x="1085" y="1026" text-anchor="middle" class="s">7 天 / 100,000 行</text>
+  <text x="962" y="1105" class="b purple">故障隔离：不阻断业务</text><text x="962" y="1140" class="s">不记录秘密或业务正文</text>
+
+  <!-- 横贯约束：比重复连线更直接地呈现共享不变量 -->
+  <rect x="48" y="1221" width="1184" height="89" rx="20" fill="#18334d"/>
+  <use href="#shield" x="73" y="1242" width="37" height="43" color="#9ed7c8"/>
+  <text x="128" y="1258" class="m white">贯穿执行的约束</text>
+  <text x="128" y="1288" class="s" style="fill:#c8dce7">审批与预算 · 项目隔离 · 失租约中止 · 幂等与取消 · 失败不覆盖有效结果</text>
+  <text x="50" y="1340" class="s">源码职责图 · 观测 IPC 当前仅 Windows · 不表示生产部署规模或性能承诺</text>
+</svg>

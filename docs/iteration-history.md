@@ -15,6 +15,7 @@
 - [方面六记录](#iteration7-aspect6)
 - [历史截图](#historical-images)
 - [来源与原件恢复](#historical-sources)
+- [README 展示与复现维护](#readme-refresh)
 
 <a id="iteration-1"></a>
 ## Iteration 1：复现与流式工作流
@@ -162,7 +163,7 @@ Python 计数包含两个同名 overload 声明，不能按函数名去重后漏
 <a id="historical-images"></a>
 ## 历史截图
 
-以下为 Iteration 3 的虚构 Aurora 项目代表性旅程，截图生成于 2026-08-25，非当前界面截图，也不是 Iteration 4 Agent E2E 证据。图片已从 docs 退出，链接固定到经过对象核对的历史提交；不自动加载图片。视口、operation、模型、时间与脱敏方式见[原始图片清单](https://github.com/Jaily16/EzllmTest/blob/e6c42a5f20a9a0003dc553cece16fd72a9f6aece/docs/images/readme/manifest.json)。
+以下为 Iteration 3 的虚构 Aurora 项目代表性旅程，截图生成于 2026-08-25，非当前界面截图，也不是 Iteration 4 Agent E2E 证据。图片曾在方面四从 docs 退出；本次 README 维护经确认恢复原字节到 docs/assets 并在 README 展示，此处继续保留固定历史出处。视口、operation、模型、时间与脱敏方式见[原始图片清单](https://github.com/Jaily16/EzllmTest/blob/e6c42a5f20a9a0003dc553cece16fd72a9f6aece/docs/images/readme/manifest.json)。
 
 | 截图 | 路由 | 视口 | operation / 模型 | 脱敏说明 |
 | --- | --- | --- | --- | --- |
@@ -196,3 +197,12 @@ Python 计数包含两个同名 overload 声明，不能按函数名去重后漏
 本机恢复批次：D:\codex\EzllmTest_v2\_archive\iteration-7\aspect-4-20260909T064721917641Z-a322db08b41b4901bce32e31d5300d8b。该路径是本机追加备份，不要求其他开发者能访问。manifest.json 列出全部 133 份原件的原始字节 SHA-256 和复制校验；evidence/migration-map.json 列出每份原路径、重定向正文、目标章节、历史对象、与 HEAD 是否逐字节相同及保留约束。源码中提及的旧批次只确认存在，未展开或重新哈希。
 
 本轮原始字节哈希与验证历史的 sha256_canonical_lf_v1、各历史 manifest 的自有口径不同，不覆盖原证据哈希。GitHub 私有页面的 HTTP 可访问性本轮未验证；本地对象存在性与类型已核对。两份临时规划的原始提示词通过精确原件保留，长期文档承接其决策和后续交接。
+
+<a id="readme-refresh"></a>
+## README 展示与复现指南维护（2026-09-09）
+
+从 0723081ecdd5bcbf58877d3414fc705714f096df 的干净 iteration7 基线维护 README，按项目介绍、界面展示、架构、技术栈、目录、环境、启动和性能八章组织。docs 约定经确认调整为三份长期 Markdown 加 assets，恢复十张历史合成截图并新增自包含架构 SVG，不改写历史验收或证据等级。
+
+复现指南区分 Windows 已有验收范围与 Linux 未实机验证的核心参考；明确三份配置、空库导入风险、普通/不消费 worker、MCP scope 与可选 runner。未集成 Java、RabbitMQ、Prometheus 仅作扩展阅读。未修改产品行为、真实配置或数据，未执行安装、产品服务、模型、生成和跨设备验收。
+
+本机追加原件与验证位置：`D:\codex\EzllmTest_v2\_archive\iteration-7\readme-refresh-20260909T131903601009Z-56377cfbefef4b01b194bee41084ec34`。四份 Markdown 原件在 before，截图来源映射及本次文档验证在 evidence；既有备份未展开。当前正文用于一次普通快进文档发布，最终提交与远程结果记录在该批次 evidence，不在提交中预写自身 SHA。

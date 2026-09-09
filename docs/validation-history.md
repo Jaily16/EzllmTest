@@ -13,6 +13,7 @@
 - [方面五本次核验](#iteration7-aspect5)
 - [方面六本次核验](#iteration7-aspect6)
 - [限制与解释](#limitations)
+- [README 展示与复现维护](#readme-refresh)
 
 <a id="evidence-classes"></a>
 ## 证据等级与保护口径
@@ -462,3 +463,14 @@ S23 记录显式三份配置、五模块、本地 readiness（数据库/Redis/wo
 - 绝对时间不能跨机器对比；比率依赖同机协议。ready、受控 ASGI、fake 边、浏览器 fixture 和有限烟测均不证明完整当前网络 Agent 旅程。
 - Iteration 7 尚未验证正常队列消费、登录后项目页、真实生成/embedding、真实项目 MCP、压力、Linux IPC、reload/多 worker。裸 Uvicorn 三组命令仅提供等价指引，真实启动用 python -m。
 - 真实环境值、凭据、上传、用户持久化、旧观测 payload/log/trace 和模型正文受保护，不作为本方面输入。GitHub 私有链接仅核对本地提交对象，HTTP 可访问性未验证。
+
+<a id="readme-refresh"></a>
+## README 维护验证（2026-09-09）
+
+本次仅为文档、历史图片与架构 SVG 的验证；不重跑产品测试、完整构建、真实配置或浏览器业务验收。历史 54/5 项、957 ms 等数字原样保留，不作为本次新运行结果。Linux 核心启动仅静态核对，未实机验证；扩展组件未接入。
+
+本机记录位置：`D:\codex\EzllmTest_v2\_archive\iteration-7\readme-refresh-20260909T131903601009Z-56377cfbefef4b01b194bee41084ec34`。四份原件采用原始字节 SHA-256 备份，十张 PNG 与固定提交 Blob 一致，不覆盖历史 canonical-LF 哈希或证据等级。本次检查结果与发布核对将记录在 evidence；这类本机记录不升级为冻结 A 级证据。
+
+本次实际检查：十张图片逐张审阅并与 Git Blob 核对；自包含 SVG XML 与 74 个文字边界通过，900 px 渲染已审阅。README 八章、四个折叠区、十一幅图像加载成功；本地静态预览桌面及 390 px 窄屏无页面横向溢出。首次独立 SVG 全页截图工具超时，改用同一文件的本地 HTML 渲染后完成，不作为产品故障或业务验收。
+
+八组人工 Python 角色配置、十条 Python 入口参数、三组 Uvicorn 角色选择器、六个 runner 子命令、十九段 PowerShell 语法及前端公开配置已核对；未创建数据库、连接服务或读取真实配置。102 处本地引用（包括新增维护目录链接）、46 个固定 Git 对象、原锚点与历史表格保持；README Prettier 检查与 Git 空白检查通过。最终精确暂存、V2 保护及远程发布结果另记 evidence。
