@@ -1,3 +1,4 @@
+// 维护模型公开标签与展示名称，实际 Provider 参数由后端配置决定。
 export const MODEL_LABELS = ["GLM-4.7", "通义千问", "DeepSeek", "Moonshot Kimi"] as const;
 
 export type ModelLabel = (typeof MODEL_LABELS)[number];

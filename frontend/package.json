@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "serve": "vite --host 127.0.0.1",
-    "build": "vite build",
+    "serve": "node tools/frontend.mjs serve",
+    "build": "node tools/frontend.mjs build",
     "lint": "eslint src",
     "type-check": "vue-tsc --noEmit",
     "format": "prettier --ignore-path ../.prettierignore --write src",
-    "format:check": "prettier --ignore-path ../.prettierignore --check src"
+    "format:check": "prettier --ignore-path ../.prettierignore --check src",
+    "test": "node --test --import ./tests/register.mjs tests/*.test.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.2",

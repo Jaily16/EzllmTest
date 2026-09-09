@@ -17,6 +17,8 @@
 </template>
 
 <script lang="ts" setup>
+// 资料准备专用展示组件；上传、项目创建与恢复编排留在 onboarding 页面。
+
 /* global defineProps, withDefaults */
 import { ref } from "vue";
 import useClipboard from "vue-clipboard3";
@@ -40,9 +42,7 @@ const props = withDefaults(
 const { toClipboard } = useClipboard();
 const announcement = ref("");
 
-/**
- * 复制项目 ID，并保持现有状态与错误处理语义。
- */
+/** 请求复制当前项目 ID，处理剪贴板不可用的提示。 */
 const copyProjectId = async (): Promise<void> => {
   try {
     await toClipboard(props.pid);

@@ -1,3 +1,4 @@
+// 声明编译期可见的前端公开配置字段，不扩大环境变量暴露范围。
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {

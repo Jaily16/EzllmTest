@@ -12,6 +12,8 @@
 </template>
 
 <script lang="ts" setup>
+// 无业务存储能力的公共展示组件，状态来自 props，用户意图通过事件交回调用方。
+
 /* global defineProps */
 defineProps<{
   title: string;

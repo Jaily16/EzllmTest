@@ -1,13 +1,13 @@
 {
-  "schema_version": "iteration6-modular-runtime-v2",
+  "schema_version": "iteration7-modular-runtime-v3",
   "readiness_schema_version": "iteration5-readiness-v1",
   "auto_accept_current_values": false,
   "source_documents": {
-    "configuration_schema": "backend/infrastructure/runtime_config.py",
+    "configuration_schema": "backend/src/ezllmtest/platform/configuration_schema.py",
     "backend_example": "backend/.env.example",
     "frontend_example": "frontend/.env.example",
     "observability_example": "observability/.env.example",
-    "historical_version_contract": "ops/version-contract.json"
+    "historical_version_contract": "https://github.com/Jaily16/EzllmTest/blob/e6c42a5f20a9a0003dc553cece16fd72a9f6aece/ops/version-contract.json"
   },
   "external_dependencies": [
     "mysql",
@@ -40,12 +40,12 @@
       "runner_managed": true,
       "depends_on": [],
       "working_dir": "backend",
-      "entrypoint": "app/observabilityApi.py",
+      "entrypoint": "src/ezllmtest/entrypoints/observability_api.py",
       "command": [
         "python",
         "-B",
         "-m",
-        "app.observabilityApi",
+        "ezllmtest.entrypoints.observability_api",
         "--port",
         "8140"
       ],
@@ -84,11 +84,14 @@
         "mysql"
       ],
       "working_dir": "backend",
-      "entrypoint": "serve.py",
+      "entrypoint": "src/ezllmtest/entrypoints/product_api.py",
       "command": [
         "python",
         "-B",
-        "serve.py"
+        "-m",
+        "ezllmtest.entrypoints.product_api",
+        "--port",
+        "8230"
       ],
       "host": "127.0.0.1",
       "port": 8230,
@@ -105,12 +108,12 @@
         "redis"
       ],
       "working_dir": "backend",
-      "entrypoint": "app/agentApi.py",
+      "entrypoint": "src/ezllmtest/entrypoints/agent_api.py",
       "command": [
         "python",
         "-B",
         "-m",
-        "app.agentApi",
+        "ezllmtest.entrypoints.agent_api",
         "--port",
         "8231"
       ],
@@ -130,12 +133,12 @@
         "agent-api"
       ],
       "working_dir": "backend",
-      "entrypoint": "app/agentWorker.py",
+      "entrypoint": "src/ezllmtest/entrypoints/agent_worker.py",
       "command": [
         "python",
         "-B",
         "-m",
-        "app.agentWorker",
+        "ezllmtest.entrypoints.agent_worker",
         "--consumer",
         "modular-worker"
       ],
@@ -152,15 +155,11 @@
         "worker"
       ],
       "working_dir": "frontend",
-      "entrypoint": "package.json",
+      "entrypoint": "tools/frontend.mjs",
       "command": [
         "node",
-        "node_modules/vite/bin/vite.js",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8180",
-        "--strictPort"
+        "tools/frontend.mjs",
+        "serve"
       ],
       "host": "127.0.0.1",
       "port": 8180,
@@ -174,7 +173,7 @@
       "kind": "manual-optional",
       "runner_managed": false,
       "working_dir": "backend",
-      "entrypoint": "app/mcpServer.py",
+      "entrypoint": "src/ezllmtest/entrypoints/mcp_server.py",
       "port": 8011,
       "data_owner": "project-scope-supplied-by-operator"
     }
@@ -217,9 +216,11 @@
       "VUE_APP_AGENT_API_BASE_URL",
       "VUE_APP_OBSERVABILITY_API_BASE_URL"
     ],
-    "frontend_env_dir_is_task_owned_legacy_shim": true,
+    "frontend_env_dir_is_task_owned_legacy_shim": false,
     "unknown_names_are_errors": true,
-    "schema_from_example_files": false
+    "schema_from_example_files": false,
+    "child_secrets_in_environment": false,
+    "token_sharing": "windows-login-session-restricted-memory-pipe"
   },
   "protected_operations": [
     "database-read-only",
@@ -231,7 +232,7 @@
     "no-project-discovery"
   ],
   "documentation": {
-    "operator_guide": "docs/operations/modular-runtime.md",
+    "operator_guide": "docs/project-design.md",
     "portable_wrapper": "ops/modular/run.sh",
     "windows_wrapper": "ops/modular/run.ps1"
   }

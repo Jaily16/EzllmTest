@@ -54,10 +54,12 @@
 </template>
 
 <script lang="ts" setup>
+// 资料准备专用展示组件；上传、项目创建与恢复编排留在 onboarding 页面。
+
 /* global defineEmits, defineProps */
 import { computed } from "vue";
 import type { UploadProps, UploadUserFile } from "element-plus";
-import type { SetupStepState } from "@/features/onboarding/state/projectSetup";
+import type { SetupStepState } from "@/entities/project/model/setup";
 
 interface UploadProgress {
   fileName: string;
@@ -85,9 +87,7 @@ const emit = defineEmits<{
   (event: "update:modelValue", value: UploadUserFile[]): void;
 }>();
 
-/**
- * 更新模型值，并保持现有状态与错误处理语义。
- */
+/** 把选择的文件列表通过事件交回创建页面，上传编排仍由页面负责。 */
 const updateModelValue = (value: UploadUserFile[]): void => {
   if (value === props.modelValue) return;
   emit("update:modelValue", value);
@@ -104,9 +104,7 @@ const statusLabels: Record<SetupStepState, string> = {
  * 派生用于界面展示或请求判断的状态标签。
  */
 const statusLabel = computed(() => statusLabels[props.status]);
-/**
- * 处理no automatic上传，并保持现有输入输出约定。
- */
+/** 阻止组件自动发送上传请求，由创建流程统一管理顺序和重试。 */
 const noAutomaticUpload = (): undefined => undefined;
 </script>
 

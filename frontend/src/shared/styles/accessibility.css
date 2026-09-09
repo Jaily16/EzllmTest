@@ -1,3 +1,4 @@
+/* 公共键盘焦点、减弱动画与辅助访问样式；业务组件复用这些规则，不在页面逐处重建焦点表现。 */
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 3px solid var(--ez-focus-color);
   outline-offset: var(--ez-focus-offset);

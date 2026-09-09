@@ -1,3 +1,4 @@
+// 前端静态检查配置：维护 Vue 与 TypeScript 规则；普通注释不改变 lint 豁免或可执行规则。
 import js from "@eslint/js";
 import process from "node:process";
 import pluginVue from "eslint-plugin-vue";

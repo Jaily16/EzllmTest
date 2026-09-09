@@ -1,3 +1,4 @@
+/* 应用基础排版、布局与元素默认表现；业务状态不通过全局样式推断或修改。 */
 @font-face {
   font-family: "Quantify";
   src: url("../assets/fonts/Quantify.ttf") format("truetype");

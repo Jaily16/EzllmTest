@@ -1,3 +1,4 @@
+// 统一页面标题等展示元数据，避免导航和文档各自维护名称。
 export interface RoutePresentation {
   title: string;
 }
@@ -20,8 +21,6 @@ export const ROUTE_PRESENTATION: Record<string, RoutePresentation> = {
   "/agent": { title: "Agent 编排" },
 };
 
-/**
- * 处理路由 title for，并保持现有输入输出约定。
- */
+/** 查找已知页面标题，未知路径使用应用名称作为回退。 */
 export const routeTitleFor = (path: string): string =>
   ROUTE_PRESENTATION[path]?.title || "EzllmTest";

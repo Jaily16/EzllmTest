@@ -1,3 +1,5 @@
+-- 项目初始化声明：包含 DROP TABLE 与 MySQL 可执行版本注释，仅用于获准的新库初始化；不是可直接应用到已有数据的迁移。
+-- 已有项目数据库原地保护，源码或注释整理不得触发此脚本执行。
 -- MySQL dump 10.13  Distrib 8.0.29, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: ezllmtest_dev

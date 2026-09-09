@@ -1,0 +1,86 @@
+[
+  {
+    "field": "path",
+    "value": "/"
+  },
+  {
+    "field": "name",
+    "value": "home"
+  },
+  {
+    "field": "path",
+    "value": "/about"
+  },
+  {
+    "field": "name",
+    "value": "about"
+  },
+  {
+    "field": "path",
+    "value": "/observability"
+  },
+  {
+    "field": "name",
+    "value": "observability"
+  },
+  {
+    "field": "path",
+    "value": "/create"
+  },
+  {
+    "field": "name",
+    "value": "create"
+  },
+  {
+    "field": "path",
+    "value": "/test"
+  },
+  {
+    "field": "name",
+    "value": "testMain"
+  },
+  {
+    "field": "path",
+    "value": "/menu"
+  },
+  {
+    "field": "path",
+    "value": "/plan"
+  },
+  {
+    "field": "path",
+    "value": "/unit"
+  },
+  {
+    "field": "path",
+    "value": "/integration"
+  },
+  {
+    "field": "path",
+    "value": "/api"
+  },
+  {
+    "field": "path",
+    "value": "/ui"
+  },
+  {
+    "field": "path",
+    "value": "/database"
+  },
+  {
+    "field": "path",
+    "value": "/functional"
+  },
+  {
+    "field": "path",
+    "value": "/nfunctional"
+  },
+  {
+    "field": "path",
+    "value": "/acceptance"
+  },
+  {
+    "field": "path",
+    "value": "/agent"
+  }
+]

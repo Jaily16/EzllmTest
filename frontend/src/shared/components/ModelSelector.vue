@@ -21,6 +21,8 @@
 </template>
 
 <script lang="ts" setup>
+// 无业务存储能力的公共展示组件，状态来自 props，用户意图通过事件交回调用方。
+
 /* global defineProps, defineEmits, withDefaults */
 import { computed, getCurrentInstance } from "vue";
 import type { ModelLabel } from "@/shared/config/models";
@@ -57,13 +59,9 @@ const instance = getCurrentInstance();
 const resolvedId = computed(() => props.id || `workspace-model-selector-${instance?.uid ?? 0}`);
 
 const value = computed({
-  /**
-   * 获取内部状态，并保持现有状态与错误处理语义。
-   */
+  /** 读取父组件的模型选择值。 */
   get: () => props.modelValue,
-  /**
-   * 设置内部状态，并保持现有状态与错误处理语义。
-   */
+  /** 只发出选择变更事件，模型执行由业务动作显式触发。 */
   set: (next: ModelLabel) => emit("update:modelValue", next),
 });
 </script>

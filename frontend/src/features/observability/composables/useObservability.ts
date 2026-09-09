@@ -1,3 +1,4 @@
+// 观测页快照与刷新生命周期；摘要、日志和可选详情分开加载，隐藏页面停止轮询。
 import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
@@ -7,16 +8,18 @@ import {
   loadTelemetryDelivery,
   listObservabilityLogs,
   listObservabilityTraces,
-  type LogLevel,
-  type ObservabilityCapabilities,
-  type ObservabilityOverview,
-  type ObservabilityWindow,
-  type SafeLogEntry,
-  type TelemetryDelivery,
-  type TraceDetail,
-  type TraceStatus,
-  type TraceSummary,
-} from "@/features/observability/state/observability";
+} from "@/features/observability/api/observability";
+import type {
+  LogLevel,
+  ObservabilityCapabilities,
+  ObservabilityOverview,
+  ObservabilityWindow,
+  SafeLogEntry,
+  TelemetryDelivery,
+  TraceDetail,
+  TraceStatus,
+  TraceSummary,
+} from "@/features/observability/types";
 
 const WINDOWS: readonly ObservabilityWindow[] = ["15m", "1h", "6h", "24h", "7d"];
 const TRACE_ID_PATTERN = /^[0-9a-f]{32}$/;
@@ -44,25 +47,19 @@ export interface ObservabilityState {
   refreshNow: () => Promise<void>;
 }
 
-/**
- * 处理查询值，并保持现有输入输出约定。
- */
+/** 仅接受单个字符串查询参数，数组或其他类型不作为选择值。 */
 const queryValue = (value: unknown): string => (typeof value === "string" ? value : "");
 
-/**
- * 处理initial时间窗口，并保持现有输入输出约定。
- */
+/** 只接受支持的观测时间窗口，未知值回退到一小时。 */
 const initialWindow = (value: unknown): ObservabilityWindow => {
   const candidate = queryValue(value) as ObservabilityWindow;
   return WINDOWS.includes(candidate) ? candidate : "1h";
 };
 
 /**
- * 管理本地观测查询、窗口切换、自动刷新与 Trace 选择。
- *
+ * 组合观测摘要、脱敏日志和 Agent 投递健康；自动刷新保留上次有效结果，Trace 详情单独按选择加载。
  * @param observabilityBaseUrl 沿用当前 TypeScript 类型约束的输入。
  * @param agentBaseUrl 沿用当前 TypeScript 类型约束的输入。
- *
  * @returns 保持当前 TypeScript 返回类型与调用方约定。
  */
 export const useObservability = (
@@ -102,8 +99,7 @@ export const useObservability = (
   });
 
   /**
-   * 加载已选 Trace，并保持现有状态与错误处理语义。
-   *
+   * 没有选中 Trace 时清空详情；详情读取失败独立返回失败，不清空其他观测摘要。
    * @returns 保持当前 TypeScript 返回类型与调用方约定。
    */
   const loadSelectedTrace = async (): Promise<boolean> => {
@@ -124,10 +120,8 @@ export const useObservability = (
   };
 
   /**
-   * 加载snapshot，并保持现有状态与错误处理语义。
-   *
+   * 并发读取摘要和列表，防止重复刷新；投递健康失败可降级，整体失败保留上次有效快照。
    * @param background 沿用当前 TypeScript 类型约束的输入。
-   *
    * @returns 保持当前 TypeScript 返回类型与调用方约定。
    */
   const loadSnapshot = async (background: boolean): Promise<void> => {
@@ -166,18 +160,14 @@ export const useObservability = (
     }
   };
 
-  /**
-   * 处理replace查询，并保持现有输入输出约定。
-   */
+  /** 将时间窗口和可选 Trace ID 写入观测页 URL，支持导航恢复。 */
   const replaceQuery = (traceId = selectedTraceId.value): void => {
     const query: Record<string, string> = { window: selectedWindow.value };
     if (traceId) query.trace = traceId;
     void router.replace({ path: "/observability", query });
   };
 
-  /**
-   * 设置时间窗口，并保持现有状态与错误处理语义。
-   */
+  /** 仅在支持的时间窗口发生变化时同步 URL 并刷新数据。 */
   const setWindow = (value: ObservabilityWindow): void => {
     if (!WINDOWS.includes(value) || value === selectedWindow.value) return;
     selectedWindow.value = value;
@@ -185,25 +175,19 @@ export const useObservability = (
     void loadSnapshot(false);
   };
 
-  /**
-   * 设置Trace状态，并保持现有状态与错误处理语义。
-   */
+  /** 更新 Trace 列表过滤条件并重新请求快照。 */
   const setTraceStatus = (value: TraceStatus | "all"): void => {
     traceStatus.value = value;
     void loadSnapshot(false);
   };
 
-  /**
-   * 设置日志级别，并保持现有状态与错误处理语义。
-   */
+  /** 更新脱敏日志级别过滤条件并刷新快照。 */
   const setLogLevel = (value: LogLevel | "all"): void => {
     logLevel.value = value;
     void loadSnapshot(false);
   };
 
-  /**
-   * 选择指定 Trace，并同步 URL 查询参数与详情请求。
-   */
+  /** 校验 Trace ID 后显式读取详情；失败保留列表并显示错误。 */
   const selectTrace = async (traceId: string): Promise<void> => {
     if (!TRACE_ID_PATTERN.test(traceId)) return;
     selectedTraceId.value = traceId;
@@ -216,18 +200,14 @@ export const useObservability = (
     }
   };
 
-  /**
-   * 清除Trace，并保持现有状态与错误处理语义。
-   */
+  /** 清除详情选择及 URL 中的 Trace 参数，列表状态保持可用。 */
   const clearTrace = (): void => {
     selectedTraceId.value = "";
     selectedTrace.value = null;
     replaceQuery("");
   };
 
-  /**
-   * 停止定时器，并保持现有状态与错误处理语义。
-   */
+  /** 释放当前自动刷新定时器，避免卸载或隐藏后继续轮询。 */
   const stopTimer = (): void => {
     if (intervalId !== null) {
       window.clearInterval(intervalId);
@@ -235,9 +215,7 @@ export const useObservability = (
     }
   };
 
-  /**
-   * 启动定时器，并保持现有状态与错误处理语义。
-   */
+  /** 只在已挂载且页面可见时开启十秒刷新，并先释放旧定时器。 */
   const startTimer = (): void => {
     stopTimer();
     if (mounted && document.visibilityState === "visible") {
@@ -245,9 +223,7 @@ export const useObservability = (
     }
   };
 
-  /**
-   * 根据页面可见状态暂停或恢复观测自动刷新。
-   */
+  /** 隐藏页面停止轮询；重新可见时立即刷新并恢复定时器。 */
   const handleVisibility = (): void => {
     if (document.visibilityState === "hidden") {
       stopTimer();
@@ -257,9 +233,6 @@ export const useObservability = (
     startTimer();
   };
 
-  /**
-   * 监听相关响应式状态变化，并同步执行既有更新逻辑。
-   */
   watch(
     () => route.query.trace,
     (value) => {
@@ -276,9 +249,6 @@ export const useObservability = (
     },
   );
 
-  /**
-   * 组件挂载后执行既有初始化或恢复流程。
-   */
   onMounted(() => {
     mounted = true;
     document.addEventListener("visibilitychange", handleVisibility);
@@ -314,9 +284,7 @@ export const useObservability = (
     setLogLevel,
     selectTrace,
     clearTrace,
-    /**
-     * 刷新now，并保持现有状态与错误处理语义。
-     */
+    /** 触发前台刷新，复用并发抑制和上次有效快照保护。 */
     refreshNow: () => loadSnapshot(false),
   };
 };

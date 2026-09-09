@@ -1,5 +1,6 @@
+// 应用启动统一安装路由、组件及公开端点；不从页面读取后端或观测秘密。
 import { createApp } from "vue";
-import { installElementPlus } from "./shared/plugins/elementPlus";
+import { installElementPlus } from "./app/plugins/elementPlus";
 import "./shared/styles/tokens.css";
 import "./shared/styles/element-plus-theme.css";
 import "./shared/styles/base.css";
@@ -10,9 +11,7 @@ import axios from "axios";
 
 // Typed backend failures use meaningful HTTP status codes while retaining the
 // legacy response envelope consumed by the existing pages.
-/**
- * 处理anonymous，并保持现有输入输出约定。
- */
+/** 让 Axios 返回 200 至 599 状态的响应，业务错误由各 API 信封处理器统一判断。 */
 axios.defaults.validateStatus = (status) => status >= 200 && status < 600;
 
 const app = createApp(App);

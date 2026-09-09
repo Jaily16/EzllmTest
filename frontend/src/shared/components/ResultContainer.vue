@@ -16,6 +16,8 @@
 </template>
 
 <script lang="ts" setup>
+// 无业务存储能力的公共展示组件，状态来自 props，用户意图通过事件交回调用方。
+
 /* global defineProps, withDefaults */
 import { computed } from "vue";
 
@@ -38,9 +40,7 @@ const props = withDefaults(
   },
 );
 
-/**
- * 派生用于界面展示或请求判断的保留状态标签。
- */
+/** 显示父组件提供的保留说明或默认保存标签，不根据可见文本推断持久化成功。 */
 const retentionLabel = computed(
   () => props.retentionText || (props.retention === "session-only" ? "仅当前页面保留" : "已保存"),
 );

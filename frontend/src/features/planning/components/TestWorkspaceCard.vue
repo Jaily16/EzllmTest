@@ -44,9 +44,11 @@
 </template>
 
 <script lang="ts" setup>
+// 计划功能的测试工作区展示卡片，仅传递导航与展示信息。
+
 /* global defineProps */
 import { RouterLink } from "vue-router";
-import type { TestWorkspaceCardViewModel } from "@/features/testing/config/testWorkspaces";
+import type { TestWorkspaceCardViewModel } from "@/entities/workflow/model/workspaces";
 
 defineProps<{
   item: TestWorkspaceCardViewModel;

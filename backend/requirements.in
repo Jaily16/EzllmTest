@@ -27,3 +27,5 @@ docx2txt==0.9
 tiktoken==0.14.0
 pytest==9.1.1
 httpx==0.28.1
+# Windows 本机会话命名管道；版本已存在于 Windows hash lock 中。
+pywin32==312; sys_platform == "win32"

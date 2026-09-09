@@ -1,5 +1,6 @@
-import { computed, onUnmounted, reactive, ref } from "vue";
-import type { TestMenuState } from "@/features/planning/state/projectAnalysis";
+// 通用生成 SSE 生命周期与渲染状态，不导入计划页或测试页的业务状态。
+import { parseSseBlock, type ParsedSseEvent } from "@/shared/transport/sse";
+import { computed, onUnmounted, reactive, ref, shallowRef } from "vue";
 
 export interface LlmProgress {
   stage: string;
@@ -55,14 +56,7 @@ interface StreamRequestBody {
   [key: string]: unknown;
 }
 
-interface ParsedSseEvent {
-  event: string;
-  data: Record<string, unknown>;
-}
-
-/**
- * 处理empty用量，并保持现有输入输出约定。
- */
+/** 创建尚未收到 usage 的空计数，null 与真实的零消耗保持区别。 */
 const emptyUsage = (): LlmTokenUsage => ({
   input_tokens: null,
   reasoning_tokens: null,
@@ -70,44 +64,22 @@ const emptyUsage = (): LlmTokenUsage => ({
   total_tokens: null,
 });
 
-/**
- * 处理as数字 or空值，并保持现有输入输出约定。
- */
+/** 仅接受数值型 usage 字段，缺失或其他类型统一表示未知。 */
 const asNumberOrNull = (value: unknown): number | null =>
   typeof value === "number" ? value : null;
 
 /**
- * 解析sse block，并保持现有状态与错误处理语义。
  *
  * @param block 沿用当前 TypeScript 类型约束的输入。
  *
  * @returns 保持当前 TypeScript 返回类型与调用方约定。
  */
-const parseSseBlock = (block: string): ParsedSseEvent | null => {
-  let event = "message";
-  const dataLines: string[] = [];
-  for (const line of block.split(/\r?\n/)) {
-    if (line.startsWith(":")) continue;
-    if (line.startsWith("event:")) {
-      event = line.slice(6).trim();
-    } else if (line.startsWith("data:")) {
-      dataLines.push(line.slice(5).trimStart());
-    }
-  }
-  if (dataLines.length === 0) return null;
-  const parsed = JSON.parse(dataLines.join("\n"));
-  if (typeof parsed !== "object" || parsed === null) return null;
-  return { event, data: parsed as Record<string, unknown> };
-};
 
 /**
- * 封装 LLM SSE 生命周期，并暴露进度、结果、推理与取消状态。
- *
+ * 管理一次生成流的网络连接、事件状态与渲染缓冲；业务状态通过返回值与调用方衔接，不导入页面状态。
  * @param baseUrl 沿用当前 TypeScript 类型约束的输入。
- *
- * 副作用：可能调用本地 API、浏览器存储或流式连接，并更新当前页面状态。
  */
-export const useLlmStream = (baseUrl: string) => {
+export const useLlmStream = <TMenu = Record<string, boolean>>(baseUrl: string) => {
   const isRunning = ref(false);
   const completed = ref(false);
   const cancelled = ref(false);
@@ -115,7 +87,7 @@ export const useLlmStream = (baseUrl: string) => {
   const fromCache = ref(false);
   const ready = ref(false);
   const summary = ref("");
-  const menu = ref<TestMenuState | null>(null);
+  const menu = shallowRef<TMenu | null>(null);
   const result = ref<unknown>(null);
   const answer = ref("");
   const reasoningSections = ref<LlmReasoningSection[]>([]);
@@ -152,9 +124,7 @@ export const useLlmStream = (baseUrl: string) => {
   let pendingAnswer = "";
   const pendingReasoning = new Map<string, { label: string; text: string }>();
 
-  /**
-   * 处理flush pending，并保持现有输入输出约定。
-   */
+  /** 把暂存的正文、摘要和分阶段推理合入响应式状态，并清理已安排的动画帧。 */
   const flushPending = () => {
     if (frameId !== null) {
       cancelAnimationFrame(frameId);
@@ -180,16 +150,12 @@ export const useLlmStream = (baseUrl: string) => {
     }
   };
 
-  /**
-   * 调度flush，并保持现有状态与错误处理语义。
-   */
+  /** 同一帧内只安排一次刷新，避免每个 token 都触发整块界面更新。 */
   const scheduleFlush = () => {
     if (frameId === null) frameId = requestAnimationFrame(flushPending);
   };
 
-  /**
-   * 重置内部状态，并保持现有状态与错误处理语义。
-   */
+  /** 中断当前请求并清空本次流状态；持久化产物的保留由外层工作流控制器处理。 */
   const reset = () => {
     if (controller) controller.abort();
     flushPending();
@@ -227,11 +193,8 @@ export const useLlmStream = (baseUrl: string) => {
   };
 
   /**
-   * 应用事件，并保持现有状态与错误处理语义。
-   *
+   * 按 SSE 事件类型更新元数据、进度、增量和终态；saved 与 completed 分开表示保存和生成完成。
    * @param event 当前事件对象。
-   *
-   * 副作用：可能调用本地 API、浏览器存储或流式连接，并更新当前页面状态。
    */
   const applyEvent = (event: ParsedSseEvent) => {
     const data = event.data;
@@ -295,7 +258,7 @@ export const useLlmStream = (baseUrl: string) => {
         scheduleFlush();
         break;
       case "menu":
-        menu.value = (data.menu || null) as TestMenuState | null;
+        menu.value = (data.menu || null) as TMenu | null;
         break;
       case "result":
         result.value = data.result ?? null;
@@ -329,14 +292,10 @@ export const useLlmStream = (baseUrl: string) => {
   };
 
   /**
-   * 启动内部状态，并保持现有状态与错误处理语义。
-   *
+   * 显式提交生成请求并持续解码 SSE；HTTP 错误、取消及提前断流分别记录，不把不完整输出判为成功。
    * @param path 沿用当前 TypeScript 类型约束的输入。
    * @param body 沿用当前 TypeScript 类型约束的输入。
-   *
    * @returns 保持当前 TypeScript 返回类型与调用方约定。
-   *
-   * 副作用：可能调用本地 API、浏览器存储或流式连接，并更新当前页面状态。
    */
   const start = async (path: string, body: StreamRequestBody): Promise<boolean> => {
     reset();
@@ -419,9 +378,7 @@ export const useLlmStream = (baseUrl: string) => {
     }
   };
 
-  /**
-   * 取消内部状态，并保持现有状态与错误处理语义。
-   */
+  /** 中止当前浏览器请求并标为取消；不会把当前未完成文本标记成已保存产物。 */
   const cancel = () => {
     if (!controller) return;
     cancelled.value = true;

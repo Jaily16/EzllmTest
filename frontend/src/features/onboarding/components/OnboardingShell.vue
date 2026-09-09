@@ -39,6 +39,8 @@
 </template>
 
 <script lang="ts" setup>
+// 资料准备专用展示组件；上传、项目创建与恢复编排留在 onboarding 页面。
+
 import workbenchLogo from "@/shared/assets/brand/ezlogo-workbench-v2.png";
 
 withDefaults(

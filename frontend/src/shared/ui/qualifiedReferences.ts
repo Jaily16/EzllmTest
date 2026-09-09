@@ -1,3 +1,4 @@
+// 把目标限定引用拆为展示信息；请求始终保留原始稳定值。
 export const QUALIFIED_REFERENCE_SEPARATOR = " ｜ ";
 
 export interface QualifiedReference {
@@ -10,10 +11,8 @@ export interface QualifiedReference {
 }
 
 /**
- * 解析限定引用，并保持现有状态与错误处理语义。
- *
+ * 保留原始值用于请求，将限定名和来源提示分开显示，兼容旧的非限定名称。
  * @param rawValue 沿用当前 TypeScript 类型约束的输入。
- *
  * @returns 保持当前 TypeScript 返回类型与调用方约定。
  */
 export const parseQualifiedReference = (rawValue: string): QualifiedReference => {

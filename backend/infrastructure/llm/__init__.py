@@ -1,1 +1,0 @@
-"""Provider and streaming adapters."""
