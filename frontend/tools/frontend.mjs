@@ -1,16 +1,17 @@
 // 命令行工具显式读取前端配置并清理继承冲突，serve 与 build 共享配置投影。
 /** 普通终端的 Vite 入口：先校验显式文件，再加载工具和应用。 */
 import { fileURLToPath } from "node:url";
-import { loadFrontendConfiguration } from "./configuration.mjs";
+import { frontendConfigurationPath, loadFrontendConfiguration } from "./configuration.mjs";
 
 const args = process.argv.slice(2);
 if (args.includes("--help")) {
-  console.log("node tools/frontend.mjs <serve|build> --env-file <absolute frontend config>");
+  console.log(
+    "node tools/frontend.mjs <serve|build> <--local-config | --env-file <absolute frontend config>>",
+  );
 } else {
   try {
-    if (args.length !== 3 || !["serve", "build"].includes(args[0]) || args[1] !== "--env-file")
-      throw new Error("frontend_config:explicit_arguments_required");
-    const values = loadFrontendConfiguration(args[2]);
+    const configPath = frontendConfigurationPath(args);
+    const values = loadFrontendConfiguration(configPath);
     for (const name of Object.keys(process.env)) {
       if (
         /^(VUE_APP_|VITE_|EZLLMTEST_|OBSERVABILITY_|AGENT_|DOTENV_|DATABASE_|REDIS_)/i.test(name) ||
@@ -18,7 +19,7 @@ if (args.includes("--help")) {
       )
         delete process.env[name];
     }
-    process.env.EZLLMTEST_FRONTEND_ENV_FILE = args[2];
+    process.env.EZLLMTEST_FRONTEND_ENV_FILE = configPath;
     const vite = await import("vite");
     const options = {
       root: fileURLToPath(new URL("../", import.meta.url)),

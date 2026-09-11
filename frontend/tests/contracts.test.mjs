@@ -3,7 +3,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseSseBlock } from "../src/shared/transport/sse.ts";
-import { parseFrontendConfiguration } from "../tools/configuration.mjs";
+import {
+  frontendConfigurationPath,
+  loadFrontendConfiguration,
+  parseFrontendConfiguration,
+} from "../tools/configuration.mjs";
+import { fileURLToPath } from "node:url";
+import { mkdtempSync, writeFileSync, unlinkSync, rmdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 import { frontendPublicDefinitions } from "../tools/frontend-public-env.mjs";
 import {
   useTestWorkflow,
@@ -107,4 +116,42 @@ test("route URL and name ordering stays at the V6 contract", async () => {
     readFileSync(new URL("./router-fixture.json", import.meta.url), "utf8"),
   );
   assert.deepEqual(values, expected);
+});
+
+/* 固定源解析不读取真实 .env；人工文件验证显式兼容，临时目录由验收进程指定。 */
+test("local frontend selector is CWD independent, exclusive and keeps explicit loading", () => {
+  const scratch = mkdtempSync(join(tmpdir(), "frontend-config-"));
+  const originalCwd = process.cwd();
+  const path = join(scratch, "synthetic.env");
+  try {
+    writeFileSync(path, valid);
+    process.chdir(scratch);
+    for (const command of ["serve", "build"]) {
+      assert.equal(
+        frontendConfigurationPath([command, "--local-config"]),
+        fileURLToPath(new URL("../.env", import.meta.url)),
+      );
+      assert.equal(frontendConfigurationPath([command, "--env-file", path]), path);
+      assert.deepEqual(loadFrontendConfiguration(path), parseFrontendConfiguration(valid));
+      for (const args of [
+        [command],
+        [command, "--env-file", "relative.env"],
+        [command, "--local-config", "--env-file", path],
+        [command, "--local-config", "extra"],
+      ])
+        assert.throws(() => frontendConfigurationPath(args), /frontend_config:/);
+    }
+    assert.throws(() => loadFrontendConfiguration(join(scratch, "missing.env")), /file_unreadable/);
+    const help = spawnSync(
+      process.execPath,
+      [fileURLToPath(new URL("../tools/frontend.mjs", import.meta.url)), "--help"],
+      { cwd: scratch, encoding: "utf8" },
+    );
+    assert.equal(help.status, 0);
+    assert.match(help.stdout, /--local-config/);
+  } finally {
+    process.chdir(originalCwd);
+    unlinkSync(path);
+    rmdirSync(scratch);
+  }
 });

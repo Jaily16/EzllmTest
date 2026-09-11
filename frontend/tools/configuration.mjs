@@ -2,6 +2,7 @@
 /** 显式读取前端配置：仅三个公开 URL 和工具端口，不发现 dotenv。 */
 import { readFileSync, lstatSync, realpathSync } from "node:fs";
 import { resolve, isAbsolute, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { PUBLIC_FRONTEND_FIELDS, frontendPublicDefinitions } from "./frontend-public-env.mjs";
 
 const allowed = new Set([...PUBLIC_FRONTEND_FIELDS, "FRONTEND_PORT"]);
@@ -9,6 +10,15 @@ const allowed = new Set([...PUBLIC_FRONTEND_FIELDS, "FRONTEND_PORT"]);
 const fail = (category, name = "") => {
   throw new Error("frontend_config:" + category + (name ? ":" + name : ""));
 };
+
+/* 快捷模式只定位本工具所属前端工程，不读取文件，也不受终端 CWD 影响。 */
+export function frontendConfigurationPath(args) {
+  if (!["serve", "build"].includes(args[0])) fail("explicit_arguments_required");
+  if (args.length === 2 && args[1] === "--local-config")
+    return fileURLToPath(new URL("../.env", import.meta.url));
+  if (args.length === 3 && args[1] === "--env-file" && isAbsolute(args[2])) return args[2];
+  fail("explicit_arguments_required");
+}
 
 /* 解析显式前端配置，拒绝重复、未知及跨端字段；只产出前端公开字段和启动端口。 */
 export function parseFrontendConfiguration(text) {

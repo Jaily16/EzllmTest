@@ -309,10 +309,22 @@ class RuntimeConfiguration:
 def explicit_observability_database_path(
     path_value: str, *, observability_directory: Path
 ) -> Path:
-    """将 SQLite 定位限制在明确观测目录的 data 边界，拒绝越界、链接及非数据库文件位置。"""
+    """相对路径以显式观测配置目录定位；绝对路径兼容，所有目标仍受 data 边界及链接检查约束。"""
     path = Path(path_value)
-    if not path.is_absolute() or path.suffix.casefold() != ".sqlite3":
+    if not path_value.strip() or path.suffix.casefold() != ".sqlite3" or (not path.is_absolute() and (path.drive or path.root)):
         raise _error("invalid_observability_database_path", "OBSERVABILITY_DATABASE_PATH")
+    if not path.is_absolute():
+        path = observability_directory / path
+    # resolve 会抹去链接本身，必须先检查用户给出的路径及其祖先。
+    try:
+        for ancestor in (path, *path.parents):
+            if not ancestor.exists() and not ancestor.is_symlink():
+                continue
+            info = ancestor.lstat()
+            if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
+                raise _error("reparse_path_forbidden")
+    except OSError:
+        raise _error("file_unavailable") from None
     expected_parent = (observability_directory / "data").resolve()
     candidate = path.resolve()
     try:

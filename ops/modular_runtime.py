@@ -25,6 +25,7 @@ from urllib.parse import urlsplit
 
 
 from ezllmtest.platform import configuration_schema as configuration
+from ezllmtest.bootstrap.settings import checked_root
 
 CONTRACT_RELATIVE = Path("infrastructure/runtime/modular-runtime-contract.json")
 STATE_ROOT_NAME = "ezllmtest-modular-runtime"
@@ -962,6 +963,7 @@ def _build_parser() -> argparse.ArgumentParser:
         child = subparsers.add_parser(name)
         child.add_argument("--repo-root", dest="sub_repo_root")
         child.add_argument("--format", dest="sub_format", choices=("text", "json"))
+        child.add_argument("--local-config", action="store_true", help="显式使用仓库根下三端固定的 .env")
         child.add_argument("--env-file", help="Deprecated explicit legacy configuration; never combined with the three-file mode")
         child.add_argument("--backend-env-file")
         child.add_argument("--observability-env-file")
@@ -982,7 +984,9 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
-        root = _repo_root(getattr(args, "sub_repo_root", None) or args.repo_root)
+        root_value = getattr(args, "sub_repo_root", None) or args.repo_root
+        # 快捷路径展开前核对未 resolve 的根，避免 junction 被规范化后隐藏。
+        root = checked_root(str(root_value or Path(__file__).absolute().parents[1])) if getattr(args, "local_config", False) else _repo_root(root_value)
         output_format = getattr(args, "sub_format", None) or args.format
         if args.command in {"config-check", "preflight", "start"}:
             arguments = {
@@ -991,6 +995,12 @@ def main(argv: list[str] | None = None) -> int:
                 "moonshot_model": args.moonshot_model, "backend_env_file": args.backend_env_file,
                 "observability_env_file": args.observability_env_file,
             }
+            if args.local_config:
+                if any(value is not None for value in arguments.values()):
+                    raise configuration.RuntimeConfigurationError("local_config_conflicts_with_explicit_arguments")
+                # 只展开路径，后续配置隔离、五进程装配与停机归属核验仍走原实现。
+                arguments.update({f"{source}_env_file": str(root / source / ".env")
+                    for source in ("backend", "frontend", "observability")})
             if args.command == "config-check":
                 payload = _config_check(root, **arguments)
             elif args.command == "preflight":

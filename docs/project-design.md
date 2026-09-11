@@ -156,6 +156,10 @@ MySQL 长期保存项目及有效结果；Redis 保存 checkpoint、queue、leas
 | 观测 API | observability、frontend；不读取 backend 秘密 |
 | 前端 | 仅 frontend |
 
+显式 `--local-config` 按绝对 repo root 展开各角色允许的固定 .env，不搜索或回退；MCP 快捷模式仅 backend。与完整配置文件参数互斥，完整模式和 Uvicorn 路径选择器继续兼容。runner 的 config-check/preflight/start 也支持该选项，前端 serve/build 固定定位本工程 .env，与 CWD 无关。
+
+`OBSERVABILITY_DATABASE_PATH` 必填；相对值以观测配置所在目录解析，最终仍限制在该目录的 data 内，合法绝对值继续支持。缺失、空值、越界、链接/junction、错误扩展名或非文件目标均拒绝，不改写已有配置或移动 SQLite。
+
 入口先校验绝对 repo root 和明确配置路径，再装配应用；--help 不读配置或连接依赖。不搜索替代 .env，不展开变量或执行配置文本。继承的冲突应用配置清理后，以显式文件为准；不修改 Windows 用户/系统环境。
 
 加载器拒绝重复/未知/跨角色字段、必填缺失、非法类型、端口/端点/CORS 不一致、重复来源及 reparse/越界路径。DATABASE_URL 和四家 API_KEY 可使用对应 _FILE，但直接赋值与 _FILE 不能并存；config-check 仅校验引用路径，实际运行才按原有单行 UTF-8、8192-byte 限制读取。错误只给字段名/类别，不回显值。
@@ -166,6 +170,8 @@ Windows 观测进程创建随机内存 token 和命名管道，显式 DACL 限�
 
 <a id="startup"></a>
 ## 分终端启动（Windows 单进程）
+
+日常使用推荐 [README 一键启动](../README.md#windows)，包含普通 worker；以下保留方面三独立入口与不消费验收的完整参数，供排错和历史结果对照。普通 worker 执行队列，不消费模式仅作连接诊断。
 
 [Verified] 方面三已使用原地三个配置文件验证以下独立入口，不回写配置。worker 按下述不消费模式验收，正常任务消费未验证；结果见[验证历史](validation-history.md#iteration-7)。产品包注册方法见[开发说明](#development)。
 
@@ -247,6 +253,8 @@ worker 和 MCP 不读取 frontend。MCP 使用 python -m ezllmtest.entrypoints.m
 <a id="maintenance"></a>
 ## 可选 runner 与维护
 
+当前 README 将 Windows runner 作为主启动路径：在激活产品 Python 的仓库终端依次运行 `ops/modular/run.ps1 config-check --local-config`、`preflight --local-config`、`start --local-config`，仅在前一步成功后继续。它复用下述完整参数流程，启动普通 worker；status/ready/stop 仍使用返回的 run-id。
+
 [runner](../ops/modular_runtime.py) 和 [runtime 声明](../infrastructure/runtime/modular-runtime-contract.json) 只负责本项目进程。runner 是可选便利工具；本轮方面三真实验收采用独立终端，没有把 runner 启动当成其证据。
 
 ```powershell
@@ -323,3 +331,9 @@ runner start 会启动普通消费 worker，不等于 --no-consume 验收。只�
 本次确认 docs 采用“三份长期 Markdown + assets 文档图片目录”；它替代此前无子目录约定，不修改方面四、六当时的清理事实。根 [README](../README.md#setup)集中提供安装、全新数据库初始化、三份配置示例和每个终端自包含的 Windows/Linux 指引。本文件继续承载深入设计与既有本机验收说明；其中绝对工具路径是原验收环境记录，不是新读者必须使用的路径。
 
 十张 PNG 是 2026-08-25 合成项目历史截图，按固定 Git Blob 原字节恢复；架构 SVG 表达当前源码职责。Linux 只给关闭遥测后的核心入口参考，没有实机验收，不启动观测 API 或统一 runner。Java、RabbitMQ、Prometheus 仅属未集成扩展阅读。产品源码、配置值、依赖与启动脚本没有因本次文档维护改变。
+
+<a id="repro-simplify"></a>
+
+## 配置与复现简化维护（2026-09-11）
+
+README 保留八章与现有图像，工具链改为参考版本/推导兼容范围，复现集中必要凭据与快捷入口；深入角色、协议和安全设计仍由本文承载。根 LOCAL-STARTUP.md 仅供作者机器使用，通过精确忽略规则排除发布。业务流程、接口、依赖版本、页面与数据结构不变。Windows 保持单进程 IPC；Linux 仅关闭遥测后的核心参考，不宣称实机验证。本机试用启用普通 worker，发布需等用户明确反馈。

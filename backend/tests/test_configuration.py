@@ -97,3 +97,86 @@ def test_each_role_assembles_before_lifespan_without_io(tmp_path, role):
     app=create_app(config)
     if role in {"worker","mcp"}: assert app is None
     else: assert app is not None
+
+
+@pytest.mark.parametrize("role", ["product-api", "agent-api", "observability-api", "worker", "mcp"])
+def test_local_cli_matches_explicit_sources_before_assembly(tmp_path, monkeypatch, role):
+    """把人工配置放入固定三端位置，捕获装配前的投影；MCP 不读取额外来源，不启动任何服务。"""
+    from ezllmtest.bootstrap import app_factory
+    from ezllmtest.bootstrap.settings import ROLE_SOURCES
+    paths = sources(tmp_path)
+    for name, source in paths.items():
+        directory = tmp_path / name
+        directory.mkdir()
+        text = Path(source).read_text().replace(str(tmp_path / "data" / "synthetic.sqlite3"), "data/synthetic.sqlite3")
+        (directory / ".env").write_text(text, encoding="utf-8")
+    selected = ROLE_SOURCES[role]
+    # 删除本角色不允许读取的源，证明快捷模式不会要求或发现这些文件。
+    for name in set(paths) - set(selected):
+        (tmp_path / name / ".env").unlink()
+    actual = []
+    class Captured(Exception): pass
+    def capture(*args, **kwargs):
+        actual.append(load_process(*args, **kwargs))
+        raise Captured
+    monkeypatch.setattr(app_factory, "load_process", capture)
+    other = tmp_path / "other"; other.mkdir(); monkeypatch.chdir(other)
+    base = ["--repo-root", str(tmp_path)]
+    if role == "worker": base += ["--consumer", "offline"]
+    if role == "mcp": base += ["--project-id", "EzOffline"]
+    with pytest.raises(Captured): app_factory.main(role, base + ["--local-config"])
+    explicit = [part for name in selected for part in (f"--{name}-env-file", str(tmp_path / name / ".env"))]
+    with pytest.raises(Captured): app_factory.main(role, base + explicit)
+    assert actual[0].values == actual[1].values
+    assert actual[0].repo_root == actual[1].repo_root == tmp_path
+    with pytest.raises(SystemExit): app_factory.main(role, base + ["--local-config"] + explicit)
+    assert len(actual) == 2
+
+
+def test_local_cli_missing_conflicting_and_invalid_root(tmp_path, monkeypatch):
+    """错误选择器在应用装配前失败；缺失固定文件不回退到其他文件或父环境。"""
+    from ezllmtest.bootstrap import app_factory
+    def forbidden(*args, **kwargs): pytest.fail("invalid configuration reached assembly")
+    monkeypatch.setattr(app_factory, "create_app", forbidden)
+    with pytest.raises(schema.RuntimeConfigurationError):
+        app_factory.main("product-api", ["--repo-root", str(tmp_path), "--local-config"])
+    for value in ("relative", str(tmp_path / "missing")):
+        with pytest.raises(schema.RuntimeConfigurationError):
+            app_factory.main("product-api", ["--repo-root", value, "--local-config"])
+    with pytest.raises(SystemExit):
+        app_factory.main("product-api", ["--repo-root", str(tmp_path)])
+
+
+def test_sqlite_paths_are_configuration_relative_and_bounded(tmp_path, monkeypatch):
+    """人工 SQLite 路径不打开数据库；跨 CWD、绝对兼容及非法文件位置分别核对。"""
+    directory = tmp_path / "observability"; directory.mkdir()
+    other = tmp_path / "other"; other.mkdir(); monkeypatch.chdir(other)
+    resolve = lambda value: schema.explicit_observability_database_path(value, observability_directory=directory)
+    expected = directory / "data" / "offline.sqlite3"
+    assert resolve("data/offline.sqlite3") == resolve(str(expected)) == expected
+    for value in ("", " ", "../outside.sqlite3", "data/../../outside.sqlite3", "data/file.txt", "C:relative.sqlite3", str(tmp_path / "outside.sqlite3")):
+        with pytest.raises(schema.RuntimeConfigurationError): resolve(value)
+    invalid = directory / "data" / "directory.sqlite3"; invalid.mkdir(parents=True)
+    with pytest.raises(schema.RuntimeConfigurationError): resolve(str(invalid))
+    # Windows junction 不依赖符号链接特权，拒绝指向边界内部的链接，防止 resolve 隐藏它。
+    link = directory / "linked"
+    if os.name == "nt":
+        result = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(directory / "data")], capture_output=True)
+        assert result.returncode == 0
+    else:
+        link.symlink_to(directory / "data", target_is_directory=True)
+    try:
+        with pytest.raises(schema.RuntimeConfigurationError, match="reparse_path_forbidden"):
+            resolve("linked/offline.sqlite3")
+    finally:
+        if os.name == "nt": os.rmdir(link)
+        else: link.unlink()
+
+
+@pytest.mark.parametrize("text", ["", "OBSERVABILITY_DATABASE_PATH=\n"])
+def test_sqlite_missing_value_has_no_default(tmp_path, text):
+    """便携相对路径只改变解析基准，缺失字段仍不能静默创建默认数据库。"""
+    paths = sources(tmp_path)
+    Path(paths["observability"]).write_text(text)
+    with pytest.raises(schema.RuntimeConfigurationError, match="explicit_value_required"):
+        load_process("worker", str(tmp_path), backend=paths["backend"], observability=paths["observability"])

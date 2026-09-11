@@ -43,3 +43,33 @@ def test_runner_synthetic_config_and_child_commands(tmp_path,monkeypatch):
         assert all(("--"+role+"-env-file" in command)==(role in selected) for role in ("backend","frontend","observability"))
         assert "DATABASE_URL" not in environment and "EZLLMTEST_OBSERVABILITY_INGEST_TOKEN" not in environment
     assert "tools" in calls[-1][0][1] and "--env-file" in calls[-1][0]
+    assert "--no-consume" not in calls[3][0]
+    # 固定路径模式展开为原有完整参数，复用同一启动实现与五角色隔离。
+    for source, path in paths.items():
+        (synthetic/source/".env").write_bytes(Path(path).read_bytes())
+    calls.clear()
+    monkeypatch.setitem(globals_,"_state_root",lambda *a:tmp_path/"fake-local-run")
+    monkeypatch.chdir(tmp_path)
+    assert namespace["main"](["--repo-root", str(synthetic), "start", "--local-config"]) == 0
+    assert len(calls) == 5 and "--no-consume" not in calls[3][0]
+    for (command, environment), selected in zip(calls, roles):
+        for source in selected:
+            assert command[command.index(f"--{source}-env-file")+1] == str(synthetic/source/".env")
+        assert "EZLLMTEST_OBSERVABILITY_INGEST_TOKEN" not in environment
+
+
+def test_runner_local_config_rejects_mixed_modes_before_io(tmp_path,monkeypatch):
+    """快捷模式不能混用新旧配置选择器；帮助和非法组合不探测外部服务。"""
+    import pytest
+    namespace=runpy.run_path(str(ROOT/"ops/modular_runtime.py"))
+    def forbidden(*a, **k): pytest.fail("invalid selectors reached external preflight")
+    monkeypatch.setitem(namespace["main"].__globals__, "_external_preflight", forbidden)
+    for command in ("config-check", "preflight", "start"):
+        for flag, value in (("--env-file","unused"),("--backend-env-file","unused"),("--frontend-env-file","unused"),("--observability-env-file","unused"),("--model-env-file","unused"),("--moonshot-model","kimi-k3"),("--frontend-port","8180")):
+            assert namespace["main"](["--repo-root",str(tmp_path),command,"--local-config",flag,value]) == 2
+        assert namespace["main"](["--repo-root",str(tmp_path),command,"--local-config"]) == 2
+        with pytest.raises(SystemExit) as caught:
+            namespace["main"]([command,"--help"])
+        assert caught.value.code == 0
+    for root_value in ("relative", str(tmp_path/"missing")):
+        assert namespace["main"](["--repo-root",root_value,"preflight","--local-config"]) == 2

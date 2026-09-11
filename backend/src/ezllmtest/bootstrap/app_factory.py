@@ -5,7 +5,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from ezllmtest.bootstrap.settings import ROLE_SOURCES, activate, from_environment, load_process
+from ezllmtest.bootstrap.settings import ROLE_SOURCES, activate, checked_root, from_environment, load_process
 
 
 def create_app(config):
@@ -62,9 +62,10 @@ def main(role: str, argv=None):
     """先解析参数，使 --help 在配置读取之前退出；不消费 worker 绕过模型服务装配，API 端口必须与显式文件一致。"""
     parser = argparse.ArgumentParser(description=f"EzllmTest {role} 独立入口")
     parser.add_argument("--repo-root", required=True)
+    parser.add_argument("--local-config", action="store_true", help="显式使用仓库根下各角色固定的 .env，不搜索其他位置")
     for source in ("backend", "frontend", "observability"):
         if source in ROLE_SOURCES[role] or role == "mcp" and source == "observability":
-            parser.add_argument(f"--{source}-env-file", required=source in ROLE_SOURCES[role])
+            parser.add_argument(f"--{source}-env-file")
     if role == "worker":
         parser.add_argument("--consumer", required=True)
         parser.add_argument("--once", action="store_true")
@@ -77,10 +78,19 @@ def main(role: str, argv=None):
     else:
         parser.add_argument("--port", type=int)
     args = parser.parse_args(argv)
-    config = load_process(role, args.repo_root,
-        backend=getattr(args, "backend_env_file", None),
-        frontend=getattr(args, "frontend_env_file", None),
-        observability=getattr(args, "observability_env_file", None))
+    sources = {source: getattr(args, f"{source}_env_file", None)
+        for source in ("backend", "frontend", "observability")}
+    if args.local_config:
+        if any(value is not None for value in sources.values()):
+            parser.error("local-config conflicts with explicit configuration files")
+        # 只展开当前角色允许的固定位置；MCP 不借此读取观测或前端配置。
+        root = checked_root(args.repo_root)
+        sources = {source: str(root / source / ".env") for source in ROLE_SOURCES[role]}
+    else:
+        for source in ROLE_SOURCES[role]:
+            if sources[source] is None:
+                parser.error(f"--{source}-env-file is required without --local-config")
+    config = load_process(role, args.repo_root, **sources)
     if role not in {"worker", "mcp"} and args.port is not None and args.port != config.port:
         parser.error("port must match the explicit configuration")
     if role == "worker" and args.no_consume:
